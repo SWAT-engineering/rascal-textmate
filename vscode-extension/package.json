@@ -1,0 +1,20 @@
+{
+  "name": "rascal-syntax-highlighting",
+  "displayName": "Rascal Syntax Highlighting",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "grammars": [{
+      "language": "rascalmpl",
+      "scopeName": "source.rascalmpl.injection",
+      "path": "./syntaxes/rascal.tmLanguage.json",
+      "injectTo": ["source.rascalmpl"]
+    }]
+  }
+}
