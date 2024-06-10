@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "rascal-textmate-core"
+		},
+		{
+			"path": "vscode-extension"
+		}
+	]
+}
