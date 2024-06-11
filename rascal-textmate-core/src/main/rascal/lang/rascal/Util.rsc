@@ -1,5 +1,7 @@
 module lang::rascal::Util
 
+import Exception;
+import Grammar;
 import ParseTree;
 
 Symbol expand(\iter-seps(symbol, separators))
@@ -11,3 +13,13 @@ Symbol expand(\iter-star-seps(symbol, separators))
     = subst(t, toMapUnique(zip2(from, to))) when size(from) == size(to);
 &T subst(&T t, map[Symbol, Symbol] m)
     = visit (t) { case Symbol s => m[s] when s in m };
+
+bool tryParse(map[Symbol, Production] rules, Symbol s, str input) {
+    if (isNonTerminalType(s)) {
+        if (value v := type(s, rules), type[Tree] t := v) {
+            try { parse(t, input); return true; }
+            catch ParseError(_): return false;
+        }
+    }
+    return false;
+}
