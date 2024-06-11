@@ -2,15 +2,17 @@ module lang::oniguruma::Convert
 
 import Grammar;
 import IO;
+import List;
 import Map;
 import ParseTree;
+import Set;
 import String;
 import util::Maybe;
 
 import lang::oniguruma::RegExp;
 import lang::rascal::Util;
 
-alias Env = map[Symbol, Maybe[RegExp]];
+alias Env = map[Production, Maybe[RegExp]];
 
 @synopsis{
     Converts a set of rules to a set of regular expressions.
@@ -18,12 +20,12 @@ alias Env = map[Symbol, Maybe[RegExp]];
 
 map[Symbol, Maybe[RegExp]] toRegExps(map[Symbol, Production] rules) {
     Env old = ();
-    Env new = (s: nothing() | s <- domain(rules));
+    Env new = (p: nothing() | p <- range(rules));
     while (old != new) {
         old = new;
-        new = old + (s: toRegExp(old, rules[s]) | s <- old, nothing() := old[s]);
+        new = old + (p: toRegExp(old, p) | p <- old, nothing() := old[p]);
     }
-    return new;
+    return (def: new[c] | c: \choice(def, _) <- new);
 }
 
 @synopsis{
@@ -62,8 +64,8 @@ default Maybe[RegExp] toRegExp(Env _, Production p) {
 // `Type`
 Maybe[RegExp] toRegExp(Env e, label(_, symbol))
     = toRegExp(e, symbol);
-// Maybe[RegExp] isSingleLine(Env e, parameter(_, _))
-//     = nothing(); // TODO
+Maybe[RegExp] toRegExp(Env e, parameter(_, _))
+    = nothing();
 
 // `ParseTree`: Start
 Maybe[RegExp] toRegExp(Env e, \start(symbol))
@@ -78,10 +80,10 @@ Maybe[RegExp] toRegExp(Env e, s: \layouts(_))
     = lookup(e, s);
 Maybe[RegExp] toRegExp(Env e, s: \keywords(_))
     = lookup(e, s);
-// Maybe[RegExp] toRegExp(Env _, \parameterized-sort(_, _))
-//     = nothing(); // TODO
-// Maybe[RegExp] toRegExp(Env _, \parameterized-lex(_, _))
-//     = nothing(); // TODO
+Maybe[RegExp] toRegExp(Env e, s: \parameterized-sort(_, _))
+    = lookup(e, s);
+Maybe[RegExp] toRegExp(Env e, s: \parameterized-lex(_, _))
+    = lookup(e, s);
 
 // `ParseTree`: Terminals
 Maybe[RegExp] toRegExp(Env _, \lit(string))
@@ -111,37 +113,63 @@ Maybe[RegExp] toRegExp(Env e, \seq(symbols))
 
 // `ParseTree`: Condition
 Maybe[RegExp] toRegExp(Env e, \conditional(symbol, conditions)) {
-    // TODO: Document what's happening here...
 
-    if ({delete: \delete(_), *rest} := conditions) {
-        Maybe[RegExp] m1 = toRegExp(e, \conditional(symbol, rest));
-        Maybe[RegExp] m2 = toRegExp(e, delete);
-        if (just(regExp(string1, categories1)) := m1, just(regExp(string2, categories2)) := m2) {
+    // Conditions are classified and converted in ascending class number:
+    //  1. Except conditions: conversion depends on `symbol`;
+    //  2. Prefix conditions: conversion depends on class 1 conversions;
+    //  3. Suffix conditions: conversion depends on class 1-2 conversions;
+    //  4. Delete conditions: conversion depends on class 1-3 conversions.
+
+    list[Condition] exceptConditions
+        = [c | c: \except(_) <- conditions];
+    list[Condition] prefixConditions
+        = [c | c: \precede(_) <- conditions]
+        + [c | c: \not-precede(_) <- conditions]
+        + [c | c: \at-column(_) <- conditions]
+        + [c | c: \begin-of-line() <- conditions];
+    list[Condition] suffixConditions
+        = [c | c: \follow(_) <- conditions]
+        + [c | c: \not-follow(_) <- conditions]
+        + [c | c: \end-of-line() <- conditions];
+    list[Condition] deleteConditions
+        = [c | c: \precede(_) <- conditions];
+    
+    Maybe[RegExp] ret = toRegExp(e, symbol);
+
+    // 1. Convert `\except` conditions
+    if (!isEmpty(exceptConditions)) {
+        if (/\choice(symbol, alternatives) := e) {
+            bool except(prod(label(l, _), _, _)) = \except(l) <- exceptConditions;
+            bool except(prod(def, _, _)) = false when label(_, _) !:= def;
+            ret = toRegExp(e, \choice(symbol, {a | a <- alternatives, !except(a)}));
+        } else {
+            ret = nothing();
+        }
+    }
+
+    // 2. Convert prefix conditions
+    if (!isEmpty(prefixConditions)) {
+        ret = infix("", toRegExps(e, prefixConditions) + [ret]);
+    }
+
+    // 3. Convert suffix conditions
+    if (!isEmpty(suffixConditions)) {
+        ret = infix("", [ret] + toRegExps(e, suffixConditions));
+    }
+
+    // 4. Convert `\delete` conditions
+    if (!isEmpty(deleteConditions)) {
+        Maybe[RegExp] delete = infix("|", [toRegExp(e, s) | \delete(s) <- deleteConditions]);
+        if (just(regExp(string1, categories1)) := ret, just(regExp(string2, categories2)) := delete) {
             str string = "(?=(?\<head\><string1>)(?\<tail\>.*)$)(?!(?:<string2>)\\k\<tail\>$)\\k\<head\>";
             list[str] categories = ["", *categories1, "", *categories2];
-            return just(regExp(string, categories));
+            ret = just(regExp(string, categories));
         } else {
-            return nothing();
+            ret = nothing();
         }
-    } else {
-
-        list[Condition] prefixConditions
-            = [c | Condition c: /\precede(_) <- conditions]
-            + [c | Condition c: /\not-precede(_) <- conditions]
-            + [c | Condition c: /\begin-of-line() <- conditions];
-
-        list[Condition] suffixConditions
-            = [c | Condition c: /\follow(_) <- conditions]
-            + [c | Condition c: /\not-follow(_) <- conditions]
-            + [c | Condition c: /\end-of-line() <- conditions];
-
-        list[Maybe[RegExp]] regExps
-            = toRegExps(e, prefixConditions)
-            + [toRegExp(e, symbol)]
-            + toRegExps(e, suffixConditions);
-
-        return infix("", regExps);
     }
+
+    return ret;
 }
 
 default Maybe[RegExp] toRegExp(Env _, Symbol s) {
@@ -162,15 +190,15 @@ Maybe[RegExp] toRegExp(Env e, \precede(symbol))
 Maybe[RegExp] toRegExp(Env e, \not-precede(symbol))
     = prefix("(?\<!", suffix(")", toRegExp(e, symbol)));
 Maybe[RegExp] toRegExp(Env e, \delete(symbol))
-    = toRegExp(e, symbol);
-// Maybe[RegExp] toRegExp(Env _, \at-column(_))
-//     = nothing(); // TODO
+    = nothing();
+Maybe[RegExp] toRegExp(Env _, \at-column(n))
+    = just(regExp("(?\<=$<right("", n, ".")>)", []));
 Maybe[RegExp] toRegExp(Env _, \begin-of-line())
     = just(regExp("(?:^)", []));
 Maybe[RegExp] toRegExp(Env _, \end-of-line())
     = just(regExp("(?:$)", []));
-// Maybe[RegExp] toRegExp(Env _, \except(_))
-//     = nothing(); // TODO
+Maybe[RegExp] toRegExp(Env _, \except(_))
+    = nothing();
 
 default Maybe[RegExp] toRegExp(Env _, Condition c) {
     println("[LOG] toRegExp: Unsupported condition <c>");
@@ -178,16 +206,20 @@ default Maybe[RegExp] toRegExp(Env _, Condition c) {
 }
 
 @synopsis{
-    Lookup a symbol in an evironment.
+    Lookup a symbol in an environment.
 }
 
-Maybe[RegExp] lookup(Env e, \parameterized-sort(name, _))
-    = {<\parameterized-sort(name, _), m>, *_} := toRel(e) ? m : nothing();
-Maybe[RegExp] lookup(Env e, \parameterized-lex(name, _))
-    = {<\parameterized-lex(name, _), m>, *_} := toRel(e) ? m : nothing();
+Maybe[RegExp] lookup(Env e, s: \parameterized-sort(name, actual))
+    = /\choice(\parameterized-sort(name, formal), alternatives) := e
+    ? toRegExp(e, \choice(s, subst(alternatives, formal, actual)))
+    : nothing();
+Maybe[RegExp] lookup(Env e, s: \parameterized-lex(name, actual))
+    = /\choice(\parameterized-lex(name, formal), alternatives) := e
+    ? toRegExp(e, \choice(s, subst(alternatives, formal, actual)))
+    : nothing();
 
 default Maybe[RegExp] lookup(Env e, Symbol s)
-    = s in e ? e[s] : nothing();
+    = /c: \choice(s, _) := e ? e[c] : nothing();
 
 @synopsis{
     Converts a character range to a regular expression.
