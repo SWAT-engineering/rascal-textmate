@@ -150,9 +150,9 @@ default Maybe[bool] isSingleLine(Env _, Condition c) {
 }
 
 Maybe[bool] lookup(Env e, \parameterized-sort(name, _))
-    = {<\parameterized-sort(name, _), m>, *_} := toRel(e) ? m : nothing();
+    =  /s: \parameterized-sort(name, _) := e ? e[s] : nothing();
 Maybe[bool] lookup(Env e, \parameterized-lex(name, _))
-    = {<\parameterized-lex(name, _), m>, *_} := toRel(e) ? m : nothing();
+    =  /s: \parameterized-lex(name, _) := e ? e[s] : nothing();
 
 default Maybe[bool] lookup(Env e, Symbol s)
     = s in e ? e[s] : nothing();
