@@ -15,9 +15,9 @@ Symbol expand(\iter-star-seps(symbol, separators))
     = visit (t) { case Symbol s => m[s] when s in m };
 
 bool tryParse(map[Symbol, Production] rules, Symbol s, str input) {
-    if (isNonTerminalType(s)) {
+    if (isNonTerminalType(s) && \parameterized-sort(_, _) !:= s && \parameterized-lex(_, _) !:= s) {
         if (value v := type(s, rules), type[Tree] t := v) {
-            try { parse(t, input); return true; }
+            try { parse(t, input, allowAmbiguity=true); return true; }
             catch ParseError(_): return false;
         }
     }
