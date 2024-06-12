@@ -3,7 +3,6 @@ module lang::oniguruma::Convert
 import Grammar;
 import IO;
 import List;
-import Map;
 import ParseTree;
 import Set;
 import String;
@@ -15,17 +14,17 @@ import lang::rascal::Util;
 alias Env = map[Production, Maybe[RegExp]];
 
 @synopsis{
-    Converts a set of rules to a set of regular expressions.
+    Converts a set of productions to a set of regular expressions.
 }
 
-map[Symbol, Maybe[RegExp]] toRegExps(map[Symbol, Production] rules) {
+map[Production, RegExp] toRegExps(set[Production] productions) {
     Env old = ();
-    Env new = (p: nothing() | p <- range(rules));
+    Env new = (p: nothing() | p <- productions);
     while (old != new) {
         old = new;
         new = old + (p: toRegExp(old, p) | p <- old, nothing() := old[p]);
     }
-    return (def: new[c] | c: \choice(def, _) <- new);
+    return (p: re | p <- new, just(re) := new[p]);
 }
 
 @synopsis{
@@ -42,11 +41,6 @@ list[Maybe[RegExp]] toRegExps(Env e, list[value] values)
     Converts a production to a regular expression.
 }
 
-// `Type`
-Maybe[RegExp] toRegExp(Env e, \choice(_, alternatives))
-    = infix("|", toRegExps(e, alternatives));
-
-// `ParseTree`
 Maybe[RegExp] toRegExp(Env e, prod(_, symbols, {\tag("category"(c)), *_}))
     = group(infix("", toRegExps(e, symbols)), category=c);
 Maybe[RegExp] toRegExp(Env e, prod(_, symbols, attributes))
@@ -73,17 +67,17 @@ Maybe[RegExp] toRegExp(Env e, \start(symbol))
 
 // `ParseTree`: Non-terminals
 Maybe[RegExp] toRegExp(Env e, s: \sort(_)) 
-    = lookup(e, s);
+    = infix("|", lookup(e, s));
 Maybe[RegExp] toRegExp(Env e, s: \lex(_))
-    = lookup(e, s);
+    = infix("|", lookup(e, s));
 Maybe[RegExp] toRegExp(Env e, s: \layouts(_))
-    = lookup(e, s);
+    = infix("|", lookup(e, s));
 Maybe[RegExp] toRegExp(Env e, s: \keywords(_))
-    = lookup(e, s);
+    = infix("|", lookup(e, s));
 Maybe[RegExp] toRegExp(Env e, s: \parameterized-sort(_, _))
-    = lookup(e, s);
+    = infix("|", lookup(e, s));
 Maybe[RegExp] toRegExp(Env e, s: \parameterized-lex(_, _))
-    = lookup(e, s);
+    = infix("|", lookup(e, s));
 
 // `ParseTree`: Terminals
 Maybe[RegExp] toRegExp(Env _, \lit(string))
@@ -209,17 +203,16 @@ default Maybe[RegExp] toRegExp(Env _, Condition c) {
     Lookup a symbol in an environment.
 }
 
-Maybe[RegExp] lookup(Env e, s: \parameterized-sort(name, actual))
-    = /\choice(\parameterized-sort(name, formal), alternatives) := e
-    ? toRegExp(e, \choice(s, subst(alternatives, formal, actual)))
-    : nothing();
-Maybe[RegExp] lookup(Env e, s: \parameterized-lex(name, actual))
-    = /\choice(\parameterized-lex(name, formal), alternatives) := e
-    ? toRegExp(e, \choice(s, subst(alternatives, formal, actual)))
-    : nothing();
+list[Maybe[RegExp]] lookup(Env e, s: \parameterized-sort(name, actual))
+    = [toRegExp(e, subst(p, formal, actual)) | p: \prod(\parameterized-sort(name, formal), _, _) <- e]
+    + [toRegExp(e, subst(p, formal, actual)) | p: \prod(label(_, \parameterized-sort(name, formal)), _, _) <- e];
+list[Maybe[RegExp]] lookup(Env e, s: \parameterized-lex(name, actual))
+    = [toRegExp(e, subst(p, formal, actual)) | p: \prod(\parameterized-lex(name, formal), _, _) <- e]
+    + [toRegExp(e, subst(p, formal, actual)) | p: \prod(label(_, \parameterized-lex(name, formal)), _, _) <- e];
 
-default Maybe[RegExp] lookup(Env e, Symbol s)
-    = /c: \choice(s, _) := e ? e[c] : nothing();
+default list[Maybe[RegExp]] lookup(Env e, Symbol s)
+    = [e[p] | p: \prod(s, _, _) <- e]
+    + [e[p] | p: \prod(label(_, s), _, _) <- e];
 
 @synopsis{
     Converts a character range to a regular expression.
