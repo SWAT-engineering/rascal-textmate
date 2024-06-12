@@ -2,25 +2,26 @@ module lang::rascal::SingleLine
 
 import Grammar;
 import IO;
-import Map;
 import ParseTree;
 import String;
 import util::Maybe;
 
-alias Env = map[Symbol, Maybe[bool]];
+import lang::rascal::Util;
+
+alias Env = map[Production, Maybe[bool]];
 
 @synopsis{
-    Gets the single-line symbols in a set of productions.
+    Keeps the single-line productions in a set of productions.
 }
 
-set[Symbol] getSingleLineSymbols(map[Symbol, Production] rules) {
+set[Production] keepSingleLineProductions(set[Production] productions) {
     Env old = ();
-    Env new = (s: nothing() | s <- domain(rules));
+    Env new = (p: nothing() | p <- productions);
     while (old != new) {
         old = new;
-        new = old + (s: isSingleLine(old, rules[s]) | s <- old, nothing() := old[s]);
+        new = old + (p: isSingleLine(old, p) | p <- old, nothing() := old[p]);
     }
-    return {s | s <- new, just(true) := new[s]};
+    return {p | p <- new, just(true) := new[p]};
 }
 
 @synopsis{
@@ -37,17 +38,8 @@ Maybe[bool] areSingleLine(Env e, list[value] values)
     Checks if a production is single-line.
 }
 
-// `Type`
-Maybe[bool] isSingleLine(Env e, \choice(_, alternatives))
-    = areSingleLine(e, alternatives);
-
-// `ParseTree`
 Maybe[bool] isSingleLine(Env e, prod(_, symbols, _))
     = areSingleLine(e, symbols);
-Maybe[bool] isSingleLine(Env e, \priority(_, choices))
-    = areSingleLine(e, choices);
-Maybe[bool] isSingleLine(Env e, \associativity(_, _, alternatives))
-    = areSingleLine(e, alternatives);
 
 default Maybe[bool] isSingleLine(Env _, Production p) {
     println("[LOG] isSingleLine: Unsupported production <p>");
@@ -70,17 +62,17 @@ Maybe[bool] isSingleLine(Env e, \start(symbol))
 
 // `ParseTree`: Non-terminals
 Maybe[bool] isSingleLine(Env e, s: \sort(_))
-    = lookup(e, s);
+    = min(lookup(e, s));
 Maybe[bool] isSingleLine(Env e, s: \lex(_))
-    = lookup(e, s);
+    = min(lookup(e, s));
 Maybe[bool] isSingleLine(Env e, s: \layouts(_))
-    = lookup(e, s);
+    = min(lookup(e, s));
 Maybe[bool] isSingleLine(Env e, s: \keywords(_))
-    = lookup(e, s);
-Maybe[bool] isSingleLine(Env e, s: \parameterized-sort(_, parameters))
-    = min(lookup(e, s), areSingleLine(e, parameters));
-Maybe[bool] isSingleLine(Env e, s: \parameterized-lex(_, parameters))
-    = min(lookup(e, s), areSingleLine(e, parameters));
+    = min(lookup(e, s));
+Maybe[bool] isSingleLine(Env e, s: \parameterized-sort(_, _))
+    = min(lookup(e, s));
+Maybe[bool] isSingleLine(Env e, s: \parameterized-lex(_, _))
+    = min(lookup(e, s));
 
 // `ParseTree`: Terminals
 Maybe[bool] isSingleLine(Env _, \lit(string))
@@ -149,13 +141,16 @@ default Maybe[bool] isSingleLine(Env _, Condition c) {
     Lookup a symbol in an evironment.
 }
 
-Maybe[bool] lookup(Env e, \parameterized-sort(name, _))
-    =  /s: \parameterized-sort(name, _) := e ? e[s] : nothing();
-Maybe[bool] lookup(Env e, \parameterized-lex(name, _))
-    =  /s: \parameterized-lex(name, _) := e ? e[s] : nothing();
+list[Maybe[bool]] lookup(Env e, s: \parameterized-sort(name, actual))
+    = [isSingleLine(e, subst(p, formal, actual)) | p: \prod(\parameterized-sort(name, formal), _, _) <- e]
+    + [isSingleLine(e, subst(p, formal, actual)) | p: \prod(label(_, \parameterized-sort(name, formal)), _, _) <- e];
+list[Maybe[bool]] lookup(Env e, s: \parameterized-lex(name, actual))
+    = [isSingleLine(e, subst(p, formal, actual)) | p: \prod(\parameterized-lex(name, formal), _, _) <- e]
+    + [isSingleLine(e, subst(p, formal, actual)) | p: \prod(label(_, \parameterized-lex(name, formal)), _, _) <- e];
 
-default Maybe[bool] lookup(Env e, Symbol s)
-    = s in e ? e[s] : nothing();
+default list[Maybe[bool]] lookup(Env e, Symbol s)
+    = [e[p] | p: \prod(s, _, _) <- e]
+    + [e[p] | p: \prod(label(_, s), _, _) <- e];
 
 @synopsis{
     Checks if a string/character range contains a line terminator.
@@ -173,6 +168,9 @@ int LF = 10;
     following total order: `just(false)` < `nothing()` < `just(true)`. This
     coincides with the disjunction operator in three-valued logic.
 }
+
+Maybe[bool] min(list[Maybe[bool]] values)
+    = (just(true) | min(it, v) | v <- values);
 
 Maybe[bool] min(just(true),  just(true))  = just(true);
 Maybe[bool] min(just(true),  nothing())   = nothing();
