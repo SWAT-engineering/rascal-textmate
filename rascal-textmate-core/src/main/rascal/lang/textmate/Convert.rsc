@@ -16,40 +16,74 @@ alias TmGrammar = lang::textmate::Grammar::Grammar;
 alias TmRule = lang::textmate::Grammar::Rule;
 
 data Mode
-    = singleLineSymbols()
-    | keywordSymbols();
+    = multiLineRules()
+    | singleLineRules()
+    | keywordRules();
 
-TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, list[Mode] modes = [singleLineSymbols(), keywordSymbols()]) {
-    TmGrammar tmGrammar0 = lang::textmate::Grammar::grammar((), name, []);
-    list[TmGrammar] tmGrammars = [toTmGrammar(rscGrammar, name, m) | m <- modes];
-    return (tmGrammar0 | merge(it, g) | g <- tmGrammars);
+TmGrammar toTmGrammar(
+        RscGrammar rscGrammar, ScopeName name,
+        list[Mode] modes = [multiLineRules(), singleLineRules(), keywordRules()]) {
+
+    list[TmGrammar] tmGrammars
+        = [lang::textmate::Grammar::grammar((), name, [])]
+        + [toTmGrammar(rscGrammar, name, m) | m <- modes];
+
+    return (tmGrammars[0] | merge(it, g) | g <- tmGrammars[1..]);
 }
 
-alias RegExps = map[Symbol, Maybe[RegExp]];
+TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, multiLineRules()) {
+    // TODO
+    return lang::textmate::Grammar::grammar((), name, []);
+}
 
-TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, singleLineSymbols()) {    
-    map[Symbol, Production] rules = rscGrammar.rules; 
+TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, singleLineRules()) {    
+    map[Symbol, Production] rules = rscGrammar.rules;
 
-    RegExps keepNonEmptySymbols(RegExps res)
-        = (s: res[s] | s <- res, !tryParse(rules, s, ""));
-    RegExps keepCategorySymbols(RegExps res)
-        = (s: res[s] | s <- res, /\tag("category"(_)) := rules[s]);
-
-    set[Symbol] singleLineSymbols = getSingleLineSymbols(rules);
-    map[Symbol, Production] singleLineRules = domainR(rules, singleLineSymbols);
+    // Auxiliary functions
+    set[Production] keepNonEmptyProductions(set[Production] productions)
+        = {p | p: \prod(def, _, _) <- productions, !tryParse(rules, def, "")};
+    set[Production] keepCategoryProductions(set[Production] productions)
+        = {p | p: \prod(_, _, {\tag("category"(_)), *_}) <- productions};
     
-    RegExps regExps = toRegExps(singleLineRules);
-    regExps = keepNonEmptySymbols(regExps);
-    regExps = keepCategorySymbols(regExps);
+    set[Production] productions = {p | /p: \prod(_, _, _) <- range(rules)};
+    map[Production, RegExp] regExps = toRegExps(productions);
+    
+    productions = keepSingleLineProductions(productions);
+    productions = keepNonEmptyProductions(productions);
+    productions = keepCategoryProductions(productions);
 
-    return lang::textmate::Grammar::grammar(
-        ("<s>": toTmRule("<s>", regExps[s].val) | s <- regExps),
-        name,
-        [include("#<s>") | s <- regExps]);
+    Counter c = counter();
+    Repository repository = ();
+    list[Rule] patterns = [];
+
+    for (p: \prod(def, _, _) <- productions, p in regExps) {
+        str matchName = "<c.next()>/<def>";
+        repository += (matchName: toTmRule(matchName, regExps[p]));
+        patterns += [include("#<matchName>")];
+
+        // Check if production can be scoped for higher accuracy
+        Symbol s = label(_, symbol) := def ? symbol : def;
+        scopes = {<begin, end> | /\prod(_, [*_, begin: lit(_), /s, end: lit(_), *_], _) := rules};
+        if ({<begin, end>} := scopes) {
+            str beginEndName = "_/<begin>/<end>";
+            TmRule rule = beginEnd(
+                toRegExp((), begin).val.string,
+                toRegExp((), end).val.string,
+                patterns
+                    = (beginEndName in repository ? repository[beginEndName].patterns : [])
+                    + last(patterns));
+            
+            repository += (beginEndName: rule);
+            patterns = prefix(patterns) + [include("#<beginEndName>")];
+        }
+    }
+
+    return lang::textmate::Grammar::grammar(repository, name, dup(patterns));
 }
 
-TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, keywordSymbols()) {
+TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, keywordRules()) {
 
+    // Auxiliary function
     set[Symbol] getKeywordSymbols() {
         set[Symbol] symbols = {};
         visit (rscGrammar) {
@@ -62,13 +96,13 @@ TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, keywordSymbols()) {
     Symbol def = ParseTree::keywords("");
     list[Symbol] symbols = [\alt(getKeywordSymbols())];
     set[Attr] attributes = {\tag("category"("keyword.control"))};
-    Production p = \prod(def, symbols, attributes);
     
-    Maybe[RegExp] maybe = prefix("\\b", suffix("\\b", toRegExp((), \choice(def, {p}))));
-    return lang::textmate::Grammar::grammar(
-        ("keywords": toTmRule("keywords", re) | just(re) := maybe),
-        name,
-        [include("#keywords") | just(_) := maybe]);
+    Production p = \prod(def, symbols, attributes);
+    RegExp re = prefix("\\b", suffix("\\b", toRegExp((), p))).val;
+    
+    Repository repository = ("_/keywords": toTmRule("_/keywords", re));
+    list[Rule] patterns = [include("#_/keywords")];
+    return lang::textmate::Grammar::grammar(repository, name, patterns);
 }
 
 TmRule toTmRule(str name, regExp(string, groups)) =
@@ -76,3 +110,20 @@ TmRule toTmRule(str name, regExp(string, groups)) =
         ungroup(string),
         name = name,
         captures = ("<n + 1>": ("name": groups[n]) | n <- [0..size(groups)]));
+
+@synopsis{
+    A simple counter.
+}
+
+data Counter = counter(int() next);
+
+Counter counter() {
+    int n = 0;
+
+    int next() {
+        n += 1;
+        return n;
+    }
+
+    return counter(next);
+}
