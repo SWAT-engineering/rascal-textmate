@@ -1,8 +1,9 @@
 module lang::textmate::Convert
 
 import Grammar;
-import Map;
+import IO;
 import ParseTree;
+import Set;
 import util::Maybe;
 
 import lang::oniguruma::Convert;
@@ -18,16 +19,18 @@ alias TmRule = lang::textmate::Grammar::Rule;
 data Mode
     = multiLineRules()
     | singleLineRules()
+    | delimiterRules()
     | keywordRules();
 
 TmGrammar toTmGrammar(
         RscGrammar rscGrammar, ScopeName name,
-        list[Mode] modes = [multiLineRules(), singleLineRules(), keywordRules()]) {
+        list[Mode] modes = [delimiterRules(), multiLineRules(), singleLineRules(), keywordRules()]) {
 
     list[TmGrammar] tmGrammars
         = [lang::textmate::Grammar::grammar((), name, [])]
         + [toTmGrammar(rscGrammar, name, m) | m <- modes];
 
+    // TODO: Merge rules with overlapping `match`/`begin` patterns
     return (tmGrammars[0] | merge(it, g) | g <- tmGrammars[1..]);
 }
 
@@ -36,36 +39,58 @@ TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, multiLineRules()) {
     return lang::textmate::Grammar::grammar((), name, []);
 }
 
-TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, singleLineRules()) {    
-    map[Symbol, Production] rules = rscGrammar.rules;
+rel[Symbol, Symbol] getDelimiterPairs(
+        Symbol child, set[Production] productions,
+        set[Symbol] nonParents = {}) {
+
+    pairs = {pair | p <- productions, just(pair) := getDelimiterPair(child, p)};
+    if (isEmpty(pairs)) {
+        nonParents += child;
+        set[Symbol] parents
+            = {delabel(parent) | \prod(parent, [*_, /child, *_], _) <- productions}
+            - nonParents;
+        
+        return ({} | it + getDelimiterPairs(p, productions) | p <- parents);
+    } else {
+        return pairs;
+    }
+}
+
+Maybe[tuple[Symbol, Symbol]] getDelimiterPair(Symbol s, \prod(_, [*_, begin, *between, end, *_], _))
+    = just(<begin, end>) when
+        lit(_) := begin || cilit(_) := begin,
+        lit(_) := end || cilit(_) := end,
+        [*between1, /s, *between2] := between,
+        !any(lit(_) <- between1 + between2);
+
+default Maybe[tuple[Symbol, Symbol]] getDelimiterPair(_, _)
+    = nothing();
+
+TmGrammar toTmGrammar(RscGrammar gr, ScopeName name, singleLineRules()) {    
 
     // Auxiliary functions
-    set[Production] keepNonEmptyProductions(set[Production] productions)
-        = {p | p: \prod(def, _, _) <- productions, !tryParse(rules, def, "")};
-    set[Production] keepCategoryProductions(set[Production] productions)
-        = {p | p: \prod(_, _, {\tag("category"(_)), *_}) <- productions};
+    bool isNonEmpty(\prod(def, _, _)) = !tryParse(gr, def, "");
+    bool isCategory(\prod(_, _, attributes)) = /\tag("category"(_)) := attributes;
     
-    set[Production] productions = {p | /p: \prod(_, _, _) <- range(rules)};
-    map[Production, RegExp] regExps = toRegExps(productions);
+    set[Production] productions
+        = prods(gr, keep=isNonEmpty)
+        & prods(gr, keep=isCategory);
     
-    productions = keepSingleLineProductions(productions);
-    productions = keepNonEmptyProductions(productions);
-    productions = keepCategoryProductions(productions);
+    productions = keepSingleLineProductions(gr, only=productions);
+    map[Production, RegExp] regExps = toRegExps(gr, only=productions);
 
     Counter c = counter();
     Repository repository = ();
     list[Rule] patterns = [];
-
     for (p: \prod(def, _, _) <- productions, p in regExps) {
         str matchName = "<c.next()>/<def>";
         repository += (matchName: toTmRule(matchName, regExps[p]));
         patterns += [include("#<matchName>")];
 
         // Check if production can be scoped for higher accuracy
-        Symbol s = label(_, symbol) := def ? symbol : def;
-        scopes = {<begin, end> | /\prod(_, [*_, begin: lit(_), /s, end: lit(_), *_], _) := rules};
-        if ({<begin, end>} := scopes) {
+        if ({<begin, end>} := getDelimiterPairs(delabel(def), prods(gr))) {
             str beginEndName = "_/<begin>/<end>";
+
             TmRule rule = beginEnd(
                 toRegExp((), begin).val.string,
                 toRegExp((), end).val.string,
@@ -81,20 +106,15 @@ TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, singleLineRules()) 
     return lang::textmate::Grammar::grammar(repository, name, dup(patterns));
 }
 
-TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, keywordRules()) {
+TmGrammar toTmGrammar(RscGrammar gr, ScopeName name, keywordRules()) {
 
-    // Auxiliary function
-    set[Symbol] getKeywordSymbols() {
-        set[Symbol] symbols = {};
-        visit (rscGrammar) {
-            case s:   lit(/^\w+$/): symbols += s;
-            case s: cilit(/^\w+$/): symbols += s;
-        }
-        return symbols;
-    }
+    // Auxiliary functions
+    bool isKeyword(lit(/^\w+$/))     = true;
+    bool isKeyword(cilit(/^\w+$/))   = true;
+    default bool isKeyword(Symbol _) = false;
 
     Symbol def = ParseTree::keywords("");
-    list[Symbol] symbols = [\alt(getKeywordSymbols())];
+    list[Symbol] symbols = [\alt({s | /Symbol s := gr, isKeyword(s)})];
     set[Attr] attributes = {\tag("category"("keyword.control"))};
     
     Production p = \prod(def, symbols, attributes);
@@ -102,6 +122,26 @@ TmGrammar toTmGrammar(RscGrammar rscGrammar, ScopeName name, keywordRules()) {
     
     Repository repository = ("_/keywords": toTmRule("_/keywords", re));
     list[Rule] patterns = [include("#_/keywords")];
+    return lang::textmate::Grammar::grammar(repository, name, patterns);
+}
+
+TmGrammar toTmGrammar(RscGrammar gr, ScopeName name, delimiterRules()) {
+
+    // Auxiliary functions
+    bool isDelimiter(lit(string))      = true when /^\w+$/ !:= string;
+    bool isDelimiter(cilit(string))    = true when /^\w+$/ !:= string;
+    default bool isDelimiter(Symbol _) = false;
+
+    // TODO: Exclude delimiters for which another scope exists
+    Symbol def = ParseTree::keywords("");
+    list[Symbol] symbols = [\alt({s | /Symbol s := gr, isDelimiter(s)})];
+    set[Attr] attributes = {};
+    
+    Production p = \prod(def, symbols, attributes);
+    RegExp re = toRegExp((), p).val;
+    
+    Repository repository = ("_/delimiters": toTmRule("_/delimiters", re));
+    list[Rule] patterns = [include("#_/delimiters")];
     return lang::textmate::Grammar::grammar(repository, name, patterns);
 }
 
