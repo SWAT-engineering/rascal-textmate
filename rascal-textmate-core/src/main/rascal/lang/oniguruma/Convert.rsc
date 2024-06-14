@@ -17,14 +17,18 @@ alias Env = map[Production, Maybe[RegExp]];
     Converts a set of productions to a set of regular expressions.
 }
 
-map[Production, RegExp] toRegExps(set[Production] productions) {
+map[Production, RegExp] toRegExps(Grammar gr, set[Production] only = prods(gr)) {
+    set[Symbol] allowed = descendants(gr, defs(only), withParents=true);
+    bool isAllowed(\prod(def, _, _)) = delabel(def) in allowed;
+
     Env old = ();
-    Env new = (p: nothing() | p <- productions);
+    Env new = (p: nothing() | p <- prods(gr, keep=isAllowed));
     while (old != new) {
         old = new;
         new = old + (p: toRegExp(old, p) | p <- old, nothing() := old[p]);
     }
-    return (p: re | p <- new, just(re) := new[p]);
+
+    return (p: re | p <- only, just(re) := new[p]);
 }
 
 @synopsis{

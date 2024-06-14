@@ -3,6 +3,7 @@ module lang::rascal::SingleLine
 import Grammar;
 import IO;
 import ParseTree;
+import Set;
 import String;
 import util::Maybe;
 
@@ -14,14 +15,18 @@ alias Env = map[Production, Maybe[bool]];
     Keeps the single-line productions in a set of productions.
 }
 
-set[Production] keepSingleLineProductions(set[Production] productions) {
+set[Production] keepSingleLineProductions(Grammar gr, set[Production] only = prods(gr)) {
+    set[Symbol] allowed = descendants(gr, defs(only), withParents=true);
+    bool isAllowed(\prod(def, _, _)) = delabel(def) in allowed;
+
     Env old = ();
-    Env new = (p: nothing() | p <- productions);
+    Env new = (p: nothing() | p <- prods(gr, keep=isAllowed));
     while (old != new) {
         old = new;
         new = old + (p: isSingleLine(old, p) | p <- old, nothing() := old[p]);
     }
-    return {p | p <- new, just(true) := new[p]};
+
+    return {p | p <- only, just(true) := new[p]};
 }
 
 @synopsis{
