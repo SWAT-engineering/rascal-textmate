@@ -1,16 +1,17 @@
 module Main
 
 import Grammar;
-import IO;
 import lang::json::IO;
 import lang::textmate::Convert;
 import lang::textmate::Grammar;
 
-int main(type[&T <: Tree] tree, str name, loc f) {
-    RscGrammar rscGrammar = Grammar::grammar(tree);
-    TmGrammar tmGrammar = toTmGrammar(rscGrammar, name);
-    
-    writeJSON(f, tmGrammar, indent=2);
-    // println(asJSON(tmGrammar, indent=2));   
+int main(type[&T <: Tree] tree, str scopeName, loc f) {
+    RscGrammar rsc = Grammar::grammar(tree);
+    return main(rsc, scopeName, f);
+}
+
+int main(RscGrammar rsc, str scopeName, loc f) {
+    TmGrammar tm = toTmGrammar(rsc, scopeName);
+    writeJSON(f, tm, indent=2);
     return 0;
 }

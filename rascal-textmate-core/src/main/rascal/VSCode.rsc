@@ -3,8 +3,17 @@ module VSCode
 import Grammar;
 import lang::json::IO;
 import lang::rascal::\syntax::Rascal;
-import lang::textmate::Convert;
+import lang::textmate::Conversion;
 import lang::textmate::Grammar;
+
+int main() {
+    str scopeName = "source.rascalmpl.injection";
+    loc f = |project://vscode-extension/syntaxes/rascal.tmLanguage.json|;
+    RscGrammar rsc = getRscGrammar();
+    TmGrammar tm = toTmGrammar(rsc, scopeName)[injectionSelector="R:source.rascalmpl"];
+    writeJSON(f, tm, indent=2);
+    return 0;
+}
 
 RscGrammar getRscGrammar() =
     visit (Grammar::grammar(#Module)) {
@@ -31,12 +40,3 @@ RscGrammar getRscGrammar() =
         case \tag("category"("StdOut"))           => \tag("category"("string"))   // Updated (before: text)
         case \tag("category"("StdErr"))           => \tag("category"("string"))   // Updated (before: text)
     };
-
-int main() {
-    str name = "source.rascalmpl.injection";
-    loc f = |project://vscode-extension/syntaxes/rascal.tmLanguage.json|;
-    RscGrammar rscGrammar = getRscGrammar();
-    TmGrammar tmGrammar = toTmGrammar(rscGrammar, name)[injectionSelector="R:source.rascalmpl"];
-    writeJSON(f, tmGrammar, indent=2);
-    return 0;
-}

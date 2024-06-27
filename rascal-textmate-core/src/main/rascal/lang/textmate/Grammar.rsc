@@ -1,6 +1,6 @@
 module lang::textmate::Grammar
 
-import Map;
+import List;
 import Set;
 
 // Based on VS Code:
@@ -49,10 +49,24 @@ data Rule
         str include,
         Repository repository = ());
 
-Grammar merge(Grammar g1, Grammar g2) {
-    if (isEmpty(domain(g1.repository) & domain(g2.repository)) && g1.scopeName == g2.scopeName) {
-        return grammar(g1.repository + g2.repository, g1.scopeName, g1.patterns + g2.patterns);
-    } else {
-        throw "Cannot merge grammars <g1> and <g2>";
-    }
+@synopsis{
+    Creates an empty grammar named `scopeName`
 }
+
+Grammar empty(ScopeName scopeName)
+    = grammar((), scopeName, []);
+
+@synopsis{
+    Adds a rule to the repository and patterns of grammar `g`
+}
+
+Grammar addRule(Grammar g, Rule r)
+    = g [repository = g.repository + (r.name: r)]
+        [patterns = g.patterns + include("#<r.name>")];
+
+@synopsis{
+    Converts list of strings `names` to a map of captures
+}
+
+Captures toCaptures(list[str] names)
+    = ("<n + 1>": ("name": names[n]) | n <- [0..size(names)]);
