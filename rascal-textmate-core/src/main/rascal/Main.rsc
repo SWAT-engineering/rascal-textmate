@@ -2,7 +2,7 @@ module Main
 
 import Grammar;
 import lang::json::IO;
-import lang::textmate::Convert;
+import lang::textmate::Conversion;
 import lang::textmate::Grammar;
 
 int main(type[&T <: Tree] tree, str scopeName, loc f) {
