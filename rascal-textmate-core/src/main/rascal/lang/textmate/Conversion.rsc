@@ -22,7 +22,15 @@ alias TmRule = lang::textmate::Grammar::Rule;
     Converts Rascal grammar `rsc` to a TextMate grammar
 }
 
-TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
+data ConversionUnit = unit(
+    RscGrammar rsc,
+    Production prod,
+    bool ignoreDelimiterPairs = false);
+
+TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName)
+    = transform(analyze(rsc)) [scopeName = scopeName];
+
+private list[ConversionUnit] analyze(RscGrammar rsc) {
 
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
@@ -36,8 +44,8 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
     bool isLayout(prod(def, _, _), _, _)
         = \layouts(_) := delabel(def);
 
-    // Analyze productions and dependencies among them
-    println("[LOG] Analyzing productions and dependencies among them");
+    // Analyze dependencies among productions
+    println("[LOG] Analyzing dependencies among productions");
     Dependencies dependencies = deps(rsc);
     
     list[Production] prods = dependencies
@@ -64,17 +72,25 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
     set[Symbol] keywords = {s | /Symbol s := rsc, isKeyword(delabel(s))};
     list[Production] prodsKeywords = [prod(lex("keywords"), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
+    // Return
+    list[ConversionUnit] units
+        = [unit(rsc, p) | p <- prodsDelimiters]
+        + [unit(rsc, p) | p <- prods - prodsLayouts]
+        + [unit(rsc, p, ignoreDelimiterPairs = true) | p <- prods & prodsLayouts]
+        + [unit(rsc, p) | p <- prodsKeywords];
+    
+    return units;
+}
+
+private TmGrammar transform(list[ConversionUnit] units) {
+
     // Transform productions to rules
     println("[LOG] Transforming productions to rules");
-    list[TmRule] rules
-        = [toTmRule(rsc, p) | p <- prodsDelimiters]
-        + [toTmRule(rsc, p) | p <- prods - prodsLayouts]
-        + [toTmRule(rsc, p, ignoreDelimiterPairs = true) | p <- prods & prodsLayouts]
-        + [toTmRule(rsc, p) | p <- prodsKeywords];
+    list[TmRule] rules = [toTmRule(u) | u <- units];
 
     // Transform rules to grammar
     println("[LOG] Transforming rules to grammar");
-    TmGrammar tm = empty(scopeName);
+    TmGrammar tm = lang::textmate::Grammar::grammar((), "", []);
     for (r <- rules) {
         // If the repository already contains a rule with the same name as `r`,
         // then: (1) the patterns of that "old" rule must be combined with the
@@ -91,18 +107,21 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
 }
 
 @synopsis{
-    Converts production `p` to a TextMate rule
+    Converts a conversion unit to a TextMate rule
 }
 
-TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), bool ignoreDelimiterPairs = false)
+TmRule toTmRule(ConversionUnit u)
+    = toTmRule(u.rsc, u.prod, u.ignoreDelimiterPairs);
+
+private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), bool ignoreDelimiterPairs)
     = !ignoreDelimiterPairs && {<begin, end>} := getDelimiterPairs(rsc, delabel(def))
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin>:<end>", [toTmRule(toRegExp(rsc, p), "<p>")])
     : toTmRule(toRegExp(rsc, p), "<p>");
 
-TmRule toTmRule(regExp(string, categories), str name)
+private TmRule toTmRule(regExp(string, categories), str name)
     = match(ungroup(string), captures = toCaptures(categories), name = name);
-TmRule toTmRule(nil(), str name)
+private TmRule toTmRule(nil(), str name)
     = match("", name = name);
 
-TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
+private TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
     = beginEnd(begin.string, end.string, name = name, patterns = patterns);

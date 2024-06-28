@@ -50,13 +50,6 @@ data Rule
         Repository repository = ());
 
 @synopsis{
-    Creates an empty grammar named `scopeName`
-}
-
-Grammar empty(ScopeName scopeName)
-    = grammar((), scopeName, []);
-
-@synopsis{
     Adds a rule to the repository and patterns of grammar `g`
 }
 
