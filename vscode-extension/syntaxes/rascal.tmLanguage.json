@@ -110,10 +110,10 @@
       "include": "#lit(\"`\"):lit(\"`\")"
     },
     {
-      "include": "#prod(lex(\"Comment\"),[lit(\"//\"),conditional(\\iter-star(\\char-class([range(1,9),range(11,1114111)])),{\\not-follow(\\char-class([range(9,9),range(13,13),range(32,32),range(160,160),range(5760,5760),range(8192,8202),range(8239,8239),range(8287,8287),range(12288,12288)])),\\end-of-line()})],{tag(\"category\"(\"comment\"))})"
+      "include": "#lit(\"[\"):lit(\"]\")"
     },
     {
-      "include": "#lit(\"[\"):lit(\"]\")"
+      "include": "#prod(lex(\"Comment\"),[lit(\"//\"),conditional(\\iter-star(\\char-class([range(1,9),range(11,1114111)])),{\\not-follow(\\char-class([range(9,9),range(13,13),range(32,32),range(160,160),range(5760,5760),range(8192,8202),range(8239,8239),range(8287,8287),range(12288,12288)])),\\end-of-line()})],{tag(\"category\"(\"comment\"))})"
     },
     {
       "include": "#prod(lex(\"keywords\"),[alt({lit(\"lexical\"),lit(\"loc\"),lit(\"if\"),lit(\"assoc\"),lit(\"test\"),lit(\"lrel\"),lit(\"throws\"),lit(\"clear\"),lit(\"module\"),lit(\"any\"),lit(\"int\"),lit(\"quit\"),lit(\"o\"),lit(\"anno\"),lit(\"true\"),lit(\"public\"),lit(\"keyword\"),lit(\"for\"),lit(\"tuple\"),lit(\"bracket\"),lit(\"bag\"),lit(\"it\"),lit(\"visit\"),lit(\"do\"),lit(\"data\"),lit(\"layout\"),lit(\"bool\"),lit(\"edit\"),lit(\"join\"),lit(\"is\"),lit(\"import\"),lit(\"view\"),lit(\"in\"),lit(\"rat\"),lit(\"modules\"),lit(\"continue\"),lit(\"left\"),lit(\"num\"),lit(\"assert\"),lit(\"throw\"),lit(\"one\"),lit(\"help\"),lit(\"default\"),lit(\"all\"),lit(\"global\"),lit(\"syntax\"),lit(\"false\"),lit(\"finally\"),lit(\"private\"),lit(\"mod\"),lit(\"java\"),lit(\"node\"),lit(\"start\"),lit(\"set\"),lit(\"right\"),lit(\"variable\"),lit(\"map\"),lit(\"10\"),lit(\"on\"),lit(\"break\"),lit(\"dynamic\"),lit(\"solve\"),lit(\"fail\"),lit(\"unimport\"),lit(\"outermost\"),lit(\"real\"),lit(\"list\"),lit(\"insert\"),lit(\"innermost\"),lit(\"declarations\"),lit(\"else\"),lit(\"rel\"),lit(\"function\"),lit(\"notin\"),lit(\"filter\"),lit(\"datetime\"),lit(\"catch\"),lit(\"try\"),lit(\"renaming\"),lit(\"tag\"),lit(\"has\"),lit(\"Z\"),lit(\"when\"),lit(\"type\"),lit(\"append\"),lit(\"extend\"),lit(\"switch\"),lit(\"void\"),lit(\"history\"),lit(\"T\"),lit(\"while\"),lit(\"str\"),lit(\"value\"),lit(\"undeclare\"),lit(\"case\"),lit(\"alias\"),lit(\"return\"),lit(\"0\")})],{tag(\"category\"(\"keyword.control\"))})"

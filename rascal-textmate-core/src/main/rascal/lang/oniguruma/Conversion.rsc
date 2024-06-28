@@ -37,9 +37,9 @@ default RegExp toRegExp(Grammar _, Production p) {
 }
 
 // `Type`
-RegExp toRegExp(Grammar g, label(_, symbol))
+RegExp toRegExp(Grammar g, \label(_, symbol))
     = toRegExp(g, symbol);
-RegExp toRegExp(Grammar g, parameter(_, _))
+RegExp toRegExp(Grammar g, \parameter(_, _))
     = nil(); // Covered by `lookup` (which substitutes actuals for formals)
 
 // `ParseTree`: Start

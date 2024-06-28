@@ -33,15 +33,23 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
         = !tryParse(rsc, delabel(def), "");
     bool isSingleLine(Production p, _, _)
         = !hasNewline(rsc, p);
+    bool isLayout(prod(def, _, _), _, _)
+        = \layouts(_) := delabel(def);
 
     // Analyze productions and dependencies among them
     println("[LOG] Analyzing productions and dependencies among them");
-    Graph graph = toGraph(rsc);
-    graph = removeNodes(graph, isCyclic, removeAncestors=true);
-    graph = filterNodes(graph, isNonEmpty, filterDescendants=true);
-    graph = filterNodes(graph, isSingleLine);
-    graph = filterNodes(graph, hasCategory);
-    list[Production] prods = toList(graph.nodes);
+    Dependencies dependencies = deps(rsc);
+    
+    list[Production] prods = dependencies
+        .removeProds(isCyclic, true, false) // Remove ancestors too
+        .filterProds(isNonEmpty, false, true) // Filter descendants too
+        .filterProds(isSingleLine, false, false)
+        .filterProds(hasCategory, false, false)
+        .getProds();
+    
+    list[Production] prodsLayouts = dependencies
+        .filterProds(isLayout, false, true) // Filter descendants too
+        .getProds();
 
     // Analyze delimiters
     println("[LOG] Analyzing delimiters");
@@ -60,7 +68,8 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
     println("[LOG] Transforming productions to rules");
     list[TmRule] rules
         = [toTmRule(rsc, p) | p <- prodsDelimiters]
-        + [toTmRule(rsc, p) | p <- prods]
+        + [toTmRule(rsc, p) | p <- prods - prodsLayouts]
+        + [toTmRule(rsc, p, ignoreDelimiterPairs = true) | p <- prods & prodsLayouts]
         + [toTmRule(rsc, p) | p <- prodsKeywords];
 
     // Transform rules to grammar
@@ -85,8 +94,8 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName) {
     Converts production `p` to a TextMate rule
 }
 
-TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _))
-    = {<begin, end>} := getDelimiterPairs(rsc, delabel(def))
+TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), bool ignoreDelimiterPairs = false)
+    = !ignoreDelimiterPairs && {<begin, end>} := getDelimiterPairs(rsc, delabel(def))
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin>:<end>", [toTmRule(toRegExp(rsc, p), "<p>")])
     : toTmRule(toRegExp(rsc, p), "<p>");
 
