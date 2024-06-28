@@ -8,10 +8,10 @@ import Set;
 
 alias ScopeName = str;
 alias RegExpString = str;
-alias Repository = map[str, Rule];
+alias Repository = map[str, TmRule];
 alias Captures = map[str, map[str, ScopeName]];
 
-data Grammar = grammar(
+data TmGrammar = grammar(
     // Not supported by VS Code:
     // str foldingStartMarker = "",
     // str foldingStopMarker = "",
@@ -19,16 +19,16 @@ data Grammar = grammar(
     // Supported by VS Code (mandatory):
     Repository repository,
     ScopeName scopeName,
-    list[Rule] patterns,
+    list[TmRule] patterns,
 
     // Supported by VS Code (optional):
-    map[str, Rule] injections = (),
+    map[str, TmRule] injections = (),
     str injectionSelector = "",
     list[str] fileTypes = [],
     str name = "",
     str firstLineMatch = "");
 
-data Rule
+data TmRule
     = match(
         RegExpString match,
         ScopeName name = "",
@@ -42,7 +42,7 @@ data Rule
         ScopeName contentName = "",
         Captures beginCaptures = (),
         Captures endCaptures = (),
-        list[Rule] patterns = [],
+        list[TmRule] patterns = [],
         Repository repository = ())
 
     | include(
@@ -53,7 +53,7 @@ data Rule
     Adds a rule to the repository and patterns of grammar `g`
 }
 
-Grammar addRule(Grammar g, Rule r)
+TmGrammar addRule(TmGrammar g, TmRule r)
     = g [repository = g.repository + (r.name: r)]
         [patterns = g.patterns + include("#<r.name>")];
 

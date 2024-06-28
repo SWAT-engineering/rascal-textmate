@@ -14,9 +14,7 @@ import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
 import lang::textmate::Grammar;
 
-alias RscGrammar = Grammar::Grammar;
-alias TmGrammar = lang::textmate::Grammar::Grammar;
-alias TmRule = lang::textmate::Grammar::Rule;
+alias RscGrammar = Grammar;
 
 @synopsis{
     Converts Rascal grammar `rsc` to a TextMate grammar
@@ -30,7 +28,12 @@ data ConversionUnit = unit(
 TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName)
     = transform(analyze(rsc)) [scopeName = scopeName];
 
-private list[ConversionUnit] analyze(RscGrammar rsc) {
+@synoposis{
+    Analyzes Rascal grammar `rsc`. Returns the list of productions, in the form
+    of conversion units, that can be transformed into TextMate rules.
+}
+
+list[ConversionUnit] analyze(RscGrammar rsc, bool printUnits = false) {
 
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
@@ -78,11 +81,19 @@ private list[ConversionUnit] analyze(RscGrammar rsc) {
         + [unit(rsc, p) | p <- prods - prodsLayouts]
         + [unit(rsc, p, ignoreDelimiterPairs = true) | p <- prods & prodsLayouts]
         + [unit(rsc, p) | p <- prodsKeywords];
-    
+
+    for (printUnits, u <- units) {
+        println("unit(rsc, <u.prod><u.ignoreDelimiterPairs ? ", ignoreDelimiterPairs = true" : "">)");
+    }
+
     return units;
 }
 
-private TmGrammar transform(list[ConversionUnit] units) {
+@synopsis{
+    Transforms conversion units to a TextMate grammar.
+}
+
+TmGrammar transform(list[ConversionUnit] units) {
 
     // Transform productions to rules
     println("[LOG] Transforming productions to rules");
@@ -103,6 +114,7 @@ private TmGrammar transform(list[ConversionUnit] units) {
         tm = addRule(tm, r);
     }
 
+    // Return
     return tm[patterns = dup(tm.patterns)];
 }
 
