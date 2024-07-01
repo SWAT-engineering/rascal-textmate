@@ -1,27 +1,41 @@
 module lang::textmate::ConversionTests
 
 import Grammar;
+import IO;
 import Map;
 import ParseTree;
 
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
 
-bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] units) {
-    assert analyze(rsc) == units;
+bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expected, bool printUnits = false) {
+    list[ConversionUnit] actual = analyze(rsc, printUnits = printUnits);
+    for (u <- actual) {
+        if (u notin expected) {
+            println("[ERROR] <u.prod>");
+            assert false : "actual but not expected";
+        }
+    }
+    for (u <- expected) {
+        if (u notin actual) {
+            println("[ERROR] <u.prod>");
+            assert false : "expected but not actual";
+        }
+    }
+    // assert actual == expected : "same elements, different order";
     return true;
 }
 
-bool doTransformTest(list[ConversionUnit] units, tuple[int match, int beginEnd, int include] sizes) {
+bool doTransformTest(list[ConversionUnit] units, tuple[int match, int beginEnd, int include] actual) {
     TmGrammar tm = transform(units);
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
 
-    assert size(repo) == sizes.match + sizes.beginEnd + sizes.include;
-    assert (0 | it + 1 | s <- repo, repo[s] is match) == sizes.match;
-    assert (0 | it + 1 | s <- repo, repo[s] is beginEnd) == sizes.beginEnd;
-    assert (0 | it + 1 | s <- repo, repo[s] is include) == sizes.include;
-    assert (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd) == size(units) - sizes.match - sizes.include;
+    assert size(repo) == actual.match + actual.beginEnd + actual.include;
+    assert (0 | it + 1 | s <- repo, repo[s] is match) == actual.match;
+    assert (0 | it + 1 | s <- repo, repo[s] is beginEnd) == actual.beginEnd;
+    assert (0 | it + 1 | s <- repo, repo[s] is include) == actual.include;
+    assert (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd) == size(units) - actual.match - actual.include;
 
     assert size(pats) == size(repo);
     assert (true | it && include(/#.*$/) := r | r <- pats);

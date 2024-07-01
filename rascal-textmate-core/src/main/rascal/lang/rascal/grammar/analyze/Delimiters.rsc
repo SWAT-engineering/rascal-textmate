@@ -25,15 +25,16 @@ set[DelimiterPair] getDelimiterPairs(Grammar g, Symbol s) {
 
         set[DelimiterPair] pairs = {};
         for (/prod(def, symbols: [*_, /s, *_], _) := g) {
-
             set[DelimiterPair] morePairs
                 = just(DelimiterPair pair) := getDelimiterPair(symbols, s)
                 ? {pair}
                 : getDelimiterPairs(delabel(def));
-            
+        
             if (isEmpty(morePairs)) {
                 pairs = {};
                 break;
+            } else {
+                pairs += morePairs;
             }
         }
 
