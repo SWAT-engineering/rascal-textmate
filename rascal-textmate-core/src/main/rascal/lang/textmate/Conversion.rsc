@@ -83,7 +83,7 @@ list[ConversionUnit] analyze(RscGrammar rsc, bool printUnits = false) {
         + [unit(rsc, p) | p <- prodsKeywords];
 
     for (printUnits, u <- units) {
-        println("unit(rsc, <u.prod><u.ignoreDelimiterPairs ? ", ignoreDelimiterPairs = true" : "">)");
+        println("unit(_, <u.prod><u.ignoreDelimiterPairs ? ", ignoreDelimiterPairs = true" : "">)");
     }
 
     return units;

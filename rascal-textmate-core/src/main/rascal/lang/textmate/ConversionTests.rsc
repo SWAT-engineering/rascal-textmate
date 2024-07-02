@@ -2,6 +2,7 @@ module lang::textmate::ConversionTests
 
 import Grammar;
 import IO;
+import List;
 import Map;
 import ParseTree;
 
@@ -10,19 +11,30 @@ import lang::textmate::Grammar;
 
 bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expected, bool printUnits = false) {
     list[ConversionUnit] actual = analyze(rsc, printUnits = printUnits);
+
     for (u <- actual) {
         if (u notin expected) {
             println("[ERROR] <u.prod>");
             assert false : "actual but not expected";
         }
     }
+    
     for (u <- expected) {
         if (u notin actual) {
             println("[ERROR] <u.prod>");
             assert false : "expected but not actual";
         }
     }
-    // assert actual == expected : "same elements, different order";
+
+    int i = 0;
+    for (<u1, u2> <- zip2(actual, expected)) {
+        if (u1 != u2) {
+            println("[ERROR] at index <i>: <u1.prod> actual, <u2.prod> expected");
+            assert false : "same elements, different order";
+        }
+        i += 1;
+    }
+
     return true;
 }
 
