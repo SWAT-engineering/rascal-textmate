@@ -5,12 +5,13 @@ import IO;
 import List;
 import Map;
 import ParseTree;
+import lang::json::IO;
 
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
 
-bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expected, bool printUnits = false) {
-    list[ConversionUnit] actual = analyze(rsc, printUnits = printUnits);
+bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expected) {
+    list[ConversionUnit] actual = analyze(rsc);
 
     for (u <- actual) {
         if (u notin expected) {
@@ -38,16 +39,17 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expected, bool printUnit
     return true;
 }
 
-bool doTransformTest(list[ConversionUnit] units, tuple[int match, int beginEnd, int include] actual) {
+bool doTransformTest(list[ConversionUnit] units, tuple[int match, int beginEnd, int include] expected) {
     TmGrammar tm = transform(units);
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
+    // println(asJSON(repo, indent=2));
 
-    assert size(repo) == actual.match + actual.beginEnd + actual.include;
-    assert (0 | it + 1 | s <- repo, repo[s] is match) == actual.match;
-    assert (0 | it + 1 | s <- repo, repo[s] is beginEnd) == actual.beginEnd;
-    assert (0 | it + 1 | s <- repo, repo[s] is include) == actual.include;
-    assert (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd) == size(units) - actual.match - actual.include;
+    assert size(repo) == expected.match + expected.beginEnd + expected.include;
+    assert (0 | it + 1 | s <- repo, repo[s] is match) == expected.match;
+    assert (0 | it + 1 | s <- repo, repo[s] is beginEnd) == expected.beginEnd;
+    assert (0 | it + 1 | s <- repo, repo[s] is include) == expected.include;
+    assert (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd) == size(units) - expected.match - expected.include;
 
     assert size(pats) == size(repo);
     assert (true | it && include(/#.*$/) := r | r <- pats);
