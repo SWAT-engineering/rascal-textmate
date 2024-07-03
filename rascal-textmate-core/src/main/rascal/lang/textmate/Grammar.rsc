@@ -57,7 +57,7 @@ TmGrammar addRule(TmGrammar g, TmRule r)
     = g [repository = g.repository + (r.name: r)]
         [patterns = appendIfAbsent(g.patterns, include("#<r.name>"))];
 
-// TODO: This function could be moved to a generic utility module
+// TODO: This function could be moved to a separate, generic module
 list[&T] appendIfAbsent(list[&T] vs, &T v)
     = v in vs ? vs : vs + v;
 

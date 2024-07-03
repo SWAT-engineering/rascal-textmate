@@ -51,7 +51,7 @@ str ungroup(str old)
     = /^\(\?:<new:.*>\)$/ := old ? new : old;
 
 @synopsis{
-    Joins a list of regular expressions `regExps` into a regular expression,
+    Joins list of regular expressions `regExps` into a regular expression,
     separated by `sep`. Returns `nil()` when the list is empty or
     contains `nil()`.
 }

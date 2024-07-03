@@ -91,12 +91,12 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
     // Analyze dependencies among productions
     println("[LOG] Analyzing dependencies among productions");
-    Dependencies dependencies = deps(rsc);
+    Dependencies dependencies = deps(toGraph(rsc));
     list[Production] prods = dependencies
-        .removeProds(isCyclic, true, false) // Remove ancestors too
-        .filterProds(isSingleLine, false, false)
-        .filterProds(isNonEmpty, false, false)
-        .filterProds(hasCategory, false, false)
+        .removeProds(isCyclic, true) // `true` means "also remove ancestors"
+        .filterProds(isSingleLine)
+        .filterProds(isNonEmpty)
+        .filterProds(hasCategory)
         .getProds();
 
     // Analyze delimiters

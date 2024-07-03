@@ -22,6 +22,7 @@ bool tryParse(Grammar g, Symbol s, str input) {
 list[Production] lookup(Grammar g, s: \parameterized-sort(name, actual))
     = [subst(p, formal, actual) | /p: prod(\parameterized-sort(name, formal), _, _) := g.rules[s] ? []]
     + [subst(p, formal, actual) | /p: prod(label(_, \parameterized-sort(name, formal)), _, _) := g.rules[s] ? []];
+
 list[Production] lookup(Grammar g, s: \parameterized-lex(name, actual))
     = [subst(p, formal, actual) | /p: prod(\parameterized-lex(name, formal), _, _) := g.rules[s] ? []]
     + [subst(p, formal, actual) | /p: prod(label(_, \parameterized-lex(name, formal)), _, _) := g.rules[s] ? []];
