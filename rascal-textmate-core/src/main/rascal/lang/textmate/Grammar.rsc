@@ -50,15 +50,19 @@ data TmRule
         Repository repository = ());
 
 @synopsis{
-    Adds a rule to the repository and patterns of grammar `g`
+    Adds a rule to both the repository and the patterns of grammar `g`
 }
 
 TmGrammar addRule(TmGrammar g, TmRule r)
     = g [repository = g.repository + (r.name: r)]
-        [patterns = g.patterns + (include("#<r.name>") in g.patterns ? [] : [include("#<r.name>")])];
+        [patterns = appendIfAbsent(g.patterns, include("#<r.name>"))];
+
+// TODO: This function could be moved to a generic utility module
+list[&T] appendIfAbsent(list[&T] vs, &T v)
+    = v in vs ? vs : vs + v;
 
 @synopsis{
-    Converts list of strings `names` to a map of captures
+    Converts list of strings `names` (typically categories) to a map of captures
 }
 
 Captures toCaptures(list[str] names)
