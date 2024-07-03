@@ -59,3 +59,24 @@ set[Symbol] getStrictPrefixes(set[Symbol] symbols)
 
 bool isStrictPrefix(Symbol s1, Symbol s2)
     = s1.string? && s2.string? && s1.string != s2.string && startsWith(s2.string, s1.string);
+
+@synopsis{
+    Utility functions for conditions
+}
+
+bool isExceptCondition(\except(_))          = true;
+default bool isExceptCondition(Condition _) = false;
+
+bool isPrefixCondition(\precede(_))         = true;
+bool isPrefixCondition(\not-precede(_))     = true;
+bool isPrefixCondition(\at-column(_))       = true;
+bool isPrefixCondition(\begin-of-line())    = true;
+default bool isPrefixCondition(Condition _) = false;
+
+bool isSuffixCondition(\follow(_))          = true;
+bool isSuffixCondition(\not-follow(_))      = true;
+bool isSuffixCondition(\end-of-line())      = true;
+default bool isSuffixCondition(Condition _) = false;
+
+bool isDeleteCondition(\delete(_))          = true;
+default bool isDeleteCondition(Condition _) = false;

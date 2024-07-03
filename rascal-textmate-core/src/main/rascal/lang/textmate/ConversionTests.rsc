@@ -5,7 +5,7 @@ import IO;
 import List;
 import Map;
 import ParseTree;
-import lang::json::IO;
+// import lang::json::IO;
 
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;

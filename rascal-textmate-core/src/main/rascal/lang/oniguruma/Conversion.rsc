@@ -23,13 +23,9 @@ list[RegExp] toRegExps(Grammar g, list[value] values)
     Converts a production to a regular expression.
 }
 
-RegExp toRegExp(Grammar g, prod(_, symbols, /\tag("category"(c))))
-    = group(infix("", toRegExps(g, symbols)), category=c);
-RegExp toRegExp(Grammar g, prod(_, symbols, attributes))
-    = infix("", toRegExps(g, symbols)) when /\tag("category"(_)) !:= attributes;
-
-default RegExp toRegExp(Grammar _, Production p) {
-    throw "Unsupported production <p>";
+RegExp toRegExp(Grammar g, prod(_, symbols, attributes)) {
+    RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
+    return /\tag("category"(c)) := attributes ? group(re, category = c) : re;
 }
 
 @synopsis{
@@ -47,24 +43,14 @@ RegExp toRegExp(Grammar g, \start(symbol))
     = toRegExp(g, symbol);
 
 // `ParseTree`: Non-terminals
-RegExp toRegExp(Grammar g, s: \sort(_)) 
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]);
-RegExp toRegExp(Grammar g, s: \lex(_))
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]);
-RegExp toRegExp(Grammar g, s: \layouts(_))
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]);
-RegExp toRegExp(Grammar g, s: \keywords(_))
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]);
-RegExp toRegExp(Grammar g, s: \parameterized-sort(_, _))
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]);
-RegExp toRegExp(Grammar g, s: \parameterized-lex(_, _))
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]);
+RegExp toRegExp(Grammar g, Symbol s)
+    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]) when isNonTerminalType(s);
 
 // `ParseTree`: Terminals
 RegExp toRegExp(Grammar _, \lit(string))
-    = regExp("(?:<toCodeUnits(chars(string), bound = /^\w+$/ := string)>)", []);
+    = regExp("(?:<encode(chars(string), withBounds = /^\w+$/ := string)>)", []);
 RegExp toRegExp(Grammar _, \cilit(string))
-    = regExp("(?i:<toCodeUnits(chars(string), bound = /^\w+$/ := string)>)", []);
+    = regExp("(?i:<encode(chars(string), withBounds = /^\w+$/ := string)>)", []);
 RegExp toRegExp(Grammar g, \char-class(ranges))
     = infix("|", toRegExps(g, ranges));
 
@@ -72,11 +58,11 @@ RegExp toRegExp(Grammar g, \char-class(ranges))
 RegExp toRegExp(Grammar _, \empty())
     = nil();
 RegExp toRegExp(Grammar g, \opt(symbol))
-    = suffix("??", toRegExp(g, symbol));
+    = suffix("??", toRegExp(g, symbol)); // Reluctant quantifier
 RegExp toRegExp(Grammar g, \iter(symbol))
-    = suffix("+?", toRegExp(g, symbol));
+    = suffix("+?", toRegExp(g, symbol)); // Reluctant quantifier
 RegExp toRegExp(Grammar g, \iter-star(symbol))
-    = suffix("*?", toRegExp(g, symbol));
+    = suffix("*?", toRegExp(g, symbol)); // Reluctant quantifier
 RegExp toRegExp(Grammar g, Symbol s: \iter-seps(_, _))
     = toRegExp(g, expand(s));
 RegExp toRegExp(Grammar g, Symbol s: \iter-star-seps(_, _))
@@ -84,67 +70,58 @@ RegExp toRegExp(Grammar g, Symbol s: \iter-star-seps(_, _))
 RegExp toRegExp(Grammar g, \alt(alternatives))
     = infix("|", toRegExps(g, alternatives));
 RegExp toRegExp(Grammar g, \seq(symbols))
-    = infix("", toRegExps(g, symbols));
+    = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
 
 // `ParseTree`: Condition
 RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
+    RegExp re = toRegExp(g, symbol);
 
-    // Conditions are classified and converted in ascending class number:
-    //  1. Except conditions: conversion depends on `symbol`;
-    //  2. Prefix conditions: conversion depends on class 1 conversions;
-    //  3. Suffix conditions: conversion depends on class 1-2 conversions;
-    //  4. Delete conditions: conversion depends on class 1-3 conversions.
-
-    list[Condition] exceptConditions
-        = [c | c: \except(_) <- conditions];
-    list[Condition] prefixConditions
-        = [c | c: \precede(_) <- conditions]
-        + [c | c: \not-precede(_) <- conditions]
-        + [c | c: \at-column(_) <- conditions]
-        + [c | c: \begin-of-line() <- conditions];
-    list[Condition] suffixConditions
-        = [c | c: \follow(_) <- conditions]
-        + [c | c: \not-follow(_) <- conditions]
-        + [c | c: \end-of-line() <- conditions];
-    list[Condition] deleteConditions
-        = [c | c: \precede(_) <- conditions];
+    // Define four kinds of conditions (and convert them in a particular order)
+    list[Condition] exceptConditions = [c | c <- conditions, isExceptCondition(c)];
+    list[Condition] prefixConditions = [c | c <- conditions, isPrefixCondition(c)];
+    list[Condition] suffixConditions = [c | c <- conditions, isSuffixCondition(c)];
+    list[Condition] deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
     
-    RegExp ret = toRegExp(g, symbol);
-
-    // 1. Convert `\except` conditions
+    // Convert except conditions (depends on previous conersion)
     if (!isEmpty(exceptConditions)) {
         if (/\choice(symbol, alternatives) := g) {
-            bool except(prod(label(l, _), _, _)) = \except(l) <- exceptConditions;
-            bool except(prod(def, _, _)) = false when label(_, _) !:= def;
-            ret = toRegExp(g, \choice(symbol, {a | a <- alternatives, !except(a)}));
+
+            bool keep(prod(def, _, _))
+                = \label(l, _) := def
+                ? !(\except(l) in exceptConditions)
+                : true;
+            
+            re = infix("|", toRegExps(g, {a | a <- alternatives, keep(a)}));
         } else {
-            ret = nil();
+            re = nil(); // Indicates failure
         }
     }
 
-    // 2. Convert prefix conditions
+    // Convert prefix conditions (depends on previous conversions)
     if (!isEmpty(prefixConditions)) {
-        ret = infix("", toRegExps(g, prefixConditions) + [ret]);
+        re = infix("", toRegExps(g, prefixConditions) + [re]);
     }
 
-    // 3. Convert suffix conditions
+    // Convert suffix conditions (depends on previous conversions)
     if (!isEmpty(suffixConditions)) {
-        ret = infix("", [ret] + toRegExps(g, suffixConditions));
+        re = infix("", [re] + toRegExps(g, suffixConditions));
     }
 
-    // 4. Convert `\delete` conditions
+    // Convert delete conditions (depends on previous conversions)
     if (!isEmpty(deleteConditions)) {
         RegExp delete = infix("|", [toRegExp(g, s) | \delete(s) <- deleteConditions]);
-        if (regExp(string1, categories1) := ret, regExp(string2, categories2) := delete) {
+        if (regExp(string1, categories1) := re, regExp(string2, categories2) := delete) {
+            
+            // TODO: Explain this complicated conversion...
             str string = "(?=(?\<head\><string1>)(?\<tail\>.*)$)(?!(?:<string2>)\\k\<tail\>$)\\k\<head\>";
             list[str] categories = ["", *categories1, "", *categories2];
-            ret = regExp(string, categories);
+            re = regExp(string, categories);
         } else {
-            ret = nil();
+            re = nil(); // Indicates failure
         }
     }
 
-    return ret;
+    return re;
 }
 
 default RegExp toRegExp(Grammar _, Symbol s) {
@@ -183,18 +160,18 @@ default RegExp toRegExp(Grammar _, Condition c) {
 }
 
 RegExp toRegExp(Grammar _, range(begin, end))
-    = regExp("[<toCodeUnit(begin)>-<toCodeUnit(end)>]", []);
+    = regExp("[<encode(begin)>-<encode(end)>]", []);
 
 @synopsis{
-    Converts a (list of) char(s) to a (list of) code unit(s).
+    Encodes a (list of) char(s) to a (list of) code unit(s).
 }
 
-str toCodeUnits(list[int] chars, bool bound = false)
-    = bound
-    ? "\\b<toCodeUnits(chars, bound = false)>\\b"
-    : ("" | it + toCodeUnit(i) | i <- chars);
+str encode(list[int] chars, bool withBounds = false)
+    = withBounds
+    ? "\\b<encode(chars, withBounds = false)>\\b"
+    : intercalate("", [encode(i) | i <- chars]);
 
-str toCodeUnit(int i)
+str encode(int i)
     = "\\u" + right(toHex(i), 4, "0");
 
 str toHex(int i) = "<i>" when 0 <= i && i < 10;
