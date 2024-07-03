@@ -6,5 +6,8 @@
 		{
 			"path": "vscode-extension"
 		}
-	]
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
 }
