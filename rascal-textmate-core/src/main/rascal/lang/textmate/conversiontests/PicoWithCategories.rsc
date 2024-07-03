@@ -53,9 +53,9 @@ list[ConversionUnit] units = [
     unit(rsc, prod(label("natural",sort("Type")),[lit("natural")],{\tag("category"("storage.type"))})),
     unit(rsc, prod(label("natcon",sort("Expression")),[label("natcon",lex("Natural"))],{\tag("category"("constant.numeric"))})),
     unit(rsc, prod(label("string",sort("Type")),[lit("string")],{\tag("category"("storage.type"))})),
+    unit(rsc, prod(lex("WhitespaceAndComment"),[lit("%%"),conditional(\iter-star(\char-class([range(1,9),range(11,1114111)])),{\end-of-line()})],{\tag("category"("comment.line"))})),
     unit(rsc, prod(label("nil",sort("Type")),[lit("nil-type")],{\tag("category"("storage.type"))})),
     unit(rsc, prod(label("id",sort("Expression")),[label("name",lex("Id"))],{\tag("category"("variable.other"))})),
-    unit(rsc, prod(lex("WhitespaceAndComment"),[lit("%%"),conditional(\iter-star(\char-class([range(1,9),range(11,1114111)])),{\end-of-line()})],{\tag("category"("comment.line"))}), ignoreDelimiterPairs = true),
     unit(rsc, prod(lex("keywords"),[alt({lit("do"),lit("declare"),lit("fi"),lit("else"),lit("end"),lit("od"),lit("begin"),lit("natural"),lit("then"),lit("if"),lit("while"),lit("string")})],{\tag("category"("keyword.control"))}))
 ];
 

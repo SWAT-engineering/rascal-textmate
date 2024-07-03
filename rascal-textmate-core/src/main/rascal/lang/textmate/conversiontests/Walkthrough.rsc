@@ -1,9 +1,9 @@
 // # Walkthrough
 //
 // This module consists of a walkthrough to explain the main ideas behind the
-// conversion algorithm (from Rascal to TextMate).
+// conversion algorithm, from Rascal grammars to TextMate grammars.
 //
-// The walkthrough is split into five parts. The initial part demonstrates basic
+// The walkthrough is split into five parts. The initial part explains basic
 // conversion. The subsequent four parts present complications and demonstrate
 // extensions of the conversion algorithm to address them.
 //
@@ -14,17 +14,17 @@
 //   - extension 3: locations;
 //   - extension 4: booleans.
 //
-// Working familiarity with TextMate is assumed. To summarize:
+// Working familiarity with TextMate grammar is assumed. To summarize:
 //
 //   - Syntax:
-//       - Each TextMate grammar consists of a list of rules.
-//       - Each rule is either *match* (consisting of one regular expression) or
-//         *begin/end* (consisting of two regular expressions and a list of
-//         nested rules).
+//       - Each TextMate grammar consists of a list of TextMate rules (ordered).
+//       - Each TextMate rule is either a *match pattern* (consisting of one
+//         regular expression) or a *begin/end pattern* (consisting of two
+//         regular expressions and a list of nested TextMate rules).
 //
 //   - Semantics: A tokenization engine reads a document (line by line, top to
-//     bottom, left to right), iteratively trying to match text by applying the
-//     rules in the list (front to back).
+//     bottom, left to right), while iteratively trying to apply TextMate rules
+//     by matching text against the regular expressions.
 //
 // Further reading:
 //   - https://macromates.com/manual/en/language_grammars
@@ -63,10 +63,9 @@ lexical Key    = Alnum+ !>> [a-z A-Z 0-9];
 lexical Number = @category="constant.numeric" Digit+ !>> [0-9];
 lexical String = @category="string.quoted.double" "\"" Alnum* "\"";
 
-// Basically, the conversion algorithm converts each non-terminal in the input
-// grammar (Rascal) that is *suitable for conversion* to a rule in the output
-// grammar (TextMate). For instance, non-terminal `Number` is converted to the
-// following match rule (in JSON):
+// Basically, the conversion algorithm converts each Rascal non-terminal that is
+// *suitable for conversion* to a TextMate rule. For instance, `Number` is
+// converted to the following match pattern (in JSON):
 //
 // ```
 // {
@@ -80,35 +79,31 @@ lexical String = @category="string.quoted.double" "\"" Alnum* "\"";
 // }
 // ```
 //
-// Here:
+// Note: The regular expression (`match` property) is written in Oniguruma
+// format (following the TextMate grammar specification), using code units
+// instead of alphanumericals.
 //
-//   - `match` is the regular expression -- in Oniguruma format, using code
-//     units instead of alphanumericals -- that corresponds with the
-//     non-terminal;
-//   - `name` is the name of the match rule (i.e., by convention, the conversion
-//     algorithm uses part of the internal Rascal representation of the
-//     non-terminal as the name);
-//   - `captures.1.name` is the category.
+// Note: The name (`name` property) could be anything, but to simplify
+// debugging, the conversion algorithm uses (part of) the internal
+// representation of the Rascal non-terminal as the name.
 //
-// In general, a non-terminal is "suitable for conversion" when it satisfies
-// each of the following conditions:
+// In general, a Rascal non-terminal is "suitable for conversion" when it
+// satisfies each of the following conditions:
 //
-//  1. It is non-recursive. (Recursive non-terminals are prohibitively hard to
-//     faithfully convert; tail-recursive non-terminals could be workable, but
-//     they are not yet supported.)
+//  1. It is non-recursive. (Recursion is prohibitively hard to faithfully
+//     convert; tail-recursion could be workable, but currently out of scope.)
 //
-//  2. It does not match newlines. (TextMate grammars with rules that can match
+//  2. It does not match newlines. (TextMate rules that involve matching against
 //     newlines are dysfunctional.)
 //
-//  3. It does not match the empty word. (TextMate grammars with rules that can
-//     match the empty word are dysfunctional.)
+//  3. It does not match the empty word. (TextMate rules that involve matching
+//     against the empty word are dysfunctional.)
 //
-//  4. It has a `@category` tag on at least one of it productions.
+//  4. It has a `@category` tag.
 //
-// For instance, non-terminals `Number` and `String` are suitable for
-// conversion, but non-terminals `Value` (violation of conditions 1 and 4),
-// `Map` (violation of condition 1), and `Key` (violation of condition 4) are
-// not suitable.
+// For instance, `Number` and `String` are suitable for conversion, but `Value`
+// (violation of conditions 1 and 4), `Map` (violation of condition 1), and
+// `Key` (violation of condition 4) are not suitable.
 
 
 
@@ -122,16 +117,16 @@ lexical Comment
 
 layout Layout = (Comment | Space)* !>> "//" !>> [\ \t\n];
 
-// Non-terminal `Comment` is *not* suitable for conversion, as it violates
-// condition 2: production `block` potentially matches newlines. However,
-// production `line` is actually totally fine and can easily be converted to a
-// match rule in TextMate. Thus, converting input grammars in Rascal at the
-// granularity of non-terminals is too coarse.
+// `Comment` is *not* suitable for conversion, as it violates condition 2: the
+// corresponding TextMate rule would involve matching against newlines. However,
+// the matching against newlines is needed only for production `block`; not for
+// production `line`. Thus, conversion at the granularity of Rascal
+// non-terminals is actually too coarse.
 // 
-// To solve this issue, the conversion algorithm operates at the granularity of
-// individual productions (specifically, `prod` constructors) instead of
-// non-terminals. For instance, production `line` of non-terminal `Comment` is
-// individually converted to the following match rule:
+// To solve this issue, the conversion algorithm works at the granularity of
+// individual productions (specifically, `prod` constructors). For instance,
+// production `line` of `Comment` is individually converted to the following
+// match pattern, independently of production `block` (which is ignored):
 //
 // ```
 // {
@@ -139,7 +134,7 @@ layout Layout = (Comment | Space)* !>> "//" !>> [\ \t\n];
 //   "name": "prod(label(\"line\",lex(\"Comment\")),[lit(\"//\"),conditional(\\iter-star(alt({lex(\"Blank\"),lex(\"Alnum\")})),{\\end-of-line()})],{tag(\"category\"(\"comment.line.double-slash\"))})",
 //   "captures": {
 //     "1": {
-//     "name": "comment.line.double-slash"
+//       "name": "comment.line.double-slash"
 //     }
 //   }
 // }
@@ -147,7 +142,7 @@ layout Layout = (Comment | Space)* !>> "//" !>> [\ \t\n];
 
 
 
-// ## Extension 2: Context-aware conversion
+// ## Extension 2: Delimiter-sensitive conversion
 //
 // The second extension (regular expressions; illustrative fragment) looks as
 // follows:
@@ -160,23 +155,21 @@ lexical RegExpBody
     | RegExpBody "+"
     | RegExpBody "|" RegExpBody;
 
-// Production `alnum` of non-terminal `RegExpBody` is suitable for conversion.
-// However, except for the `@category` tag, it has exactly the same definition
-// as the production of non-terminal `Key` (above). Thus, if the conversion
-// algorithm were to naively convert `alnum` to a match rule, keys in maps would
-// be tokenized accidentally as regular expressions (and mistakenly typeset in
-// italics).
+// Production `alnum` of `RegExpBody` is suitable for conversion. However,
+// except for the `@category` tag, it has exactly the same definition as the
+// production of `Key` (above). Thus, if the conversion algorithm were to
+// naively convert `alnum` to a TextMate rule, keys in maps would be tokenized
+// accidentally as regular expressions (and mistakenly typeset in italics).
 //
 // To solve this issue, the conversion algorithm first heuristically checks for
-// each suitable-for-conversion production if it is *enclosed by delimiters*
-// (i.e., it should be applied only in particular contexts). If so, instead of
-// converting the production to a top-level match rule, it is converted to a
-// top-level begin/end rule (for the enclosing delimiters) with a nested match
-// rule (for the production itself). As a result, the nested match rule will be
-// used for tokenization only between matches of the enclosing delimiters. For
-// instance, production `alnum` is enclosed by an opening `/` and a closing `/`,
-// so it is converted into the following top-level begin/end rule and nested
-// match rule:
+// each suitable-for-conversion production if it is *enclosed by delimiters*. If
+// so, instead of converting the production to a top-level match pattern, it is
+// converted to a top-level begin/end pattern (for the enclosing delimiters)
+// with a nested match pattern (for the production itself). As a result, the
+// nested match pattern will be used for tokenization only between matches of
+// the enclosing delimiters. For instance, production `alnum` is enclosed by an
+// opening `/` and a closing `/`, so it is converted to the following top-level
+// begin/end pattern with a nested match pattern:
 //
 // ```
 // {
@@ -196,9 +189,9 @@ lexical RegExpBody
 // }
 // ```
 //
-// Note: If N suitable-for-conversion productions are always enclosed by the
-// same delimiters, then the conversion algorithm converts them into one
-// top-level begin/end rule with N nested match rules (one for each production).
+// Note: If N suitable-for-conversion productions are enclosed by the same
+// delimiters, then the conversion algorithm converts them into one top-level
+// begin/end pattern with N nested match patterns (one for each production).
 
 
 
@@ -209,23 +202,26 @@ lexical RegExpBody
 syntax  Location = "|" Segment "://" {Segment "/"}+ "|";
 lexical Segment  = Alnum+ !>> [a-z A-Z 0-9];
 
-// The productions of these non-terminals are *not* suitable for conversion, as
-// they violate condition 4. However, the match rule for production `line` of
-// non-terminal `Comment` (above) is applicable to suffixes of locations (due to
-// the presence of `://` in the middle). As a result, suffixes of locations will
-// mistakenly be highlighted as comments.
+// The productions of `Location` and `Segment` are *not* suitable for
+// conversion, as they violate condition 4. However, accidentally, the TextMate
+// rule for production `line` of `Comment` (above) will actually be applicable
+// to suffixes of locations (e.g., it matches `//bar/baz` in `|foo://bar/baz|`).
+// Thus, suffixes of locations will mistakenly be highlighted as comments.
 //
 // To solve this issue, the conversion algorithm creates a synthetic production
 // of the form `lit1 | lit2 | ...`, where each `lit<i>` is a literal that occurs
-// in the input grammar, and:
-//   - `lit<i>` does not match `/^\w+$/` (i.e., it is a *delimiter literal*;
-//     e.g., `(`, `://`, and `,` are delimiter literals);
-//   - `lit<i>` does not enclose a suitable-for-conversion production;
-//   - `lit<i>` is not a prefix of any other delimiter literal that occurs in
-//     the input grammar.
+// in the Rascal grammar, and:
+//   - it does not match `/^\w+$/` (i.e., it is a *delimiter literal*; e.g.,
+//     `(`, `://`, and `,` are delimiter literals);
+//   - it is not a prefix of any other delimiter literal;
+//   - it does not occur at the start of a suitable-for-conversion production;
+//   - it does not enclose a suitable-for-conversion production.
 // 
-// The synthetic production is converted to a match rule in the output grammar.
-// For instance:
+// The synthetic production is converted to a TextMate rule (match pattern). The
+// previous requirements for each `lit<i>` are intended to ensure that only a
+// single TextMate rule is applicable to each delimiter. For instance, the
+// synthetic production in the example grammar is converted to the following
+// match pattern:
 //
 // ```
 // {
@@ -234,9 +230,10 @@ lexical Segment  = Alnum+ !>> [a-z A-Z 0-9];
 // }
 // ```
 //
-// The point of this match rule is *not* to assign a category. The only purpose
-// is to force the tokenizer engine to consume highlighting-insignificant
-// delimiters before they are accidentally tokenized wrongly.
+// Note: The intent of this match pattern is *not* to assign a category. The
+// only purpose is to force the tokenization engine to consume
+// "highlighting-insignificant" delimiters before they are accidentally
+// tokenized and mistakenly highlighted.
 
 
 
@@ -248,15 +245,16 @@ lexical Boolean
     = "true"
     | "false";
 
-// The productions of this non-terminal are *not* suitable for conversion, as
-// they violate condition 4. However, by default, literals like these should be
-// highlighted.
+// The productions of `Boolean` are *not* suitable for conversion, as they
+// violate condition 4. However, by default, literals like these should be
+// highlighted as keywords.
 //
 // To solve this issue, the conversion algorithm creates a synthetic production
 // of the form `lit1 | lit2 | ...`, where each `lit<i>` is a literal that occurs
 // in the input grammar, and `lit<i>` matches `/^\w+$/` (i.e., it is a *keyword
-// literal*; e.g., `true` and `false`). This synthetic production is converted
-// to a rule in the output TextMate grammar. For instance:
+// literal*; e.g., `true` and `false`). The synthetic production is converted to
+// a TextMate rule (match pattern). For instance, the synthetic production in
+// the example grammar is converted to the following match pattern:
 //
 // ```
 // {
@@ -284,7 +282,7 @@ list[ConversionUnit] units = [
     unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))})),
     unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))})),
     unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))})),
-    unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))}), ignoreDelimiterPairs = true),
+    unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))})),
     unit(rsc, prod(lex("keywords"),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}))
 ];
 

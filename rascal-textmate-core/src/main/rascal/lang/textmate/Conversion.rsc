@@ -3,8 +3,6 @@ module lang::textmate::Conversion
 import Grammar;
 import IO;
 import ParseTree;
-import Set;
-import String;
 
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
@@ -20,54 +18,93 @@ alias RscGrammar = Grammar;
     Converts Rascal grammar `rsc` to a TextMate grammar
 }
 
-data ConversionUnit = unit(
-    RscGrammar rsc,
-    Production prod,
-    bool ignoreDelimiterPairs = false);
+// The conversion consists of two stages:
+//   - analysis (function `analyze`);
+//   - transformation (function `transform`).
+//
+// The aim of the analysis stage is to select those productions of the Rascal
+// grammar that are "suitable for conversion" to TextMate rules. The aim of the
+// transformation stage is to subsequently convert those productions and produce
+// a TextMate grammar.
+//
+// To be able to cleanly separate analysis and transformation, productions
+// selected during the analysis stage are wrapped into *conversion units* that
+// may contain additional meta-data needed during the transformation stage.
 
 TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName)
     = transform(analyze(rsc)) [scopeName = scopeName];
 
+data ConversionUnit = unit(
+    RscGrammar rsc,
+    Production prod);
+
 @synoposis{
-    Analyzes Rascal grammar `rsc`. Returns the list of productions, in the form
-    of conversion units, that can be transformed into TextMate rules.
+    Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of
+    conversion units, consisting of:
+      - one synthetic *delimiters* production;
+      - zero-or-more *user-defined* productions (from `rsc`);
+      - one synthetic *keywords* production.
+    
+    Each production in the list (including the synthetic ones) is *suitable for
+    conversion* to a TextMate rule. A production is "suitable for conversion"
+    when it satisfies each of the following conditions:
+      - it is non-recursive;
+      - it does not match newlines;
+      - it does not match the empty word;
+      - it has a `@category` tag.
+    
+    See the walkthrough for further motivation and examples.
 }
 
-list[ConversionUnit] analyze(RscGrammar rsc, bool printUnits = false) {
+// The analysis consists of three stages:
+//  1. selection of user-defined productions;
+//  2. creation of synthetic delimiters production;
+//  3. creation of synthetic keywords production.
+//
+// In stage 1, a dependency graph among all productions that occur in `rsc`
+// (specifically: `prod` constructors) is created. This dependency graph is
+// subsequently pruned to keep only the suitable-for-conversion productions:
+//   - first, productions with a cyclic dependency on themselves are removed;
+//   - next, productions that only involve single-line matching are filtered;
+//   - next, productions that only involve non-empty word matching are filtered;
+//   - next, productions that have a `@category` tag are filtered.
+//
+// In stage 2, the set of all delimiters that occur in `rsc` is created. This
+// set is subsequently reduced by removing:
+//   - strict prefixes of delimiters;
+//   - delimiters that enclose user-defined productions;
+//   - delimiters that occur at the beginning of user-defined productions.
+//
+// In stage 3, the set of all keywords that occur in `rsc` is created.
+
+list[ConversionUnit] analyze(RscGrammar rsc) {
 
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
         = p in ancestors;
-    bool hasCategory(prod(_, _, attributes), _, _)
-        = /\tag("category"(_)) := attributes;
-    bool isNonEmpty(prod(def, _, _), _, _)
-        = !tryParse(rsc, delabel(def), "");
     bool isSingleLine(Production p, _, _)
         = !hasNewline(rsc, p);
-    bool isLayout(prod(def, _, _), _, _)
-        = \layouts(_) := delabel(def);
+    bool isNonEmpty(prod(def, _, _), _, _)
+        = !tryParse(rsc, delabel(def), "");
+    bool hasCategory(prod(_, _, attributes), _, _)
+        = /\tag("category"(_)) := attributes;
 
     // Analyze dependencies among productions
     println("[LOG] Analyzing dependencies among productions");
     Dependencies dependencies = deps(rsc);
-    
     list[Production] prods = dependencies
         .removeProds(isCyclic, true, false) // Remove ancestors too
-        .filterProds(isNonEmpty, false, true) // Filter descendants too
         .filterProds(isSingleLine, false, false)
+        .filterProds(isNonEmpty, false, false)
         .filterProds(hasCategory, false, false)
-        .getProds();
-    
-    list[Production] prodsLayouts = dependencies
-        .filterProds(isLayout, false, true) // Filter descendants too
         .getProds();
 
     // Analyze delimiters
     println("[LOG] Analyzing delimiters");
     set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
     delimiters -= getStrictPrefixes(delimiters);
-    delimiters -= {s | prod(def, _, _) <- prods, /s := getDelimiterPairs(rsc, delabel(def))};
     delimiters -= {s | prod(_, [s, *_], _) <- prods, isDelimiter(delabel(s))};
+    delimiters -= {s | prod(def, _, _) <- prods, /s := getDelimiterPairs(rsc, delabel(def))};
     list[Production] prodsDelimiters = [prod(lex("delimiters"), [\alt(delimiters)], {})];
 
     // Analyze keywords
@@ -78,20 +115,20 @@ list[ConversionUnit] analyze(RscGrammar rsc, bool printUnits = false) {
     // Return
     list[ConversionUnit] units
         = [unit(rsc, p) | p <- prodsDelimiters]
-        + [unit(rsc, p) | p <- prods - prodsLayouts]
-        + [unit(rsc, p, ignoreDelimiterPairs = true) | p <- prods & prodsLayouts]
+        + [unit(rsc, p) | p <- prods]
         + [unit(rsc, p) | p <- prodsKeywords];
-
-    for (printUnits, u <- units) {
-        println("unit(_, <u.prod><u.ignoreDelimiterPairs ? ", ignoreDelimiterPairs = true" : "">)");
-    }
 
     return units;
 }
 
 @synopsis{
-    Transforms conversion units to a TextMate grammar.
+    Transforms a list of productions, in the form of conversion units, to a
+    TextMate grammar.
 }
+
+// The transformation consists of two stages:
+//  1. creation of TextMate rules;
+//  2. composition of TextMate rules into a TextMate grammar.
 
 TmGrammar transform(list[ConversionUnit] units) {
 
@@ -115,7 +152,7 @@ TmGrammar transform(list[ConversionUnit] units) {
     }
 
     // Return
-    return tm[patterns = dup(tm.patterns)];
+    return tm[patterns = tm.patterns];
 }
 
 @synopsis{
@@ -123,17 +160,19 @@ TmGrammar transform(list[ConversionUnit] units) {
 }
 
 TmRule toTmRule(ConversionUnit u)
-    = toTmRule(u.rsc, u.prod, u.ignoreDelimiterPairs);
+    = toTmRule(u.rsc, u.prod);
 
-private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), bool ignoreDelimiterPairs)
-    = !ignoreDelimiterPairs && {<begin, end>} := getDelimiterPairs(rsc, delabel(def))
+private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _))
+    = {<begin, end>} := getDelimiterPairs(rsc, delabel(def)) // TODO: Support non-singleton sets of delimiter pairs
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin>:<end>", [toTmRule(toRegExp(rsc, p), "<p>")])
     : toTmRule(toRegExp(rsc, p), "<p>");
 
+// Match patterns
 private TmRule toTmRule(regExp(string, categories), str name)
-    = match(ungroup(string), captures = toCaptures(categories), name = name);
+    = match(string, captures = toCaptures(categories), name = name);
 private TmRule toTmRule(nil(), str name)
     = match("", name = name);
 
+// Begin-end patterns
 private TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
     = beginEnd(begin.string, end.string, name = name, patterns = patterns);

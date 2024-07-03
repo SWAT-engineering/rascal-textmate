@@ -55,7 +55,7 @@ data TmRule
 
 TmGrammar addRule(TmGrammar g, TmRule r)
     = g [repository = g.repository + (r.name: r)]
-        [patterns = g.patterns + include("#<r.name>")];
+        [patterns = g.patterns + (include("#<r.name>") in g.patterns ? [] : [include("#<r.name>")])];
 
 @synopsis{
     Converts list of strings `names` to a map of captures
