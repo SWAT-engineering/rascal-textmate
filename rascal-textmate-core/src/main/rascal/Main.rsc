@@ -5,7 +5,6 @@
 module Main
 
 import Grammar;
-import lang::json::IO;
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
 
@@ -14,8 +13,8 @@ int main(type[&T <: Tree] tree, str scopeName, loc f) {
     return main(rsc, scopeName, f);
 }
 
-int main(RscGrammar rsc, str scopeName, loc f) {
+int main(RscGrammar rsc, str scopeName, loc l) {
     TmGrammar tm = toTmGrammar(rsc, scopeName);
-    writeJSON(f, tm, indent=2);
+    toJSON(tm, indent = 2, l = l);
     return 0;
 }

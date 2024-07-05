@@ -11,6 +11,7 @@ module lang::textmate::Grammar
 
 import List;
 import Set;
+import lang::json::IO;
 
 alias ScopeName = str;
 alias RegExpString = str;
@@ -63,8 +64,18 @@ data TmRule
         str include,
         Repository repository = ());
 
-// TODO: Add function to convert a TextMate grammar to JSON (so dependencies to
-// lang::json::IO can be removed from other modules)
+@synopsis{
+    Converts a TextMate grammar to JSON, optionally with custom indentation size
+    `indent` (default: `2`), and optionally by also writing the output to
+     location `l`
+}
+
+str toJSON(TmGrammar g, int indent = 2, loc l = |unknown:///|) {
+    if (l?) {
+        writeJSON(l, g, indent = indent);
+    }
+    return asJSON(g, indent = indent);
+}
 
 @synopsis{
     Adds a TextMate rule to both the repository and the patterns of TextMate

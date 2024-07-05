@@ -8,7 +8,6 @@ import Grammar;
 import List;
 import Map;
 import ParseTree;
-// import lang::json::IO;
 
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
@@ -37,7 +36,6 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect) {
     TmGrammar tm = transform(units);
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
-    // println(asJSON(repo, indent=2));
     
     RepositoryStats actual = <
         (0 | it + 1 | s <- repo, repo[s] is match),

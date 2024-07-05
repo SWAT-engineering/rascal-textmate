@@ -6,17 +6,15 @@
 module VSCode
 
 import Grammar;
-import lang::json::IO;
 import lang::rascal::\syntax::Rascal;
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
 
 int main() {
     str scopeName = "source.rascalmpl.injection";
-    loc f = |project://vscode-extension/syntaxes/rascal.tmLanguage.json|;
     RscGrammar rsc = getRscGrammar();
-    TmGrammar tm = toTmGrammar(rsc, scopeName)[injectionSelector="R:source.rascalmpl"];
-    writeJSON(f, tm, indent=2);
+    TmGrammar tm = toTmGrammar(rsc, scopeName)[injectionSelector = "R:source.rascalmpl"];
+    toJSON(tm, indent = 2, l = |project://vscode-extension/syntaxes/rascal.tmLanguage.json|);
     return 0;
 }
 
