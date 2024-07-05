@@ -172,6 +172,12 @@ TmGrammar transform(list[ConversionUnit] units) {
 TmRule toTmRule(ConversionUnit u)
     = toTmRule(u.rsc, u.prod);
 
+// TODO: Check if the size of rule names materially affects VS Code. Currently,
+// we use stringified productions as names, which is quite useful for debugging,
+// but maybe it leads to performance issues. If so, we should add a conversion
+// configuration flag to control generation of "long names" vs "short names" (as
+// long as names continue to be unique, everything should continue to work ok).
+
 private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _))
     = {<begin, end>} := getDelimiterPairs(rsc, delabel(def)) // TODO: Support non-singleton sets of delimiter pairs
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin>:<end>", [toTmRule(toRegExp(rsc, p), "<p>")])
