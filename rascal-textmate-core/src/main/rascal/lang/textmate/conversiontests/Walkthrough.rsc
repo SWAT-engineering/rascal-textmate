@@ -94,10 +94,12 @@ lexical String = @category="string.quoted.double" "\"" Alnum* "\"";
 //     convert; tail-recursion could be workable, but currently out of scope.)
 //
 //  2. It does not match newlines. (TextMate rules that involve matching against
-//     newlines are dysfunctional.)
+//     newlines are problematic because the tokenization engine operates line by
+//     line.)
 //
 //  3. It does not match the empty word. (TextMate rules that involve matching
-//     against the empty word are dysfunctional.)
+//     against the empty word are problematic because they match at every
+//     position.)
 //
 //  4. It has a `@category` tag.
 //
