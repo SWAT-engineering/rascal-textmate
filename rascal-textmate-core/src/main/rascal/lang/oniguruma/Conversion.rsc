@@ -5,6 +5,7 @@ import List;
 import ParseTree;
 import Set;
 import String;
+import lang::rascal::format::Escape;
 
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
@@ -77,10 +78,10 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     RegExp re = toRegExp(g, symbol);
 
     // Define four kinds of conditions (and convert them in a particular order)
-    list[Condition] exceptConditions = [c | c <- conditions, isExceptCondition(c)];
-    list[Condition] prefixConditions = [c | c <- conditions, isPrefixCondition(c)];
-    list[Condition] suffixConditions = [c | c <- conditions, isSuffixCondition(c)];
-    list[Condition] deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
+    exceptConditions = [c | c <- conditions, isExceptCondition(c)];
+    prefixConditions = [c | c <- conditions, isPrefixCondition(c)];
+    suffixConditions = [c | c <- conditions, isSuffixCondition(c)];
+    deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
     
     // Convert except conditions (depends on previous conersion)
     if (!isEmpty(exceptConditions)) {
@@ -88,7 +89,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
 
             bool keep(prod(def, _, _))
                 = \label(l, _) := def
-                ? !(\except(l) in exceptConditions)
+                ? \except(l) notin exceptConditions
                 : true;
             
             re = infix("|", toRegExps(g, {a | a <- alternatives, keep(a)}));
@@ -172,13 +173,4 @@ str encode(list[int] chars, bool withBounds = false)
     : intercalate("", [encode(i) | i <- chars]);
 
 str encode(int i)
-    = "\\u" + right(toHex(i), 4, "0");
-
-str toHex(int i) = "<i>" when 0 <= i && i < 10;
-str toHex(   10) = "A";
-str toHex(   11) = "B";
-str toHex(   12) = "C";
-str toHex(   13) = "D";
-str toHex(   14) = "E";
-str toHex(   15) = "F";
-str toHex(int i) = "<toHex(i / 16)><toHex(i % 16)>" when 15 < i;
+    = makeStringChar(i);
