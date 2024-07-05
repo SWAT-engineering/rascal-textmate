@@ -88,8 +88,8 @@ set[DelimiterPair] getDelimiterPairs(Grammar g, Symbol s) {
 }
 
 Maybe[DelimiterPair] getDelimiterPair([*_, Symbol begin, *between, Symbol end, *_], Symbol s)
-    = just(<begin, end>) when
-        isDelimiter(begin) && isDelimiter(end),
+    = just(<begin, end>)
+    when isDelimiter(begin) && isDelimiter(end),
         [*between1, /s, *between2] := between,
         !containsDelimiter(between1 + between2);
 
@@ -108,9 +108,9 @@ bool containsDelimiter(list[Symbol] symbols)
 }
 
 bool isDelimiter(lit(string))
-    = true when /^\w+$/ !:= string;
+    = /^\w+$/ !:= string;
 bool isDelimiter(cilit(string))
-    = true when /^\w+$/ !:= string;
+    = /^\w+$/ !:= string;
 
 default bool isDelimiter(Symbol _)
     = false;
@@ -120,9 +120,9 @@ default bool isDelimiter(Symbol _)
 }
 
 bool isKeyword(lit(string))
-    = true when /^\w+$/ := string;
+    = /^\w+$/ := string;
 bool isKeyword(cilit(string))
-    = true when /^\w+$/ := string;
+    = /^\w+$/ := string;
 
 default bool isKeyword(Symbol _)
     = false;
