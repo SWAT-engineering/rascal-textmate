@@ -1,15 +1,25 @@
+@synopsis{
+    Types and functions to represent TextMate grammars
+}
+
+@description{
+    ADTs and names are based on VS Code:
+    https://github.com/microsoft/vscode-textmate/blob/main/src/rawGrammar.ts
+}
+
 module lang::textmate::Grammar
 
 import List;
 import Set;
 
-// Based on VS Code:
-// https://github.com/microsoft/vscode-textmate/blob/main/src/rawGrammar.ts 
-
 alias ScopeName = str;
 alias RegExpString = str;
 alias Repository = map[str, TmRule];
 alias Captures = map[str, map[str, ScopeName]];
+
+@synopsis{
+    Representation of a TextMate grammar
+}
 
 data TmGrammar = grammar(
     // Not supported by VS Code:
@@ -27,6 +37,10 @@ data TmGrammar = grammar(
     list[str] fileTypes = [],
     str name = "",
     str firstLineMatch = "");
+
+@synopsis{
+    Representation of a TextMate rule in a TextMate grammar
+}
 
 data TmRule
     = match(
@@ -49,8 +63,12 @@ data TmRule
         str include,
         Repository repository = ());
 
+// TODO: Add function to convert a TextMate grammar to JSON (so dependencies to
+// lang::json::IO can be removed from other modules)
+
 @synopsis{
-    Adds a rule to both the repository and the patterns of grammar `g`
+    Adds a TextMate rule to both the repository and the patterns of TextMate
+    grammar `g`
 }
 
 TmGrammar addRule(TmGrammar g, TmRule r)
@@ -58,7 +76,7 @@ TmGrammar addRule(TmGrammar g, TmRule r)
         [patterns = appendIfAbsent(g.patterns, include("#<r.name>"))];
 
 // TODO: This function could be moved to a separate, generic module
-list[&T] appendIfAbsent(list[&T] vs, &T v)
+private list[&T] appendIfAbsent(list[&T] vs, &T v)
     = v in vs ? vs : vs + v;
 
 @synopsis{

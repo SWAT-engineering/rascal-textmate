@@ -1,10 +1,16 @@
-module lang::rascal::grammar::analyze::Dependencies
+@synopsis{
+    Types and functions to analyze dependencies among productions
+}
 
-// This module does not import:
-//   - `analysis::graphs::Graph`, because it works for *reflexive* binary
-//     relations, but not non-reflexive ones (as needed here);
-//   - `analysis::grammars::Dependency`, because it analyzes dependencies
-//     between symbols instead of productions.
+@description{
+    This module does not import:
+      - `analysis::graphs::Graph`, because it works for *reflexive* binary
+        relations, but not non-reflexive ones (as needed here);
+      - `analysis::grammars::Dependency`, because it analyzes dependencies
+        between symbols instead of productions.
+}
+
+module lang::rascal::grammar::analyze::Dependencies
 
 import Grammar;
 import ParseTree;
@@ -14,7 +20,8 @@ import Set;
 import lang::rascal::grammar::Util;
 
 @synoposis{
-    Interface to manipulate dependency graphs for productions
+    Representation of an interface with functions to manipulate/query dependency
+    graphs among productions
 }
 
 data Dependencies = deps(
@@ -47,7 +54,7 @@ Dependencies deps(Graph[Production] g) {
 }
 
 @synopsis{
-    Converts grammar `g` to a dependency graph for its productions
+    Converts grammar `g` to a dependency graph among its productions
 }
 
 Graph[Production] toGraph(Grammar g)
@@ -65,7 +72,8 @@ private rel[Production, Production] toEdges(Grammar g)
 // module.
 
 @synopsis{
-    Graphs are used to represent (possibly non-reflexive) binary relations
+    Representation of graphs to manipulate/query (possibly non-reflexive) binary
+    relations
 }
 
 alias Graph[&Node] = tuple[
@@ -73,7 +81,7 @@ alias Graph[&Node] = tuple[
     rel[&Node, &Node] edges];
 
 @synopsis {
-    Predicates are used to select nodes in a graph based on their own
+    Representation of predicates to select nodes in a graph based on their own
     properties, their ancestors, and their descendants
 }
 
@@ -103,11 +111,15 @@ set[&Node] getNodes(Graph[&Node] g, Predicate[&Node] p,
 }
 
 @synopsis{
-    Filters/removes nodes (and connected edges) from graph `g`
+    Filters nodes (and connected edges) from graph `g`
 }
 
 Graph[&Node] filterNodes(Graph[&Node] g, set[&Node] nodes)
     = <g.nodes & nodes, carrierR(g.edges, nodes)>;
+
+@synopsis{
+    Removes nodes (and connected edges) from graph `g`
+}
 
 Graph[&Node] removeNodes(Graph[&Node] g, set[&Node] nodes)
     = <g.nodes - nodes, carrierX(g.edges, nodes)>;

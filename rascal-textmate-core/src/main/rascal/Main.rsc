@@ -1,3 +1,7 @@
+@synopsis{
+    Main functions to generate TextMate grammars for Rascal grammars
+}
+
 module Main
 
 import Grammar;

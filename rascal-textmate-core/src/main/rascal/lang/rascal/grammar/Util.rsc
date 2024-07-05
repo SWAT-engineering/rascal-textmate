@@ -1,3 +1,7 @@
+@synopsis{
+    Utility functions to work with grammars, productions, and symbols.
+}
+
 module lang::rascal::grammar::Util
 
 import Exception;
@@ -27,6 +31,11 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
     return false;
 }
 
+@synopsis{
+    Lookups a list of productions for symbol `s` in grammar `g`, replacing
+    formal parameters with actual parameters when needed
+}
+
 list[Production] lookup(Grammar g, s: \parameterized-sort(name, actual))
     = [subst(p, formal, actual) | /p: prod(\parameterized-sort(name, formal), _, _) := g.rules[s] ? []]
     + [subst(p, formal, actual) | /p: prod(label(_, \parameterized-sort(name, formal)), _, _) := g.rules[s] ? []];
@@ -40,16 +49,21 @@ default list[Production] lookup(Grammar g, Symbol s)
     + [p | /p: prod(label(_, s), _, _) := g.rules[s] ? []];
 
 @synopsis{
-    Utility functions for productions
+    Replaces in `t` each occurrence of each symbol in `from` with the
+    corresponding symbol (at the same index) in `to`
 }
 
 &T subst(&T t, list[Symbol] from, list[Symbol] to)
-    = subst(t, toMapUnique(zip2(from, to))) when size(from) == size(to);
-&T subst(&T t, map[Symbol, Symbol] m)
+    = subst(t, toMapUnique(zip2(from, to)))
+    when size(from) == size(to);
+    
+private &T subst(&T t, map[Symbol, Symbol] m)
     = visit (t) { case Symbol s => m[s] when s in m };
 
 @synopsis{
-    Utility functions for symbols
+    Expands symbols as follows:
+      - `{s ","}+` => `s ("," s)*`
+      - `{s ","}*` => `(s ("," s)*)?`
 }
 
 Symbol expand(\iter-seps(symbol, separators))
@@ -57,23 +71,38 @@ Symbol expand(\iter-seps(symbol, separators))
 Symbol expand(\iter-star-seps(symbol, separators))
     = \opt(expand(\iter-seps(symbol, separators)));
 
-Symbol delabel(label(_, Symbol s))
-    = s;
-default Symbol delabel(Symbol s)
-    = s;
+@synopsis{
+    Removes the label from symbol `s`, if any
+}
+
+Symbol delabel(label(_, Symbol s)) = s;
+default Symbol delabel(Symbol s)   = s;
+
+@synopsis{
+    Gets from set `symbols` each symbol that is a strict prefix of any other
+    symbol in `symbols`
+}
 
 set[Symbol] getStrictPrefixes(set[Symbol] symbols)
     = {s1 | s1 <- symbols, any(s2 <- symbols, isStrictPrefix(s1, s2))};
+
+@synopsis{
+    Checks if symbol `s1` is a strict prefix of symbol `s2`
+}
 
 bool isStrictPrefix(Symbol s1, Symbol s2)
     = s1.string? && s2.string? && s1.string != s2.string && startsWith(s2.string, s1.string);
 
 @synopsis{
-    Utility functions for conditions
+    Checks if a condition is an except condition
 }
 
 bool isExceptCondition(\except(_))          = true;
 default bool isExceptCondition(Condition _) = false;
+
+@synopsis{
+    Checks if a condition is a prefix condition
+}
 
 bool isPrefixCondition(\precede(_))         = true;
 bool isPrefixCondition(\not-precede(_))     = true;
@@ -81,10 +110,18 @@ bool isPrefixCondition(\at-column(_))       = true;
 bool isPrefixCondition(\begin-of-line())    = true;
 default bool isPrefixCondition(Condition _) = false;
 
+@synopsis{
+    Checks if a condition is an suffix condition
+}
+
 bool isSuffixCondition(\follow(_))          = true;
 bool isSuffixCondition(\not-follow(_))      = true;
 bool isSuffixCondition(\end-of-line())      = true;
 default bool isSuffixCondition(Condition _) = false;
+
+@synopsis{
+    Checks if a condition is a delete condition
+}
 
 bool isDeleteCondition(\delete(_))          = true;
 default bool isDeleteCondition(Condition _) = false;

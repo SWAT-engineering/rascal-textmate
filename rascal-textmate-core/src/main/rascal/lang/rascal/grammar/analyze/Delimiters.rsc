@@ -1,3 +1,7 @@
+@synopsis{
+    Types and functions to analyse delimiters in productions
+}
+
 module lang::rascal::grammar::analyze::Delimiters
 
 import Grammar;
@@ -7,13 +11,13 @@ import util::Maybe;
 
 import lang::rascal::grammar::Util;
 
+alias DelimiterPair = tuple[Symbol begin, Symbol end];
+
 @synopsis{
     Gets all delimiter pairs that enclose symbol `s` in grammar `g` when `s` is
     always enclosed by delimiters. Returns the empty set when at least one
     occurrence of `s` in `g` is not enclosed by delimiters.
 }
-
-alias DelimiterPair = tuple[Symbol begin, Symbol end];
 
 set[DelimiterPair] getDelimiterPairs(Grammar g, Symbol s) {
     map[Symbol, set[DelimiterPair]] index = ();

@@ -1,3 +1,7 @@
+@synopsis{
+    Functions to simplify testing of module `lang::testmate::Conversion`
+}
+
 module lang::textmate::ConversionTests
 
 import Grammar;

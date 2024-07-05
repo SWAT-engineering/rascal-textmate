@@ -1,3 +1,7 @@
+@synopsis{
+    Types and functions to transform Rascal grammars to TextMate grammars
+}
+
 module lang::textmate::Conversion
 
 import Grammar;
@@ -14,29 +18,31 @@ import lang::textmate::Grammar;
 
 alias RscGrammar = Grammar;
 
+data ConversionUnit = unit(
+    RscGrammar rsc,
+    Production prod);
+
 @synopsis{
     Converts Rascal grammar `rsc` to a TextMate grammar
 }
 
-// The conversion consists of two stages:
-//   - analysis (function `analyze`);
-//   - transformation (function `transform`).
-//
-// The aim of the analysis stage is to select those productions of the Rascal
-// grammar that are "suitable for conversion" to TextMate rules. The aim of the
-// transformation stage is to subsequently convert those productions and produce
-// a TextMate grammar.
-//
-// To be able to cleanly separate analysis and transformation, productions
-// selected during the analysis stage are wrapped into *conversion units* that
-// may contain additional meta-data needed during the transformation stage.
+@description{
+    The conversion consists of two stages:
+      - analysis (function `analyze`);
+      - transformation (function `transform`).
+
+    The aim of the analysis stage is to select those productions of the Rascal
+    grammar that are "suitable for conversion" to TextMate rules. The aim of the
+    transformation stage is to subsequently convert those productions and
+    produce a TextMate grammar.
+
+    To be able to cleanly separate analysis and transformation, productions
+    selected during the analysis stage are wrapped into *conversion units* that
+    may contain additional meta-data needed during the transformation stage.
+}
 
 TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName)
     = transform(analyze(rsc)) [scopeName = scopeName];
-
-data ConversionUnit = unit(
-    RscGrammar rsc,
-    Production prod);
 
 @synoposis{
     Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of
@@ -56,26 +62,28 @@ data ConversionUnit = unit(
     See the walkthrough for further motivation and examples.
 }
 
-// The analysis consists of three stages:
-//  1. selection of user-defined productions;
-//  2. creation of synthetic delimiters production;
-//  3. creation of synthetic keywords production.
-//
-// In stage 1, a dependency graph among all productions that occur in `rsc`
-// (specifically: `prod` constructors) is created. This dependency graph is
-// subsequently pruned to keep only the suitable-for-conversion productions:
-//   - first, productions with a cyclic dependency on themselves are removed;
-//   - next, productions that only involve single-line matching are filtered;
-//   - next, productions that only involve non-empty word matching are filtered;
-//   - next, productions that have a `@category` tag are filtered.
-//
-// In stage 2, the set of all delimiters that occur in `rsc` is created. This
-// set is subsequently reduced by removing:
-//   - strict prefixes of delimiters;
-//   - delimiters that enclose user-defined productions;
-//   - delimiters that occur at the beginning of user-defined productions.
-//
-// In stage 3, the set of all keywords that occur in `rsc` is created.
+@description{
+    The analysis consists of three stages:
+      1. selection of user-defined productions;
+      2. creation of synthetic delimiters production;
+      3. creation of synthetic keywords production.
+
+    In stage 1, a dependency graph among all productions that occur in `rsc`
+    (specifically: `prod` constructors) is created. This dependency graph is
+    subsequently pruned to keep only the suitable-for-conversion productions:
+      - first, productions with a cyclic dependency on themselves are removed;
+      - next, productions that only involve single-line matching are filtered;
+      - next, productions that only involve non-empty word matching are filtered;
+      - next, productions that have a `@category` tag are filtered.
+
+    In stage 2, the set of all delimiters that occur in `rsc` is created. This
+    set is subsequently reduced by removing:
+      - strict prefixes of delimiters;
+      - delimiters that enclose user-defined productions;
+      - delimiters that occur at the beginning of user-defined productions.
+
+    In stage 3, the set of all keywords that occur in `rsc` is created.
+}
 
 list[ConversionUnit] analyze(RscGrammar rsc) {
 
@@ -123,12 +131,14 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
 @synopsis{
     Transforms a list of productions, in the form of conversion units, to a
-    TextMate grammar.
+    TextMate grammar
 }
 
-// The transformation consists of two stages:
-//  1. creation of TextMate rules;
-//  2. composition of TextMate rules into a TextMate grammar.
+@description{
+    The transformation consists of two stages:
+      1. creation of TextMate rules;
+      2. composition of TextMate rules into a TextMate grammar.
+}
 
 TmGrammar transform(list[ConversionUnit] units) {
 
@@ -167,10 +177,8 @@ private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _))
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin>:<end>", [toTmRule(toRegExp(rsc, p), "<p>")])
     : toTmRule(toRegExp(rsc, p), "<p>");
 
-// Match patterns
 private TmRule toTmRule(RegExp re, str name)
     = match(re.string, captures = toCaptures(re.categories), name = name);
 
-// Begin-end patterns
 private TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
     = beginEnd(begin.string, end.string, name = name, patterns = patterns);

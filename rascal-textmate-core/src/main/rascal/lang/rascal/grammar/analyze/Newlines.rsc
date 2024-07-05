@@ -1,3 +1,7 @@
+@synopsis{
+    Functions to analyze presence/absence of newline characters in productions
+}
+
 module lang::rascal::grammar::analyze::Newlines
 
 import Grammar;
@@ -29,4 +33,4 @@ bool hasNewline(str s)
 bool hasNewline(range(begin, end))
     = begin <= LF && LF <= end;
 
-int LF = 10;
+private int LF = 10;

@@ -1,3 +1,7 @@
+@synopsis{
+    Types and functions to transform productions to regular expressions
+}
+
 module lang::oniguruma::Conversion
 
 import Grammar;

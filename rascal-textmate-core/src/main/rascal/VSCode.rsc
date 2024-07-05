@@ -1,3 +1,8 @@
+@synopsis{
+    Main function to generate a new TextMate grammar for use in the special VS
+    Code extension
+}
+
 module VSCode
 
 import Grammar;
