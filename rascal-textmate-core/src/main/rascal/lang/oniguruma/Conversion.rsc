@@ -36,8 +36,8 @@ RegExp toRegExp(Grammar g, prod(_, symbols, attributes)) {
 // `Type`
 RegExp toRegExp(Grammar g, \label(_, symbol))
     = toRegExp(g, symbol);
-RegExp toRegExp(Grammar g, \parameter(_, _))
-    = nil(); // Covered by `lookup` (which substitutes actuals for formals)
+RegExp toRegExp(Grammar g, \parameter(_, _)) {
+    throw "Presumably unreachable..."; } // Covered by `lookup` (which substitutes actuals for formals)
 
 // `ParseTree`: Start
 RegExp toRegExp(Grammar g, \start(symbol))
@@ -57,7 +57,7 @@ RegExp toRegExp(Grammar g, \char-class(ranges))
 
 // `ParseTree`: Regular expressions
 RegExp toRegExp(Grammar _, \empty())
-    = nil();
+    = regExp("", []);
 RegExp toRegExp(Grammar g, \opt(symbol))
     = suffix("??", toRegExp(g, symbol)); // Reluctant quantifier
 RegExp toRegExp(Grammar g, \iter(symbol))
@@ -83,7 +83,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     suffixConditions = [c | c <- conditions, isSuffixCondition(c)];
     deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
     
-    // Convert except conditions (depends on previous conersion)
+    // Convert except conditions (depends on previous conversion)
     if (!isEmpty(exceptConditions)) {
         if (/\choice(symbol, alternatives) := g) {
 
@@ -93,8 +93,6 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
                 : true;
             
             re = infix("|", toRegExps(g, {a | a <- alternatives, keep(a)}));
-        } else {
-            re = nil(); // Indicates failure
         }
     }
 
@@ -111,15 +109,11 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     // Convert delete conditions (depends on previous conversions)
     if (!isEmpty(deleteConditions)) {
         RegExp delete = infix("|", [toRegExp(g, s) | \delete(s) <- deleteConditions]);
-        if (regExp(string1, categories1) := re, regExp(string2, categories2) := delete) {
             
-            // TODO: Explain this complicated conversion...
-            str string = "(?=(?\<head\><string1>)(?\<tail\>.*)$)(?!(?:<string2>)\\k\<tail\>$)\\k\<head\>";
-            list[str] categories = ["", *categories1, "", *categories2];
-            re = regExp(string, categories);
-        } else {
-            re = nil(); // Indicates failure
-        }
+        // TODO: Explain this complicated conversion...
+        str string = "(?=(?\<head\><re.string>)(?\<tail\>.*)$)(?!(?:<delete.string>)\\k\<tail\>$)\\k\<head\>";
+        list[str] categories = ["", *re.categories, "", *delete.categories];
+        re = regExp(string, categories);
     }
 
     return re;
@@ -141,16 +135,16 @@ RegExp toRegExp(Grammar g, \precede(symbol))
     = prefix("(?\<=", suffix(")", toRegExp(g, symbol)));
 RegExp toRegExp(Grammar g, \not-precede(symbol))
     = prefix("(?\<!", suffix(")", toRegExp(g, symbol)));
-RegExp toRegExp(Grammar g, \delete(symbol))
-    = nil(); // Covered by `toRegExp(Grammar g, \conditional(symbol, conditions))`
+RegExp toRegExp(Grammar g, \delete(symbol)) {
+    throw "Presumably unreachable..."; } // Covered by `toRegExp(Grammar g, \conditional(symbol, conditions))`
 RegExp toRegExp(Grammar _, \at-column(n))
     = regExp("(?\<=$<right("", n, ".")>)", []);
 RegExp toRegExp(Grammar _, \begin-of-line())
     = regExp("(?:^)", []);
 RegExp toRegExp(Grammar _, \end-of-line())
     = regExp("(?:$)", []);
-RegExp toRegExp(Grammar _, \except(_))
-    = nil(); // Covered by `toRegExp(Grammar g, \conditional(symbol, conditions))`
+RegExp toRegExp(Grammar _, \except(_)) {
+    throw "Presumably unreachable..."; } // Covered by `toRegExp(Grammar g, \conditional(symbol, conditions))`
 
 default RegExp toRegExp(Grammar _, Condition c) {
     throw "Unsupported condition <c>";

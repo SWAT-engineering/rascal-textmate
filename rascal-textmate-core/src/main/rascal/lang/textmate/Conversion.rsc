@@ -168,10 +168,8 @@ private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _))
     : toTmRule(toRegExp(rsc, p), "<p>");
 
 // Match patterns
-private TmRule toTmRule(regExp(string, categories), str name)
-    = match(string, captures = toCaptures(categories), name = name);
-private TmRule toTmRule(nil(), str name)
-    = match("", name = name);
+private TmRule toTmRule(RegExp re, str name)
+    = match(re.string, captures = toCaptures(re.categories), name = name);
 
 // Begin-end patterns
 private TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
