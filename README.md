@@ -1,4 +1,4 @@
-# rascal-textmate-core
+# rascal-textmate
 
 The aim of this project is to design and implement a scalable converter from
 Rascal grammars to TextMate grammars. TextMate grammars generated in this way
