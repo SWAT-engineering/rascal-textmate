@@ -9,11 +9,19 @@ import String;
     Utility functions for grammars
 }
 
-bool tryParse(Grammar g, Symbol s, str input) {
-    if (isNonTerminalType(s) && \parameterized-sort(_, _) !:= s && \parameterized-lex(_, _) !:= s) {
+bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
+    if (isNonTerminalType(s) && !(s is \parameterized-sort) && !(s is \parameterized-lex)) {
         if (value v := type(s, g.rules), type[Tree] t := v) {
-            try { parse(t, input); return true; }
-            catch ParseError(_): return false;
+            try {
+                parse(t, input, allowAmbiguity = allowAmbiguity);
+                return true;
+            }
+            catch ParseError(_): {
+                return false;
+            }
+            catch Ambiguity(_, _, _): {
+                return false;
+            }
         }
     }
     return false;
