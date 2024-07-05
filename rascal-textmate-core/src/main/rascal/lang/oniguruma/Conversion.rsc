@@ -10,6 +10,7 @@ import ParseTree;
 import Set;
 import String;
 import lang::rascal::format::Escape;
+import util::Math;
 
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
@@ -170,5 +171,26 @@ str encode(list[int] chars, bool withBounds = false)
     ? "\\b<encode(chars, withBounds = false)>\\b"
     : intercalate("", [encode(i) | i <- chars]);
 
-str encode(int i)
-    = makeStringChar(i);
+str encode(int char) {
+    if (char <= 0xFFFF) {
+        return \u(char);
+    } else {
+        // The following formulas to compute surrogate pairs are taken from:
+        // https://www.unicode.org/versions/Unicode3.0.0/
+        int high = ((char - 0x10000) / 0x400) + 0xD800;
+        int low = ((char - 0x10000) % 0x400) + 0xDC00;
+        return \u(high) + \u(low);
+    }
+}
+
+private str \u(int i)
+    = "\\u<right(toHex(i), 4, "0")>";
+
+private str toHex(int i)
+    = i < 16 
+    ? hex[i]
+    : toHex(i / 16) + toHex(i % 16);
+
+private list[str] hex
+    = ["<i>" | i <- [0..10]]
+    + ["A", "B", "C", "D", "E", "F"];
