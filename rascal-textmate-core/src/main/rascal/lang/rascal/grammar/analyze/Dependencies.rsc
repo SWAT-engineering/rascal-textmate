@@ -1,8 +1,8 @@
 module lang::rascal::grammar::analyze::Dependencies
 
 // This module does not import:
-//   - `analysis::graphs::Graph`, because it works for *reflective* edge
-//     relations, but not non-reflective ones (as needed here);
+//   - `analysis::graphs::Graph`, because it works for *reflexive* binary
+//     relations, but not non-reflexive ones (as needed here);
 //   - `analysis::grammars::Dependency`, because it analyzes dependencies
 //     between symbols instead of productions.
 
@@ -18,14 +18,14 @@ import lang::rascal::grammar::Util;
 }
 
 data Dependencies = deps(
-    // Filters productions that satisfy predicate `p` (and their dependencies)
+    // Filters productions that satisfy a predicate (and their dependencies)
     // from the underlying dependency graph
-    Dependencies(Predicate p) filterProds,
+    Dependencies(Predicate[Production]) filterProds,
 
-    // Removes productions that satisfy predicate `p` (and their dependencies),
+    // Removes productions that satisfy a predicate (and their dependencies),
     // from the underlying dependency graph, optionally including (for removal)
     // all ancestors of those productions (and their dependencies)
-    Dependencies(Predicate p, bool removeAncestors) removeProds,
+    Dependencies(Predicate[Production], bool) removeProds,
 
     // Gets the productions from the underlying dependency graph
     list[Production]() getProds
@@ -35,10 +35,10 @@ data Dependencies = deps(
     Implements the `Dependencies` interface
 }
 
-Dependencies deps(Graph g) {
-    Dependencies filterProds(Predicate p)
+Dependencies deps(Graph[Production] g) {
+    Dependencies filterProds(Predicate[Production] p)
         = deps(filterNodes(g, getNodes(g, p)));
-    Dependencies removeProds(Predicate p, bool removeAncestors)
+    Dependencies removeProds(Predicate[Production] p, bool removeAncestors)
         = deps(removeNodes(g, getNodes(g, p, getAncestors = removeAncestors)));
     list[Production] getProds()
         = toList(g.nodes);
@@ -50,58 +50,64 @@ Dependencies deps(Graph g) {
     Converts grammar `g` to a dependency graph for its productions
 }
 
-// TODO: If these aliases were to be parameterized, then they (and the functions
-// that rely on them) could be moved to a separate, generic module.
-alias Graph = tuple[Nodes nodes, Edges edges];
-alias Nodes = set[Node];
-alias Node  = Production;
-alias Edges = rel[Node, Node];
-alias Index = map[Node, set[Node]];
-
-Graph toGraph(Grammar g)
+Graph[Production] toGraph(Grammar g)
     = <toNodes(g), toEdges(g)>;
 
-private Nodes toNodes(Grammar g)
+private set[Production] toNodes(Grammar g)
     = {n | /n: prod(_, _, _) := g};
-private Nodes toNodes(Grammar g, Symbol s)
+private set[Production] toNodes(Grammar g, Symbol s)
     = {n | /n: prod(_, _, _) := g.rules[delabel(s)] ? []};
 
-private Edges toEdges(Grammar g)
+private rel[Production, Production] toEdges(Grammar g)
     = {<from, to> | from: prod(_, /Symbol s, _) <- toNodes(g), to <- toNodes(g, s)}; 
 
+// TODO: The remaining code in this file could be moved to a separate, generic
+// module.
+
 @synopsis{
-    Gets the nodes of dependency graph `g` that satisfy predicate `p`,
-    optionally including all ancestors/descendants of those nodes
+    Graphs are used to represent (possibly non-reflexive) binary relations
 }
 
-// Predicates are used to select nodes in the dependency graph, based on their
-// own properties, their ancestors, and their descendants
-alias Predicate = bool(
-    Node  n, 
-    Nodes ancestors /* of `n` in the dependency graph */,  
-    Nodes descendants /* of `n` in the dependency graph */);
+alias Graph[&Node] = tuple[
+    set[&Node] nodes,
+    rel[&Node, &Node] edges];
 
-Nodes getNodes(Graph g, Predicate p,
+@synopsis {
+    Predicates are used to select nodes in a graph based on their own
+    properties, their ancestors, and their descendants
+}
+
+alias Predicate[&Node] = bool(
+    &Node n, 
+    set[&Node] ancestors /* of `n` in the graph */,  
+    set[&Node] descendants /* of `n` in the graph */);
+
+@synopsis{
+    Gets the nodes of graph `g` that satisfy predicate `p`, optionally including
+    all ancestors/descendants of those nodes
+}
+
+set[&Node] getNodes(Graph[&Node] g, Predicate[&Node] p,
         bool getAncestors = false, bool getDescendants = false) {
     
     // Compute ancestors/descendants of nodes
-    Edges closure = g.edges+;
-    Index ancestors = (n: {} | n <- g.nodes) + index(invert(closure));
-    Index descendants = (n: {} | n <- g.nodes) + index(closure);
+    rel[&Node, &Node] closure = g.edges+;
+    map[&Node, set[&Node]] ancestors = index(invert(closure));
+    map[&Node, set[&Node]] descendants = index(closure);
 
     // Select nodes
-    Nodes nodes = {n | n <- g.nodes, p(n, ancestors[n], descendants[n])};
-    nodes += ({} | it + ancestors[n] | getAncestors, n <- nodes);
-    nodes += ({} | it + descendants[n] | getDescendants, n <- nodes);
+    nodes = {n | n <- g.nodes, p(n, ancestors[n] ? {}, descendants[n] ? {})};
+    nodes += ({} | it + (ancestors[n] ? {}) | getAncestors, n <- nodes);
+    nodes += ({} | it + (descendants[n] ? {}) | getDescendants, n <- nodes);
     return nodes;
 }
 
 @synopsis{
-    Filters/removes nodes (and connected edges) from dependency graph `g`
+    Filters/removes nodes (and connected edges) from graph `g`
 }
 
-Graph filterNodes(Graph g, Nodes nodes)
+Graph[&Node] filterNodes(Graph[&Node] g, set[&Node] nodes)
     = <g.nodes & nodes, carrierR(g.edges, nodes)>;
 
-Graph removeNodes(Graph g, Nodes nodes)
+Graph[&Node] removeNodes(Graph[&Node] g, set[&Node] nodes)
     = <g.nodes - nodes, carrierX(g.edges, nodes)>;

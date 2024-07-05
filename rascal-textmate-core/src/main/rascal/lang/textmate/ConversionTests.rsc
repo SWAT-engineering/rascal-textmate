@@ -1,7 +1,6 @@
 module lang::textmate::ConversionTests
 
 import Grammar;
-import IO;
 import List;
 import Map;
 import ParseTree;
