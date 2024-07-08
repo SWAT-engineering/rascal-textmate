@@ -31,6 +31,14 @@
       <artifactId>rascal</artifactId>
       <version>0.34.1</version>
     </dependency>
+
+    <!-- Rascal tests require JUnit 4 -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
