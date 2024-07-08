@@ -171,7 +171,9 @@ str encode(list[int] chars, bool withBounds = false)
     : intercalate("", [encode(i) | i <- chars]);
 
 str encode(int char)
-    = "\\x{<right(toHex(char), 8, "0")>}";
+    = char in alnum 
+    ? stringChar(char)
+    : "\\x{<toHex(char)>}";
 
 private str toHex(int i)
     = i < 16 
@@ -181,3 +183,6 @@ private str toHex(int i)
 private list[str] hex
     = ["<i>" | i <- [0..10]]
     + ["A", "B", "C", "D", "E", "F"];
+
+private set[int] alnum
+    = toSet([48..58] + [65..91] + [97..123]);
