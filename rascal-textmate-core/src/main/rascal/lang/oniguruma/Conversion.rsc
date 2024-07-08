@@ -9,7 +9,6 @@ import List;
 import ParseTree;
 import Set;
 import String;
-import lang::rascal::format::Escape;
 import util::Math;
 
 import lang::oniguruma::RegExp;
@@ -172,7 +171,7 @@ str encode(list[int] chars, bool withBounds = false)
     : intercalate("", [encode(i) | i <- chars]);
 
 str encode(int char) {
-    if (char <= 0xFFFF) {
+    if (char <= 0x7FFF) {
         return \u(char);
     } else {
         // The following formulas to compute surrogate pairs are taken from:
