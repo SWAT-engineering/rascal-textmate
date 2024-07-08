@@ -8,6 +8,7 @@ import Grammar;
 import List;
 import Map;
 import ParseTree;
+import IO;
 
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
@@ -18,7 +19,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect) {
     for (u <- actual) {
         assert u in expect : "Actual but not expected: <u.prod>";
     }
-    
+
     for (u <- expect) {
         assert u in actual : "Expected but not actual: <u.prod>";
     }
@@ -36,6 +37,7 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect) {
     TmGrammar tm = transform(units);
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
+    println(toJSON(tm));
     
     RepositoryStats actual = <
         (0 | it + 1 | s <- repo, repo[s] is match),
