@@ -99,9 +99,8 @@ set[&Node] getNodes(Graph[&Node] g, Predicate[&Node] p,
         bool getAncestors = false, bool getDescendants = false) {
     
     // Compute ancestors/descendants of nodes
-    rel[&Node, &Node] closure = g.edges+;
-    map[&Node, set[&Node]] ancestors = index(invert(closure));
-    map[&Node, set[&Node]] descendants = index(closure);
+    rel[&Node, &Node] descendants = g.edges+;
+    rel[&Node, &Node] ancestors = invert(descendants);
 
     // Select nodes
     nodes = {n | n <- g.nodes, p(n, ancestors[n] ? {}, descendants[n] ? {})};
