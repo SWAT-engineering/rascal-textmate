@@ -170,20 +170,8 @@ str encode(list[int] chars, bool withBounds = false)
     ? "\\b<encode(chars, withBounds = false)>\\b"
     : intercalate("", [encode(i) | i <- chars]);
 
-str encode(int char) {
-    if (char <= 0x7FFF) {
-        return \u(char);
-    } else {
-        // The following formulas to compute surrogate pairs are taken from:
-        // https://www.unicode.org/versions/Unicode3.0.0/
-        int high = ((char - 0x10000) / 0x400) + 0xD800;
-        int low = ((char - 0x10000) % 0x400) + 0xDC00;
-        return \u(high) + \u(low);
-    }
-}
-
-private str \u(int i)
-    = "\\u<right(toHex(i), 4, "0")>";
+str encode(int char)
+    = "\\x{<right(toHex(char), 8, "0")>}";
 
 private str toHex(int i)
     = i < 16 

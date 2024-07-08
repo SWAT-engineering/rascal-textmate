@@ -1,14 +1,15 @@
 @synopsis{
-    Types and functions to represent regular expressions in the .NET version of
-    the Oniguruma format for regular expressions, as required by the VS Code
-    TextMate-based tokenizer (main difference: hexadecimal characters are
-    represented as `\uHHHH` instead of as `\x{HHHH}`)
+    Types and functions to represent regular expressions in the
+    the Oniguruma format (required by the TextMate tokenizer)
 }
 
 @description{
     Further reading:
-      - https://macromates.com/manual/en/regular_expressions
-      - https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expressions
+     1. https://macromates.com/manual/en/regular_expressions
+     2. https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expressions
+    
+    Note: A significant difference with [1] is that hexadecimal characters need
+    to be represented as `\x{0HHHHHHH}` instead of as `\x{7HHHHHHH}`.
 }
 
 module lang::oniguruma::RegExp
