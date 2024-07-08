@@ -6,7 +6,6 @@ module lang::rascal::grammar::analyze::Delimiters
 
 import Grammar;
 import ParseTree;
-import Set;
 import util::Maybe;
 
 import lang::rascal::grammar::Util;
@@ -50,7 +49,7 @@ set[DelimiterPair] getDelimiterPairs(Grammar g, Symbol s) {
                 }
                 
                 // Case 2b: `sParent` has delimiter pairs
-                else if (morePairs := getDelimiterPairs(delabel(sParent)), !isEmpty(morePairs)) {
+                else if (morePairs := getDelimiterPairs(delabel(sParent)), _ <- morePairs) {
                     pairs += morePairs;
                 }
                 

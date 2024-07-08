@@ -7,7 +7,6 @@ module lang::textmate::Conversion
 import Grammar;
 import IO;
 import ParseTree;
-import Set;
 
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
@@ -122,7 +121,7 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     list[Production] prodsKeywords = [prod(lex("keywords"), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
     // Return
-    bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = isEmpty(alternatives);
+    bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
     list[ConversionUnit] units
         = [unit(rsc, p) | p <- prodsDelimiters, !isEmptyProd(p)]
         + [unit(rsc, p) | p <- prods]

@@ -88,7 +88,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
     
     // Convert except conditions (depends on previous conversion)
-    if (!isEmpty(exceptConditions)) {
+    if (_ <- exceptConditions) {
         if (/\choice(symbol, alternatives) := g) {
 
             bool keep(prod(def, _, _))
@@ -101,17 +101,17 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     }
 
     // Convert prefix conditions (depends on previous conversions)
-    if (!isEmpty(prefixConditions)) {
+    if (_ <- prefixConditions) {
         re = infix("", toRegExps(g, prefixConditions) + [re]);
     }
 
     // Convert suffix conditions (depends on previous conversions)
-    if (!isEmpty(suffixConditions)) {
+    if (_ <- suffixConditions) {
         re = infix("", [re] + toRegExps(g, suffixConditions));
     }
 
     // Convert delete conditions (depends on previous conversions)
-    if (!isEmpty(deleteConditions)) {
+    if (_ <- deleteConditions) {
         RegExp delete = infix("|", [toRegExp(g, s) | \delete(s) <- deleteConditions]);
             
         // TODO: Explain this complicated conversion...
@@ -185,4 +185,4 @@ private list[str] hex
     + ["A", "B", "C", "D", "E", "F"];
 
 private set[int] alnum
-    = toSet([48..58] + [65..91] + [97..123]);
+    = {*[48..58], *[65..91], *[97..123]};
