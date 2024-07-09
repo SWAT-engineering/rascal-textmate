@@ -1,0 +1,11 @@
+# SYNTAX TEST "source.pico"
+
+%% foo bar
+# <-- Comment
+#  ^^^^^^^ Comment
+
+%% do
+#  ^^ Comment
+
+do
+# <-- keyword.control
