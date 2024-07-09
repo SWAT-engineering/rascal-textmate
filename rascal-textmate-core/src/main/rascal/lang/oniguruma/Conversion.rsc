@@ -170,10 +170,29 @@ str encode(list[int] chars, bool withBounds = false)
     ? "\\b<encode(chars, withBounds = false)>\\b"
     : intercalate("", [encode(i) | i <- chars]);
 
-str encode(int char)
-    = char in alnum 
-    ? stringChar(char)
-    : "\\x{<toHex(char)>}";
+str encode(int char) {
+    if (char in alnum) {
+        return stringChar(char);
+    }
+    if (char in shorthands) {
+        return shorthands[char];
+    }
+    if (char < 256) {
+        return "\\x<right(toHex(char),2, "0")>";
+    }
+    return "\\x{<toHex(char)>}";
+
+}
+
+map[int, str] shorthands = (
+    0x09: "\\t",
+    0x0A: "\\n",
+    0x0B: "\\v",
+    0x0C: "\\f",
+    0x0D: "\\r",
+    0x20: " "
+);
+
 
 private str toHex(int i)
     = i < 16 
