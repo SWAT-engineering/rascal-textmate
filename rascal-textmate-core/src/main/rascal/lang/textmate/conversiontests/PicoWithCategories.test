@@ -1,0 +1,41 @@
+# SYNTAX TEST "PicoWithCategories"
+
+%% foo bar
+# <-- comment.line
+#  ^^^^^^^ comment.line
+
+%% do
+#  ^^ comment.line
+
+do
+# <-- variable.other
+# Note: Keywords can be identifiers in Pico
+
+123
+# <--- constant.numeric
+
+foo123
+# <------- variable.other
+
+foo_123
+# <--- variable.other
+#  ^ -variable.other
+#  ^ -constant.numeric
+#   ^^^ constant.numeric
+# Note: Underscores cannot occur in identifiers in Pico
+
+#begin
+## <----- keyword.control
+## TODO: `begin` outside `begin`-`end` can never be an identifier in Pico
+
+#"foo" "bar"
+## <----- string.quoted.double
+##    ^ -string.quoted.double
+##     ^^^^^ string.quoted.double
+## TODO: Support multiline productions
+
+#"foo\"bar"
+## <---- string.quoted.double
+##   ^^ string.quoted.double
+##     ^^^^ string.quoted.double
+## TODO: Support multiline productions with escaping
