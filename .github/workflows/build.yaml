@@ -25,6 +25,7 @@ jobs:
           cache: 'maven'
       - uses: actions/setup-node@v4
       - name: install-tokenizer
+        working-directory: rascal-textmate-core
         run: npm install vscode-tmgrammar-test
       - name: run-tests
         working-directory: rascal-textmate-core
