@@ -24,8 +24,6 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - uses: actions/setup-node@v4
-        with:
-          cache: 'npm'
       - name: install-tokenizer
         run: npm install vscode-tmgrammar-test
       - name: run-tests
