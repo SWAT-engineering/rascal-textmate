@@ -5,15 +5,23 @@
 module lang::textmate::ConversionTests
 
 import Grammar;
+import IO;
 import List;
 import Map;
 import ParseTree;
+import String;
+import util::ShellExec;
+import util::SystemAPI;
 
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
 
-bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect) {
+bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual = false) {
     list[ConversionUnit] actual = analyze(rsc);
+
+    for (printActual, u <- actual) {
+        println("unit(rsc, <u.prod>),");
+    }
 
     for (u <- actual) {
         assert u in expect : "Actual but not expected: <u.prod>";
@@ -32,10 +40,12 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect) {
     return true;
 }
 
-bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect) {
-    TmGrammar tm = transform(units);
+bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str name = "") {
+    TmGrammar tm = transform(units)[scopeName = "source.<name>"];
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
+    
+    // Test structural properties of the TextMate grammar
     
     RepositoryStats actual = <
         (0 | it + 1 | s <- repo, repo[s] is match),
@@ -59,10 +69,38 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect) {
     assert size(pats) == size(repo) : "Actual patterns list size: <size(pats)>. Expected: <size(repo)>.";
     assert (true | it && r is include | r <- pats) : "Patterns list contains pattern(s) of unexpected kind";
     assert (true | it && s in repo | r <- pats, include(/#<s:.*>$/) := r) : "Patterns list contains pattern(s) outside repository";
+
+    // Test behavioral properties of the TextMate grammar
+    
+    loc lProject = |project://rascal-textmate-core|;
+    loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";
+    toJSON(tm, l = resolveLocation(lGrammar));
+    
+    loc lTest = lProject + "/src/main/rascal/lang/textmate/conversiontests/<name>.test";
+    loc lTester = lProject + "/node_modules/vscode-tmgrammar-test";
+    if (!exists(lTest)) {
+        println("[LOG] No tokenization tests available for `<name>` (`<resolveLocation(lTest).path>` does not exist)");
+    } elseif (!exists(lTester)) {
+        println("[LOG] No tokenizer available (`<resolveLocation(lTester).path>` does not exist)");
+    } else {
+        bool windows = startsWith(getSystemProperty("os.name"), "Windows"); 
+        loc lExec = lProject + "/src/test/sh/lang/textmate/conversion-tests.<windows ? "bat" : "sh">";
+
+        if (<output, exitCode> := execWithCode(lExec, args = [name]) && exitCode != 0) {
+            println(output);
+            assert false : "Actual tokenization does not match expected tokenization (see output above for details)";
+        }
+    }
+
     return true;
 }
 
-alias RepositoryStats = tuple[int match, int beginEnd, int include];
+alias RepositoryStats = tuple[
+    int match,
+    int beginEnd,
+    int include];
 
 int sum(RepositoryStats stats)
-    = stats.match + stats.beginEnd + stats.include;
+    = stats.match
+    + stats.beginEnd
+    + stats.include;

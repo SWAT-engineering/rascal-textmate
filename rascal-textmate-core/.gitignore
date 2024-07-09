@@ -1,1 +1,6 @@
 target
+
+# Only used to run tests:
+node_modules
+package-lock.json
+package.json

@@ -16,5 +16,18 @@ TextMate grammars, this project applies partial conversion. Alternatively, a
 previous [project](https://github.com/TarVK/syntax-highlighter) by
 [@TarVK](https://github.com/TarVK) applies total conversion.
 
-The [walkthrough](src/main/rascal/lang/textmate/conversiontests/Walkthrough.rsc)
+## Documentation
+
+The [walkthrough](rascal-textmate-core/src/main/rascal/lang/textmate/conversiontests/Walkthrough.rsc)
 explains the main ideas behind the conversion algorithm in this project.
+
+## Tests
+
+To test tokenization (as part of the conversion
+[tests](rascal-textmate-core/src/main/rascal/lang/textmate/conversiontests)),
+the [`vscode-tmgrammar-test`](https://github.com/PanAeon/vscode-tmgrammar-test)
+tool is used. Install it locally in directory `rascal-textmate-core` as follows:
+
+```
+npm install vscode-tmgrammar-test
+```
