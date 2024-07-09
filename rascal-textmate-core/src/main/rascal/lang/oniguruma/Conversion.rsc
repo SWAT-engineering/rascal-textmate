@@ -170,59 +170,14 @@ str encode(list[int] chars, bool withBounds = false)
     ? "\\b<encode(chars, withBounds = false)>\\b"
     : intercalate("", [encode(i) | i <- chars]);
 
-str encode(int char) {
-    if (char in alnum) {
-        return stringChar(char);
-    }
-    if (char in shorthands) {
-        return shorthands[char];
-    }
-    if (char < 256) {
-        return "\\x<right(toHex(char),2, "0")>";
-    }
-    return "\\x{<toHex(char)>}";
+str encode(int char) 
+    = char in preEncoded
+    ? preEncoded[char]
+    : "\\x{<toHex(char)>}"
+    ;
 
-}
 
-map[int, str] shorthands = (
-    0x09: "\\t",
-    0x0A: "\\n",
-    0x0D: "\\r",
-    0x20: " ",
-    0x21: "\\!",
-    0x22: "\"",
-    0x23: "\\#",
-    0x24: "\\$",
-    0x25: "\\%",
-    0x26: "\\&",
-    0x27: "\'",
-    0x28: "\\(",
-    0x29: "\\)",
-    0x2A: "\\*",
-    0x2B: "\\+",
-    0x2C: "\\,",
-    0x2D: "\\-",
-    0x2E: "\\.",
-    0x2F: "\\/",
-    0x3A: "\\:",
-    0x3B: "\\;",
-    0x3C: "\\\<",
-    0x3D: "\\=",
-    0x3E: "\\\>",
-    0x3F: "\\?",
-    0x40: "\\@",
-    0x5B: "\\[",
-    0x5C: "\\\\",
-    0x5D: "\\]",
-    0x5E: "\\^",
-    0x5F: "\\_",
-    0x60: "\\`",
-    0x7B: "\\{",
-    0x7C: "\\|",
-    0x7D: "\\{",
-    0x7E: "\\~"
-);
-
+private set[int] charRange(str from, str to) = {*[charAt(from, 0)..charAt(to, 0) + 1]};
 
 private str toHex(int i)
     = i < 16 
@@ -233,5 +188,24 @@ private list[str] hex
     = ["<i>" | i <- [0..10]]
     + ["A", "B", "C", "D", "E", "F"];
 
-private set[int] alnum
-    = {*[48..58], *[65..91], *[97..123]};
+private set[int] printable
+    = charRange("0", "9")
+    + charRange("a", "z")
+    + charRange("A", "Z")
+    ;
+
+private map[int, str] escapes = (
+    0x09: "\\t",
+    0x0A: "\\n",
+    0x0D: "\\r",
+    0x20: "\\x20" // spaces look a bit strange in a regex, although they are valid, people tend to read over them as layout
+) + ( c : "\\<stringChar(c)>" | c <- [0x21..0x7F], c notin printable); // regular ascii characters that might have special meaning in a regex
+
+
+private map[int, str] addFallBack(map[int, str] defined)
+    = ( char : "\\x<right(toHex(char),2, "0")>" | char <- [0..256], char notin defined)
+    + defined
+    ;
+
+private map[int, str] preEncoded
+    = addFallBack(escapes + ( c : stringChar(c) | c <- printable));
