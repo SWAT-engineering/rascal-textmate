@@ -187,7 +187,6 @@ str encode(int char) {
 map[int, str] shorthands = (
     0x09: "\\t",
     0x0A: "\\n",
-    0x0B: "\\v",
     0x0C: "\\f",
     0x0D: "\\r",
     0x20: " "
