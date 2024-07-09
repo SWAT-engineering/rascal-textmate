@@ -38,4 +38,4 @@ jobs:
           cache: 'maven'
       - name: check
         working-directory: rascal-textmate-core
-        run: mvn compile
+        run: mvn -B compile

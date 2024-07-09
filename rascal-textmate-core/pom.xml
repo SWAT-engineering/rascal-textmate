@@ -55,7 +55,7 @@
       <plugin>
         <groupId>org.rascalmpl</groupId>
         <artifactId>rascal-maven-plugin</artifactId>
-        <version>0.8.2</version>
+        <version>0.22.0</version>
         <configuration>
           <errorsAsWarnings>true</errorsAsWarnings>
           <bin>${project.build.outputDirectory}</bin>
@@ -63,6 +63,15 @@
             <src>${project.basedir}/src/main/rascal</src>
           </srcs>
         </configuration>
+        <executions>
+           <execution> <?m2e ignore?>
+              <id>it-compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+            </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
