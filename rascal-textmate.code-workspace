@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "vscode-extension"
+		},
+		{
+			"path": ".github"
 		}
 	],
 	"settings": {
