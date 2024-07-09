@@ -15,4 +15,4 @@ list[ConversionUnit] units = [
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <3, 0, 0>, name = "pico");
+test bool transformTest() = doTransformTest(units, <3, 0, 0>, name = "Pico");

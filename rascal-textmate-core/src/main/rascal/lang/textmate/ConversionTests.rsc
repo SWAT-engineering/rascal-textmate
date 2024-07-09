@@ -41,7 +41,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
 }
 
 bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str name = "") {
-    TmGrammar tm = transform(units)[scopeName = "source.<name>"];
+    TmGrammar tm = transform(units)[scopeName = "<name>"];
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
     

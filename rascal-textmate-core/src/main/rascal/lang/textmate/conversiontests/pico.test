@@ -1,4 +1,4 @@
-# SYNTAX TEST "source.pico"
+# SYNTAX TEST "Pico"
 
 %% foo bar
 # <-- Comment
