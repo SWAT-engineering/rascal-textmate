@@ -170,11 +170,7 @@ str encode(list[int] chars, bool withBounds = false)
     ? "\\b<encode(chars, withBounds = false)>\\b"
     : intercalate("", [encode(i) | i <- chars]);
 
-str encode(int char) 
-    = char in preEncoded
-    ? preEncoded[char]
-    : "\\x{<toHex(char)>}"
-    ;
+str encode(int char) = preEncoded[char] ? "\\x{<toHex(char)>}";
 
 
 private set[int] charRange(str from, str to) = {*[charAt(from, 0)..charAt(to, 0) + 1]};
@@ -202,10 +198,10 @@ private map[int, str] escapes = (
 ) + ( c : "\\<stringChar(c)>" | c <- [0x21..0x7F], c notin printable); // regular ascii characters that might have special meaning in a regex
 
 
-private map[int, str] addFallBack(map[int, str] defined)
+private map[int, str] addFallback(map[int, str] defined)
     = ( char : "\\x<right(toHex(char),2, "0")>" | char <- [0..256], char notin defined)
     + defined
     ;
 
 private map[int, str] preEncoded
-    = addFallBack(escapes + ( c : stringChar(c) | c <- printable));
+    = addFallback(escapes + ( c : stringChar(c) | c <- printable));
