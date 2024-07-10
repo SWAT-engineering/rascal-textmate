@@ -172,10 +172,10 @@ str encode(list[int] chars, bool withBounds = false)
     ? "\\b<encode(chars, withBounds = false)>\\b"
     : intercalate("", [encode(i) | i <- chars]);
 
-str encode(int char)
-    = char in alnum 
-    ? stringChar(char)
-    : "\\x{<toHex(char)>}";
+str encode(int char) = preEncoded[char] ? "\\x{<toHex(char)>}";
+
+
+private set[int] charRange(str from, str to) = {*[charAt(from, 0)..charAt(to, 0) + 1]};
 
 private str toHex(int i)
     = i < 16 
@@ -186,5 +186,24 @@ private list[str] hex
     = ["<i>" | i <- [0..10]]
     + ["A", "B", "C", "D", "E", "F"];
 
-private set[int] alnum
-    = {*[48..58], *[65..91], *[97..123]};
+private set[int] printable
+    = charRange("0", "9")
+    + charRange("a", "z")
+    + charRange("A", "Z")
+    ;
+
+private map[int, str] escapes = (
+    0x09: "\\t",
+    0x0A: "\\n",
+    0x0D: "\\r",
+    0x20: "\\x20" // spaces look a bit strange in a regex, although they are valid, people tend to read over them as layout
+) + ( c : "\\<stringChar(c)>" | c <- [0x21..0x7F], c notin printable); // regular ascii characters that might have special meaning in a regex
+
+
+private map[int, str] addFallback(map[int, str] defined)
+    = ( char : "\\x<right(toHex(char),2, "0")>" | char <- [0..256], char notin defined)
+    + defined
+    ;
+
+private map[int, str] preEncoded
+    = addFallback(escapes + ( c : stringChar(c) | c <- printable));
