@@ -71,7 +71,7 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert (true | it && s in repo | r <- pats, include(/#<s:.*>$/) := r) : "Patterns list contains pattern(s) outside repository";
 
     // Test behavioral properties of the TextMate grammar
-    
+
     loc lProject = |project://rascal-textmate-core|;
     loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";
     toJSON(tm, l = resolveLocation(lGrammar));
@@ -83,10 +83,16 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     } elseif (!exists(lTester)) {
         println("[LOG] No tokenizer available (`<resolveLocation(lTester).path>` does not exist)");
     } else {
-        bool windows = startsWith(getSystemProperty("os.name"), "Windows"); 
-        loc lExec = lProject + "/src/test/sh/lang/textmate/conversion-tests.<windows ? "bat" : "sh">";
+        bool windows = startsWith(getSystemProperty("os.name"), "Windows");
+        loc lExec = |PATH:///npx<windows ? ".cmd" : "">|;
+        list[str] args = [
+            "vscode-tmgrammar-test",
+            "--grammar",
+            resolveLocation(lGrammar).path[(windows ? 1 : 0)..],
+            resolveLocation(lTest).path[(windows ? 1 : 0)..]
+        ];
 
-        if (<output, exitCode> := execWithCode(lExec, args = [name]) && exitCode != 0) {
+        if (<output, exitCode> := execWithCode(lExec, args = args) && exitCode != 0) {
             println(output);
             assert false : "Actual tokenization does not match expected tokenization (see output above for details)";
         }
