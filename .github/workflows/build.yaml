@@ -24,6 +24,8 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - uses: actions/setup-node@v4
+          node-version: '20'
+          cache: 'npm'
       - name: install-tokenizer
         working-directory: rascal-textmate-core
         run: npm install vscode-tmgrammar-test
