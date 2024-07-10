@@ -1,0 +1,11 @@
+# SYNTAX TEST "Pico"
+
+%% foo bar
+# <-- Comment
+#  ^^^^^^^ Comment
+
+%% do
+#  ^^ Comment
+
+do
+# <-- keyword.control

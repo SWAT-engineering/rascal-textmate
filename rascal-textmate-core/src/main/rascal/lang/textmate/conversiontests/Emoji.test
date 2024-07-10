@@ -1,0 +1,17 @@
+# SYNTAX TEST "Emoji"
+
+🌊
+# <-- constant.language
+
+foo 🌊 bar
+#  ^ -constant.language
+#   ^^ constant.language
+#     ^ -constant.language
+
+🙂🙁
+# <---- constant.language
+
+foo 🙂 bar 🙁
+#   ^^ constant.language
+#     ^^^^^ -constant.language
+#          ^^ constant.language

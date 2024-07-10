@@ -158,7 +158,9 @@ default RegExp toRegExp(Grammar _, Condition c) {
     Converts a character range to a regular expression.
 }
 
-RegExp toRegExp(Grammar _, range(begin, end))
+RegExp toRegExp(Grammar _, range(char, char))
+    = regExp("<encode(char)>", []);
+default RegExp toRegExp(Grammar _, range(begin, end))
     = regExp("[<encode(begin)>-<encode(end)>]", []);
 
 @synopsis{
