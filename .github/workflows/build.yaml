@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: 'rascal-textmate-core/package-lock.json'
       - name: install-tokenizer
         working-directory: rascal-textmate-core
-        run: npm install vscode-tmgrammar-test
+        run: npm ci
       - name: run-tests
         working-directory: rascal-textmate-core
         run: mvn test -B -Drascal.compile.skip -Drascal.tutor.skip
