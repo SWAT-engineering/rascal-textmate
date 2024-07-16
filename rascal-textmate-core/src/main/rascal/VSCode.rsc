@@ -18,8 +18,14 @@ int main() {
     return 0;
 }
 
-RscGrammar getRscGrammar() =
-    visit (Grammar::grammar(#Module)) {
+RscGrammar getRscGrammar() {
+    Production setCategory(p: prod(_, _, attributes), str category)
+        = {\tag("category"(_)), *rest} := attributes
+        ? p[attributes = rest + \tag("category"(category))]
+        : p[attributes = attributes + \tag("category"(category))];
+    
+    return visit (Grammar::grammar(#Module)) {
+
         // The following mapping is based on:
         //   - https://github.com/usethesource/rascal/blob/83023f60a6eb9df7a19ccc7a4194b513ac7b7157/src/org/rascalmpl/values/parsetrees/TreeAdapter.java#L44-L59
         //   - https://github.com/usethesource/rascal-language-servers/blob/752fea3ea09101e5b22ee426b11c5e36db880225/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L121-L142
@@ -42,4 +48,18 @@ RscGrammar getRscGrammar() =
         case \tag("category"("Result"))           => \tag("category"("string"))   // Updated (before: text)
         case \tag("category"("StdOut"))           => \tag("category"("string"))   // Updated (before: text)
         case \tag("category"("StdErr"))           => \tag("category"("string"))   // Updated (before: text)
+
+        // With additional hot-patching as discussed:
+        //   - https://github.com/SWAT-engineering/rascal-textmate/pull/6
+        case p: prod(label("integer",  sort("Literal")), _, _)   => setCategory(p, "constant.numeric")
+        case p: prod(label("real",     sort("Literal")), _, _)   => setCategory(p, "constant.numeric")
+        case p: prod(label("rational", sort("Literal")), _, _)   => setCategory(p, "constant.numeric")
+        case p: prod(label("location", sort("Literal")), _, _)   => setCategory(p, "markup.underline.link")
+        case p: prod(label("regExp",   sort("Literal")), _, _)   => setCategory(p, "string.regexp")
+        case p: prod(lex("StringConstant"), _, _)                => setCategory(p, "string.quoted.double")
+        case p: prod(lex("CaseInsensitiveStringConstant"), _, _) => setCategory(p, "string.quoted.single")
+        case p: prod(lex("PreStringChars"), _, _)                => setCategory(p, "string.interpolated")
+        case p: prod(lex("MidStringChars"), _, _)                => setCategory(p, "string.interpolated")
+        case p: prod(lex("PostStringChars"), _, _)               => setCategory(p, "string.interpolated")
     };
+}
