@@ -196,12 +196,12 @@ private map[int, str] escapes = (
     0x09: "\\t",
     0x0A: "\\n",
     0x0D: "\\r",
-    0x20: "\\x20" // spaces look a bit strange in a regex, although they are valid, people tend to read over them as layout
+    0x20: "\\x{20}" // spaces look a bit strange in a regex, although they are valid, people tend to read over them as layout
 ) + ( c : "\\<stringChar(c)>" | c <- [0x21..0x7F], c notin printable); // regular ascii characters that might have special meaning in a regex
 
 
 private map[int, str] addFallback(map[int, str] defined)
-    = ( char : "\\x<right(toHex(char),2, "0")>" | char <- [0..256], char notin defined)
+    = ( char : "\\x{<right(toHex(char),2, "0")>}" | char <- [0..256], char notin defined)
     + defined
     ;
 
