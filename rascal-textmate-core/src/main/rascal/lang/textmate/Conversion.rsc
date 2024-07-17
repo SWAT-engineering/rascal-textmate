@@ -42,7 +42,7 @@ data ConversionUnit = unit(
     may contain additional meta-data needed during the transformation stage.
 }
 
-TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName, NameGeneration nameGeneration = long(pretty=true))
+TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName, NameGeneration nameGeneration = long())
     = transform(analyze(rsc), nameGeneration = nameGeneration) [scopeName = scopeName];
 
 @synoposis{
