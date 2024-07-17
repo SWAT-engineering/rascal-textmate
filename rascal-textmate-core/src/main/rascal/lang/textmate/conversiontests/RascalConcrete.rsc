@@ -25,7 +25,7 @@ syntax ConcreteHole
 Grammar rsc = grammar(#Concrete);
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex("delimiters"),[alt({lit("\n"),lit("\'"),lit("\<"),lit("\>")})],{})),
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'"),lit("\<"),lit("\>")})],{})),
     unit(rsc, prod(label("gt",lex("ConcretePart")),[lit("\\\>")],{\tag("category"("MetaSkipped"))})),
     unit(rsc, prod(label("text",lex("ConcretePart")),[conditional(iter(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)])),{\not-follow(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)]))})],{\tag("category"("MetaSkipped"))})),
     unit(rsc, prod(label("bs",lex("ConcretePart")),[lit("\\\\")],{\tag("category"("MetaSkipped"))})),
