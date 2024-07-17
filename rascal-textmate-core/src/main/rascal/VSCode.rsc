@@ -9,11 +9,12 @@ import Grammar;
 import lang::rascal::\syntax::Rascal;
 import lang::textmate::Conversion;
 import lang::textmate::Grammar;
+import lang::textmate::NameGeneration;
 
 int main() {
     str scopeName = "source.rascalmpl.injection";
     RscGrammar rsc = getRscGrammar();
-    TmGrammar tm = toTmGrammar(rsc, scopeName)[injectionSelector = "R:source.rascalmpl"];
+    TmGrammar tm = toTmGrammar(rsc, scopeName, nameGeneration = short())[injectionSelector = "R:source.rascalmpl"];
     toJSON(tm, indent = 2, l = |project://vscode-extension/syntaxes/rascal.tmLanguage.json|);
     return 0;
 }
