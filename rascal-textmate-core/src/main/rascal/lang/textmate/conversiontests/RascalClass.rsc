@@ -32,10 +32,10 @@ lexical UnicodeEscape
 Grammar rsc = grammar(#Class);
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex("delimiters"),[alt({lit("-"),lit(")"),lit("("),lit("!"),lit("||"),lit("&&")})],{})),
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("-"),lit(")"),lit("("),lit("!"),lit("||"),lit("&&")})],{})),
     unit(rsc, prod(lex("Char"),[lit("\\"),\char-class([range(32,32),range(34,34),range(39,39),range(45,45),range(60,60),range(62,62),range(91,93),range(98,98),range(102,102),range(110,110),range(114,114),range(116,116)])],{\tag("category"("Constant"))})),
     unit(rsc, prod(lex("Char"),[lex("UnicodeEscape")],{\tag("category"("Constant"))})),
-    unit(rsc, prod(lex("keywords"),[alt({lit("10"),lit("0")})],{\tag("category"("keyword.control"))}))
+    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("10"),lit("0")})],{\tag("category"("keyword.control"))}))
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);

@@ -15,6 +15,7 @@ import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
 import lang::textmate::Grammar;
+import lang::textmate::NameGeneration;
 
 alias RscGrammar = Grammar;
 
@@ -41,8 +42,8 @@ data ConversionUnit = unit(
     may contain additional meta-data needed during the transformation stage.
 }
 
-TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName)
-    = transform(analyze(rsc)) [scopeName = scopeName];
+TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName, NameGeneration nameGeneration = long())
+    = transform(analyze(rsc), nameGeneration = nameGeneration) [scopeName = scopeName];
 
 @synoposis{
     Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of
@@ -113,12 +114,12 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     delimiters -= getStrictPrefixes(delimiters);
     delimiters -= {s | prod(_, [s, *_], _) <- prods, isDelimiter(delabel(s))};
     delimiters -= {s | prod(def, _, _) <- prods, /s := getDelimiterPairs(rsc, delabel(def))};
-    list[Production] prodsDelimiters = [prod(lex("delimiters"), [\alt(delimiters)], {})];
+    list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
     println("[LOG] Analyzing keywords");
     set[Symbol] keywords = {s | /Symbol s := rsc, isKeyword(delabel(s))};
-    list[Production] prodsKeywords = [prod(lex("keywords"), [\alt(keywords)], {\tag("category"("keyword.control"))})];
+    list[Production] prodsKeywords = [prod(lex(KEYWORDS_PRODUCTION_NAME), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
     // Return
     bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
@@ -129,6 +130,9 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
     return units;
 }
+
+public str DELIMITERS_PRODUCTION_NAME = "$delimiters";
+public str KEYWORDS_PRODUCTION_NAME   = "$keywords";
 
 @synopsis{
     Transforms a list of productions, in the form of conversion units, to a
@@ -141,11 +145,12 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
       2. composition of TextMate rules into a TextMate grammar.
 }
 
-TmGrammar transform(list[ConversionUnit] units) {
+TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = long()) {
 
     // Transform productions to rules
     println("[LOG] Transforming productions to rules");
-    list[TmRule] rules = [toTmRule(u) | u <- units];
+    NameGenerator g = newNameGenerator([u.prod | u <- units], nameGeneration);
+    list[TmRule] rules = [toTmRule(u, g) | u <- units];
 
     // Transform rules to grammar
     println("[LOG] Transforming rules to grammar");
@@ -170,19 +175,13 @@ TmGrammar transform(list[ConversionUnit] units) {
     Converts a conversion unit to a TextMate rule
 }
 
-TmRule toTmRule(ConversionUnit u)
-    = toTmRule(u.rsc, u.prod);
+TmRule toTmRule(ConversionUnit u, NameGenerator g)
+    = toTmRule(u.rsc, u.prod, g(u.prod));
 
-// TODO: Check if the size of rule names materially affects VS Code. Currently,
-// we use stringified productions as names, which is quite useful for debugging,
-// but maybe it leads to performance issues. If so, we should add a conversion
-// configuration flag to control generation of "long names" vs "short names" (as
-// long as names continue to be unique, everything should continue to work ok).
-
-private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _))
+private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), str name)
     = {<begin, end>} := getDelimiterPairs(rsc, delabel(def)) // TODO: Support non-singleton sets of delimiter pairs
-    ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin>:<end>", [toTmRule(toRegExp(rsc, p), "<p>")])
-    : toTmRule(toRegExp(rsc, p), "<p>");
+    ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin.string><end.string>", [toTmRule(toRegExp(rsc, p), name)])
+    : toTmRule(toRegExp(rsc, p), name);
 
 private TmRule toTmRule(RegExp re, str name)
     = match(re.string, captures = toCaptures(re.categories), name = name);
