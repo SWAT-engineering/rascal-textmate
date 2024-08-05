@@ -111,9 +111,6 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Analyze delimiters
     println("[LOG] Analyzing delimiters");
     set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
-    delimiters -= getStrictPrefixes(delimiters);
-    delimiters -= {s | prod(_, [s, *_], _) <- prods, isDelimiter(delabel(s))};
-    delimiters -= {s | prod(def, _, _) <- prods, /s := getDelimiterPairs(rsc, delabel(def))};
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
@@ -124,8 +121,8 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Return
     bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
     list[ConversionUnit] units
-        = [unit(rsc, p) | p <- prodsDelimiters, !isEmptyProd(p)]
-        + [unit(rsc, p) | p <- prods]
+        = [unit(rsc, p) | p <- prods]
+        + [unit(rsc, p) | p <- prodsDelimiters, !isEmptyProd(p)]
         + [unit(rsc, p) | p <- prodsKeywords, !isEmptyProd(p)];
 
     return units;

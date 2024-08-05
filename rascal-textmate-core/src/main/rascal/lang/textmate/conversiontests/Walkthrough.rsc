@@ -280,11 +280,11 @@ lexical Boolean
 Grammar rsc = grammar(#Value);
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("+"),lit("*/"),lit("}"),lit("|"),lit("?"),lit("://"),lit("/*"),lit("{")})],{})),
     unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))})),
     unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))})),
     unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))})),
     unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))})),
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("/"),lit("+"),lit("*/"),lit("//"),lit("\""),lit("}"),lit("|"),lit("?"),lit("/*"),lit("{"),lit("://"),lit(":")})],{})),
     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}))
 ];
 
