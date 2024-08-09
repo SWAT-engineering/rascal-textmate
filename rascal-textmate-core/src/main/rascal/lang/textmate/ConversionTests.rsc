@@ -19,8 +19,26 @@ import lang::textmate::Grammar;
 bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual = false) {
     list[ConversionUnit] actual = analyze(rsc);
 
-    for (printActual, u <- actual) {
-        println("unit(rsc, <u.prod>),");
+    if (printActual) {
+        str syntheticProductionNameVars(str s)
+            = replaceAll(replaceAll(s,                 
+                "\"<DELIMITERS_PRODUCTION_NAME>\"", "DELIMITERS_PRODUCTION_NAME"),
+                "\"<KEYWORDS_PRODUCTION_NAME>\"",   "KEYWORDS_PRODUCTION_NAME");
+        
+        str tagEscape(str s)
+            = /<before:.*[^\\]>\btag\b<after:.*>/ := s 
+            ? "<before>\\tag<after>"
+            : s;
+        
+        str toStr(Production p)
+            = tagEscape(syntheticProductionNameVars("<p>"));
+
+        println();
+        for (i <- [0..size(actual)]) {
+            ConversionUnit u = actual[i];
+            println("unit(rsc, <toStr(u.prod)>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
+        }
+        println();
     }
 
     for (u <- actual) {
