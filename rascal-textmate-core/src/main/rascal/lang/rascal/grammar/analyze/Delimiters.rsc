@@ -10,8 +10,7 @@ import util::Maybe;
 
 import lang::rascal::grammar::Util;
 
-alias Delimiter     = Maybe[Symbol];
-alias DelimiterPair = tuple[Delimiter begin, Delimiter end];
+alias DelimiterPair = tuple[Maybe[Symbol] begin, Maybe[Symbol] end];
 
 data Direction    // Traverse lists of symbols (in productions)...
     = forward()   //   - ...from left to right;
@@ -33,17 +32,17 @@ DelimiterPair getInnerDelimiterPair(Grammar g, Production p)
     = <getInnerDelimitersByProduction(g, forward())[p], getInnerDelimitersByProduction(g, backward())[p]>;
 
 @memo
-private map[Symbol, Delimiter] getInnerDelimitersBySymbol(Grammar g, Direction direction) {
-    map[Production, Delimiter] m = getInnerDelimitersByProduction(g, direction);
+private map[Symbol, Maybe[Symbol]] getInnerDelimitersBySymbol(Grammar g, Direction direction) {
+    map[Production, Maybe[Symbol]] m = getInnerDelimitersByProduction(g, direction);
     return (s: unique({m[p] | p <- m, s == delabel(p.def)}) | p <- m, s := delabel(p.def));
 }
 
 @memo
-private map[Production, Delimiter] getInnerDelimitersByProduction(Grammar g, Direction direction) {
-    map[Production, Delimiter] delimiters = (p: nothing() | /p: prod(_, _, _) := g);
+private map[Production, Maybe[Symbol]] getInnerDelimitersByProduction(Grammar g, Direction direction) {
+    map[Production, Maybe[Symbol]] delimiters = (p: nothing() | /p: prod(_, _, _) := g);
     set[Production] todo() = {p | p <- delimiters, delimiters[p] == nothing()};
 
-    Delimiter \do(Production p) {
+    Maybe[Symbol] \do(Production p) {
         for (s <- reorder(p.symbols, direction)) {
             s = delabel(s);
             if (isDelimiter(s)) {
@@ -72,14 +71,14 @@ DelimiterPair getOuterDelimiterPair(Grammar g, Production p)
     = <getOuterDelimitersByProduction(g, backward())[p], getOuterDelimitersByProduction(g, forward())[p]>;
 
 @memo
-private map[Symbol, Delimiter] getOuterDelimitersBySymbol(Grammar g, Direction direction) {
-    map[Symbol, Delimiter] delimiters = (s: nothing() | /p: prod(_, _, _) := g, s := delabel(p.def));
+private map[Symbol, Maybe[Symbol]] getOuterDelimitersBySymbol(Grammar g, Direction direction) {
+    map[Symbol, Maybe[Symbol]] delimiters = (s: nothing() | /p: prod(_, _, _) := g, s := delabel(p.def));
     set[Symbol] todo() = {s | s <- delimiters, delimiters[s] == nothing()};
 
-    Delimiter \do(Symbol s)
+    Maybe[Symbol] \do(Symbol s)
         = unique({\do(parent.def, rest) | parent <- getParents(g, s), [*_, /s, *rest] := reorder(parent.symbols, direction), /s !:= rest});
 
-    Delimiter \do(Symbol def, list[Symbol] rest) {
+    Maybe[Symbol] \do(Symbol def, list[Symbol] rest) {
         for (s <- rest) {
             s = delabel(s);
             if (isDelimiter(s)) {
@@ -97,8 +96,8 @@ private map[Symbol, Delimiter] getOuterDelimitersBySymbol(Grammar g, Direction d
 }
 
 @memo
-private map[Production, Delimiter] getOuterDelimitersByProduction(Grammar g, Direction direction) {
-    map[Symbol, Delimiter] m = getOuterDelimitersBySymbol(g, direction);
+private map[Production, Maybe[Symbol]] getOuterDelimitersByProduction(Grammar g, Direction direction) {
+    map[Symbol, Maybe[Symbol]] m = getOuterDelimitersBySymbol(g, direction);
     return (p: m[delabel(p.def)] | /p: prod(_, _, _) := g);
 }
 
@@ -110,7 +109,7 @@ private set[Production] getParents(Grammar g, Symbol s)
     `nothing()` otherwise.
 }
 
-Delimiter unique(set[Delimiter] delimiters)
+Maybe[Symbol] unique(set[Maybe[Symbol]] delimiters)
     = {d: just(_)} := delimiters
     ? d
     : nothing();
