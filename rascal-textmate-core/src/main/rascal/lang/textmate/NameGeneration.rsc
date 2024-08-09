@@ -23,9 +23,7 @@ alias NameGenerator = str(Production);
 NameGenerator newNameGenerator(list[Production] prods, short()) {
 
     // Define auxiliary functions to compute names for symbols
-    str toName(sort(name)) = toLowerCase(name);
-    str toName(lex(name)) = toLowerCase(name);
-    str toName(label(name, symbol)) = "<toName(symbol)>.<name>";
+
 
     // Define auxiliary function to count the number of occurrences of a name
     int count(str name) = (0 | it + 1 | p <- prods, toName(p.def) == name);
@@ -51,3 +49,14 @@ NameGenerator newNameGenerator(list[Production] _, long(pretty = pretty)) {
         return pretty ? "<prod2rascal(p)>" : "<p>";
     };
 }
+
+@synopsis{
+    Converts a (possibly labeled) `sort`/`lex` to a TextMate-style name
+}
+
+str toName(sort(name))
+    = toLowerCase(name);
+str toName(lex(name))
+    = toLowerCase(name);
+str toName(label(name, symbol))
+    = "<toName(symbol)>.<name>";
