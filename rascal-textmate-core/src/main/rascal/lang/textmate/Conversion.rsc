@@ -94,8 +94,8 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
         = p in ancestors;
-    bool isSingleLine(Production p, _, _)
-        = !hasNewline(rsc, p);
+    // bool isSingleLine(Production p, _, _)
+    //     = !hasNewline(rsc, p);
     bool isNonEmpty(prod(def, _, _), _, _)
         = !tryParse(rsc, delabel(def), "");
     bool hasCategory(prod(_, _, attributes), _, _)
@@ -106,7 +106,7 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     Dependencies dependencies = deps(toGraph(rsc));
     list[Production] prods = dependencies
         .removeProds(isCyclic, true) // `true` means "also remove ancestors"
-        .filterProds(isSingleLine)
+        // .filterProds(isSingleLine)
         .filterProds(isNonEmpty)
         .filterProds(hasCategory)
         .getProds();
