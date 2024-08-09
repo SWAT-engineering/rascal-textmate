@@ -3,6 +3,8 @@
   %% foo bar
 # ^^^^^^^^^^ comment.line
 
+  %% foo % bar
+# ^^^^^^^^^^^^ comment.line
   %% do
 # ^^^^^ comment.line
 
