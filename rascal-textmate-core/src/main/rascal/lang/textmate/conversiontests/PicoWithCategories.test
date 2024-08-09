@@ -1,28 +1,29 @@
 # SYNTAX TEST "PicoWithCategories"
 
-%% foo bar
-# <-- comment.line
-#  ^^^^^^^ comment.line
+  %% foo bar
+# ^^^^^^^^^^ comment.line
 
-%% do
-#  ^^ comment.line
+  %% do
+# ^^^^^ comment.line
 
-do
-# <-- variable.other
-# Note: Keywords can be identifiers in Pico
+  do
+# ^^ variable.other
 
-123
-# <--- constant.numeric
+  123
+# ^^^ constant.numeric
 
-foo123
-# <------- variable.other
+  foo123
+# ^^^^^^ variable.other
 
-foo_123
-# <--- variable.other
-#  ^ -variable.other
-#  ^ -constant.numeric
-#   ^^^ constant.numeric
-# Note: Underscores cannot occur in identifiers in Pico
+  foo_123
+# ^^^     variable.other
+#    ^    -variable.other
+#    ^    -constant.numeric
+#     ^^^ constant.numeric
+
+  natural: natural;
+# ^^^^^^^           variable.other
+#          ^^^^^^^  storage.type
 
 #begin
 ## <----- keyword.control

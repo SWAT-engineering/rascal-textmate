@@ -10,101 +10,110 @@ import util::Maybe;
 
 import lang::rascal::grammar::Util;
 
-alias DelimiterPair = tuple[Symbol begin, Symbol end];
+alias Delimiter     = Maybe[Symbol];
+alias DelimiterPair = tuple[Delimiter begin, Delimiter end];
+
+data Direction    // Traverse lists of symbols (in productions)...
+    = forward()   //   - ...from left to right;
+    | backward(); //   - ...from right to left.
 
 @synopsis{
-    Gets all delimiter pairs that enclose symbol `s` in grammar `g` when `s` is
-    always enclosed by delimiters. Returns the empty set when at least one
-    occurrence of `s` in `g` is not enclosed by delimiters.
+    Reorder a list according to the specified direction
 }
 
-set[DelimiterPair] getDelimiterPairs(Grammar g, Symbol s) {
-    map[Symbol, set[DelimiterPair]] index = ();
+list[&T] reorder(list[&T] l, forward())  = l;
+list[&T] reorder(list[&T] l, backward()) = reverse(l);
 
-    set[DelimiterPair] getDelimiterPairs(Symbol s) {
-        set[DelimiterPair] pairs = {};
-        index += (s: pairs); // Provisionally added for cycle detection
+@synopsis{
+    Gets the leftmost common delimiter (`begin`) and the rightmost common
+    delimiter (`end`), if any, that occur inside production `p` in grammar `g`
+}
 
-        // For each production in which `s` occurs, search for delimiter pairs
-        // that enclose `s`.
-        for (/prod(sParent, symbols: [*_, /s, *_], _) := g) {
+DelimiterPair getInnerDelimiterPair(Grammar g, Production p)
+    = <getInnerDelimitersByProduction(g, forward())[p], getInnerDelimitersByProduction(g, backward())[p]>;
 
-            // Case 1: The production itself has enclosing delimiters for `s`
-            if (just(DelimiterPair pair) := getDelimiterPair(symbols, s)) {
-                pairs += {pair};
+@memo
+private map[Symbol, Delimiter] getInnerDelimitersBySymbol(Grammar g, Direction direction) {
+    map[Production, Delimiter] m = getInnerDelimitersByProduction(g, direction);
+    return (s: unique({m[p] | p <- m, s == delabel(p.def)}) | p <- m, s := delabel(p.def));
+}
+
+@memo
+private map[Production, Delimiter] getInnerDelimitersByProduction(Grammar g, Direction direction) {
+    map[Production, Delimiter] delimiters = (p: nothing() | /p: prod(_, _, _) := g);
+    set[Production] todo() = {p | p <- delimiters, delimiters[p] == nothing()};
+
+    Delimiter \do(Production p) {
+        for (s <- reorder(p.symbols, direction)) {
+            s = delabel(s);
+            if (isDelimiter(s)) {
+                return just(s);
             }
-            
-            // Case 2: The production itself does not have enclosing delimiters
-            // for `s`. In this case, proceed by searching for delimiter pairs
-            // that enclose the parent of `s`.
-            else {
-
-                // Case 2a: `sParent` is already being searched for (i.e., there
-                // is a cyclic dependency). In this case, `sParent` can be
-                // ignored by the present call of this function (top of the call
-                // stack), as it is already dealt with by a past/ongoing call of
-                // this function (middle of the call stack).
-                if (delabel(sParent) in index) {
-                    continue;
-                }
-                
-                // Case 2b: `sParent` has delimiter pairs
-                else if (morePairs := getDelimiterPairs(delabel(sParent)), _ <- morePairs) {
-                    pairs += morePairs;
-                }
-                
-                // Case 2c: `sParent` does not have delimiter pairs. In this
-                // case, at least one occurrence of `s` in `g` is not enclosed
-                // by delimiters. Thus, the empty set is returned (and
-                // registered in the index), while the remaining productions in
-                // which `s` occurs, are ignored.
-                else {
-                    pairs = {};
-                    break;
-                }
+            if (isNonTerminalType(s) && just(delimiter) := unique({delimiters[child] | child <- getChildren(g, s)})) {
+                return just(delimiter);
             }
         }
-
-        index += (s: pairs); // Definitively added 
-        return pairs;
+        return nothing();
     }
 
-    return getDelimiterPairs(s);
-
-    // TODO: The current version of this function does not find delimiter pairs
-    // that are spread across multiple productions. For instance:
-    //
-    // ```
-    // lexical DelimitedNumber = Left Number Right;
-    //
-    // lexical Left   = "<";
-    // lexical Right  = ">";
-    // lexical Number = [0-9]+ !>> [0-9];
-    // ```
-    //
-    // In this example, `getDelimiterPairs(lex("Number"))` returns the empty
-    // set. This could be further improved.
+    solve (delimiters) delimiters = delimiters + (p: \do(p) | p <- todo());
+    return delimiters;
 }
+
+set[Production] getChildren(Grammar g, Symbol s)
+    = {child | child <- lookup(g, s)};
 
 @synopsis{
-    Gets the delimiter pair that encloses symbol `s` in a list, if any
+    Gets the rightmost common delimiter (`begin`) and the leftmost common
+    delimiter (`end`), if any, that occur outside production `p` in grammar `g`.
 }
 
-Maybe[DelimiterPair] getDelimiterPair([*_, Symbol begin, *between, Symbol end, *_], Symbol s)
-    = just(<begin, end>)
-    when isDelimiter(begin) && isDelimiter(end),
-        [*between1, /s, *between2] := between,
-        !containsDelimiter(between1 + between2);
+DelimiterPair getOuterDelimiterPair(Grammar g, Production p)
+    = <getOuterDelimitersByProduction(g, backward())[p], getOuterDelimitersByProduction(g, forward())[p]>;
 
-default Maybe[DelimiterPair] getDelimiterPair(list[Symbol] _, Symbol _)
-    = nothing();
+@memo
+private map[Symbol, Delimiter] getOuterDelimitersBySymbol(Grammar g, Direction direction) {
+    map[Symbol, Delimiter] delimiters = (s: nothing() | /p: prod(_, _, _) := g, s := delabel(p.def));
+    set[Symbol] todo() = {s | s <- delimiters, delimiters[s] == nothing()};
+
+    Delimiter \do(Symbol s)
+        = unique({\do(parent.def, rest) | parent <- getParents(g, s), [*_, /s, *rest] := reorder(parent.symbols, direction), /s !:= rest});
+
+    Delimiter \do(Symbol def, list[Symbol] rest) {
+        for (s <- rest) {
+            s = delabel(s);
+            if (isDelimiter(s)) {
+                return just(s);
+            }
+            if (isNonTerminalType(s) && just(delimiter) := getInnerDelimitersBySymbol(g, direction)[s]) {
+                return just(delimiter);
+            }
+        }
+        return delimiters[delabel(def)];
+    }
+
+    solve (delimiters) delimiters = delimiters + (s: \do(s) | s <- todo());
+    return delimiters;
+}
+
+@memo
+private map[Production, Delimiter] getOuterDelimitersByProduction(Grammar g, Direction direction) {
+    map[Symbol, Delimiter] m = getOuterDelimitersBySymbol(g, direction);
+    return (p: m[delabel(p.def)] | /p: prod(_, _, _) := g);
+}
+
+private set[Production] getParents(Grammar g, Symbol s)
+    = {parent | /parent: prod(_, [*_, /s, *_], _) := g, s != delabel(parent.def)};
 
 @synopsis{
-    Checks if a list contains a delimiter
+    Returns the single delimiter if set `delimiters` is a singleton. Returns
+    `nothing()` otherwise.
 }
 
-bool containsDelimiter(list[Symbol] symbols)
-    = any(s <- symbols, isDelimiter(s));
+Delimiter unique(set[Delimiter] delimiters)
+    = {d: just(_)} := delimiters
+    ? d
+    : nothing();
 
 @synopsis{
     Checks if a symbol is a delimiter

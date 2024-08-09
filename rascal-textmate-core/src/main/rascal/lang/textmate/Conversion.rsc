@@ -7,6 +7,7 @@ module lang::textmate::Conversion
 import Grammar;
 import IO;
 import ParseTree;
+import util::Maybe;
 
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
@@ -131,6 +132,9 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 public str DELIMITERS_PRODUCTION_NAME = "$delimiters";
 public str KEYWORDS_PRODUCTION_NAME   = "$keywords";
 
+private bool isSynthetic(Symbol s)
+    = lex(name) := s && name in {DELIMITERS_PRODUCTION_NAME, KEYWORDS_PRODUCTION_NAME};
+
 @synopsis{
     Transforms a list of productions, in the form of conversion units, to a
     TextMate grammar
@@ -163,6 +167,11 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
         }
         tm = addRule(tm, r);
     }
+    for (name <- tm.repository, tm.repository[name] is beginEnd) {
+        // Inject top-level patterns into begin/end patterns
+        TmRule r = tm.repository[name]; 
+        tm.repository += (name: r[patterns = r.patterns + tm.patterns - include("#<name>")]);
+    }
 
     // Return
     return tm[patterns = tm.patterns];
@@ -176,7 +185,7 @@ TmRule toTmRule(ConversionUnit u, NameGenerator g)
     = toTmRule(u.rsc, u.prod, g(u.prod));
 
 private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), str name)
-    = {<begin, end>} := getDelimiterPairs(rsc, delabel(def)) // TODO: Support non-singleton sets of delimiter pairs
+    = !isSynthetic(def) && <just(begin), just(end)> := getOuterDelimiterPair(rsc, p)
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin.string><end.string>", [toTmRule(toRegExp(rsc, p), name)])
     : toTmRule(toRegExp(rsc, p), name);
 

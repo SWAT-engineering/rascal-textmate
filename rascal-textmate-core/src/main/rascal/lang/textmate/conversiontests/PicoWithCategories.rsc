@@ -60,4 +60,4 @@ list[ConversionUnit] units = [
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <8, 0, 0>, name = "PicoWithCategories");
+test bool transformTest() = doTransformTest(units, <5, 1, 0>, name = "PicoWithCategories");
