@@ -28,8 +28,11 @@ list[&T] reorder(list[&T] l, backward()) = reverse(l);
     delimiter (`end`), if any, that occur inside production `p` in grammar `g`
 }
 
-DelimiterPair getInnerDelimiterPair(Grammar g, Production p)
-    = <getInnerDelimitersByProduction(g, forward())[p], getInnerDelimitersByProduction(g, backward())[p]>;
+DelimiterPair getInnerDelimiterPair(Grammar g, Production p, bool getOnlyFirst = false) {
+    Maybe[Symbol] begin = getInnerDelimitersByProduction(g, forward(), getOnlyFirst = getOnlyFirst)[p];
+    Maybe[Symbol] end = getInnerDelimitersByProduction(g, backward(), getOnlyFirst = getOnlyFirst)[p];
+    return <begin, end>;
+}
 
 @memo
 private map[Symbol, Maybe[Symbol]] getInnerDelimitersBySymbol(Grammar g, Direction direction) {
@@ -38,7 +41,7 @@ private map[Symbol, Maybe[Symbol]] getInnerDelimitersBySymbol(Grammar g, Directi
 }
 
 @memo
-private map[Production, Maybe[Symbol]] getInnerDelimitersByProduction(Grammar g, Direction direction) {
+private map[Production, Maybe[Symbol]] getInnerDelimitersByProduction(Grammar g, Direction direction, bool getOnlyFirst = false) {
     map[Production, Maybe[Symbol]] delimiters = (p: nothing() | /p: prod(_, _, _) := g);
     set[Production] todo() = {p | p <- delimiters, delimiters[p] == nothing()};
 
@@ -50,6 +53,9 @@ private map[Production, Maybe[Symbol]] getInnerDelimitersByProduction(Grammar g,
             }
             if (isNonTerminalType(s) && just(delimiter) := unique({delimiters[child] | child <- getChildren(g, s)})) {
                 return just(delimiter);
+            }
+            if (getOnlyFirst) {
+                return nothing();
             }
         }
         return nothing();
