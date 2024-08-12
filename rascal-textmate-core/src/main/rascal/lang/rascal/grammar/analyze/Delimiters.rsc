@@ -1,5 +1,5 @@
 @synopsis{
-    Types and functions to analyse delimiters in productions
+    Types and functions to analyze delimiters in productions
 }
 
 module lang::rascal::grammar::analyze::Delimiters
@@ -24,8 +24,36 @@ list[&T] reorder(list[&T] l, forward())  = l;
 list[&T] reorder(list[&T] l, backward()) = reverse(l);
 
 @synopsis{
-    Gets the leftmost common delimiter (`begin`) and the rightmost common
-    delimiter (`end`), if any, that occur inside production `p` in grammar `g`
+    Gets the unique leftmost delimiter (`begin`) and the unique rightmost
+    delimiter (`end`), if any, that occur **inside** production `p` in grammar
+    `g`. If `getOnlyFirst` is `true` (default: `false`), then only the first
+    (resp. last) symbol of the production can be considered as leftmost (resp.
+    rightmost).
+}
+
+@description{
+    For instance, consider the following grammar:
+
+    ```
+    lexical X  = Y;
+    lexical Y  = Y1 | Y2;
+    lexical Y1 = "[" Z "]"; 
+    lexical Y2 = "[" Z ")" [a-z];
+    lexical Z  = [a-z];
+    ```
+
+    The unique leftmost delimiter of the `Y1`  production is `[`. The unique
+    leftmost delimiter of the `Y2` production is `[`. The unique leftmost
+    delimiter of the `X` production is `[`. The remaining productions do not
+    have a unique leftmost delimiter.
+
+    The unique rightmost delimiter of the `Y1` production is `]`. The unique
+    rightmost delimiter of the `Y2` production is `)`. The remaining productions
+    do not have a unique rightmost delimiter. In particular, the `X` production
+    has two rightmost delimiters, but not one unique.
+
+    If `getOnlyFirst` is `true`, then the `Y2` production does not have a
+    rightmost delimiter.
 }
 
 DelimiterPair getInnerDelimiterPair(Grammar g, Production p, bool getOnlyFirst = false) {
@@ -35,8 +63,8 @@ DelimiterPair getInnerDelimiterPair(Grammar g, Production p, bool getOnlyFirst =
 }
 
 @memo
-private map[Symbol, Maybe[Symbol]] getInnerDelimitersBySymbol(Grammar g, Direction direction) {
-    map[Production, Maybe[Symbol]] m = getInnerDelimitersByProduction(g, direction);
+private map[Symbol, Maybe[Symbol]] getInnerDelimitersBySymbol(Grammar g, Direction direction, bool getOnlyFirst = false) {
+    map[Production, Maybe[Symbol]] m = getInnerDelimitersByProduction(g, direction, getOnlyFirst = getOnlyFirst);
     return (s: unique({m[p] | p <- m, s == delabel(p.def)}) | p <- m, s := delabel(p.def));
 }
 
@@ -69,8 +97,27 @@ set[Production] getChildren(Grammar g, Symbol s)
     = {child | child <- lookup(g, s)};
 
 @synopsis{
-    Gets the rightmost common delimiter (`begin`) and the leftmost common
-    delimiter (`end`), if any, that occur outside production `p` in grammar `g`.
+    Gets the unique rightmost delimiter (`begin`) and the unique leftmost
+    delimiter (`end`), if any, that occur **outside** production `p` in grammar
+    `g`.
+}
+
+@description{
+    For instance, consider the following grammar:
+
+    ```
+    lexical X  = Y;
+    lexical Y  = Y1 | Y2;
+    lexical Y1 = "[" Z "]"; 
+    lexical Y2 = "[" Z ")" [a-z];
+    lexical Z  = [a-z];
+    ```
+
+    The unique rightmost delimiter of the `Z` production is `[`. The remaining
+    productions do not have a unique rightmost delimiter.
+
+    The productions do not have a unique leftmost delimiter. In particular, the
+    `Z` productions has two leftmost delimiters, but not one unique.
 }
 
 DelimiterPair getOuterDelimiterPair(Grammar g, Production p)
