@@ -31,14 +31,19 @@
 ## <----- keyword.control
 ## TODO: `begin` outside `begin`-`end` can never be an identifier in Pico
 
-#"foo" "bar"
-## <----- string.quoted.double
-##    ^ -string.quoted.double
-##     ^^^^^ string.quoted.double
-## TODO: Support multiline productions
+  "foo bar"
+# ^^^^^^^^^ string.quoted.double
 
-#"foo\"bar"
-## <---- string.quoted.double
-##   ^^ string.quoted.double
-##     ^^^^ string.quoted.double
-## TODO: Support multiline productions with escaping
+  "foo" "bar"
+# ^^^^^       string.quoted.double
+#      ^      -string.quoted.double
+#       ^^^^^ string.quoted.double
+
+  "foo\" bar
+# ^^^^^^     string.quoted.double
+#       ^^^^ -string.quoted.double
+
+#  "foo
+## ^^^^ string.quoted.double
+#  bar"
+## ^^^^ string.quoted.double
