@@ -151,6 +151,7 @@ private bool less(ConversionUnit u1, ConversionUnit u2) {
             // Symmetrical case
             return false;
         } else {
+            // Otherwise, sort arbitrarily by name and stringified production
             return toName(u1.prod.def) + "<u1.prod>" < toName(u2.prod.def) + "<u2.prod>";
         }
     } else if (nothing() != key1 && nothing() == key2) {
@@ -161,6 +162,7 @@ private bool less(ConversionUnit u1, ConversionUnit u2) {
         // Symmetrical case
         return false;
     } else {
+        // Otherwise, sort arbitrarily by name and stringified production
         return toName(u1.prod.def) + "<u1.prod>" < toName(u2.prod.def) + "<u2.prod>";
     }
 }
