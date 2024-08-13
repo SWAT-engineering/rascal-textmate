@@ -16,7 +16,7 @@ import lang::rascal::grammar::Util;
 
 @synopsis{
     Converts a set/list of values (presumably: productions, symbols, or
-    conditions) to a list of regular expressions.
+    conditions) to a list of regular expressions
 }
 
 list[RegExp] toRegExps(Grammar g, set[value] values)
@@ -25,16 +25,23 @@ list[RegExp] toRegExps(Grammar g, list[value] values)
     = [toRegExp(g, v) | v <- values];
 
 @synopsis{
-    Converts a production to a regular expression.
+    Converts a production to a regular expression
 }
 
-RegExp toRegExp(Grammar g, prod(_, symbols, attributes)) {
+RegExp toRegExp(Grammar g, prod(_, symbols, attributes))
+    = toRegExp(g, symbols, attributes);
+
+@synopsis{
+    Converts a list of symbols and a set of attributes to a regular expression
+}
+
+RegExp toRegExp(Grammar g, symbols, attributes) {
     RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
     return /\tag("category"(c)) := attributes ? group(re, category = c) : re;
 }
 
 @synopsis{
-    Converts a symbol to a regular expression.
+    Converts a symbol to a regular expression
 }
 
 // `Type`
@@ -128,7 +135,7 @@ default RegExp toRegExp(Grammar _, Symbol s) {
 }
 
 @synopsis{
-    Converts a condition to a regular expression.
+    Converts a condition to a regular expression
 }
 
 RegExp toRegExp(Grammar g, \follow(symbol))
@@ -155,7 +162,7 @@ default RegExp toRegExp(Grammar _, Condition c) {
 }
 
 @synopsis{
-    Converts a character range to a regular expression.
+    Converts a character range to a regular expression
 }
 
 RegExp toRegExp(Grammar _, range(char, char))
@@ -164,7 +171,7 @@ default RegExp toRegExp(Grammar _, range(begin, end))
     = regExp("[<encode(begin)>-<encode(end)>]", []);
 
 @synopsis{
-    Encodes a (list of) char(s) to a (list of) code unit(s).
+    Encodes a (list of) char(s) to a (list of) code unit(s)
 }
 
 str encode(list[int] chars, bool withBounds = false)
