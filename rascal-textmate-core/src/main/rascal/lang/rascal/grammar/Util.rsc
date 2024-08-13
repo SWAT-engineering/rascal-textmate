@@ -103,12 +103,20 @@ Symbol destar(\iter-star-seps(symbol, separators))
 default Symbol destar(Symbol s) = s;
 
 @synopsis{
-    Gets from set `symbols` each symbol that is a strict prefix of any other
+    Filter from set `symbols` each symbol that is a strict prefix of any other
     symbol in `symbols`
 }
 
-set[Symbol] getStrictPrefixes(set[Symbol] symbols)
+set[Symbol] filterStrictPrefixes(set[Symbol] symbols)
     = {s1 | s1 <- symbols, any(s2 <- symbols, isStrictPrefix(s1, s2))};
+
+@synopsis{
+    Removes from set `symbols` each symbol that is a strict prefix of any other
+    symbol in `symbols`
+}
+
+set[Symbol] removeStrictPrefixes(set[Symbol] symbols)
+    = symbols - filterStrictPrefixes(symbols);
 
 @synopsis{
     Checks if symbol `s1` is a strict prefix of symbol `s2`
