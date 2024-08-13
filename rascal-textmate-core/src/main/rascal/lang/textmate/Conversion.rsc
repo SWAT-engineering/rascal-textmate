@@ -21,11 +21,20 @@ import lang::textmate::NameGeneration;
 
 alias RscGrammar = Grammar;
 
+// TODO: Move this type (and related types and functions) to its own module
 data ConversionUnit = unit(
     RscGrammar rsc,
     Production prod,
+    ProductionKind kind,
     DelimiterPair outerDelimiters,
-    DelimiterPair innerDelimiters);
+    DelimiterPair innerDelimiters,
+    str name = "",
+    list[TmRule] innerRules = [],
+    list[TmRule] outerRules = []);
+
+data ProductionKind
+    = singleLine()
+    | multiLine();
 
 @synopsis{
     Converts Rascal grammar `rsc` to a TextMate grammar
@@ -112,8 +121,6 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
         = p in ancestors;
-    // bool isSingleLine(Production p, _, _)
-    //     = !hasNewline(rsc, p);
     bool isNonEmpty(prod(def, _, _), _, _)
         = !tryParse(rsc, delabel(def), "");
     bool hasCategory(prod(_, _, attributes), _, _)
@@ -124,7 +131,6 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     Dependencies dependencies = deps(toGraph(rsc));
     list[Production] prods = dependencies
         .removeProds(isCyclic, true) // `true` means "also remove ancestors"
-        // .filterProds(isSingleLine)
         .filterProds(isNonEmpty)
         .filterProds(hasCategory)
         .getProds();
@@ -140,11 +146,15 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     list[Production] prodsKeywords = [prod(lex(KEYWORDS_PRODUCTION_NAME), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
     // Return
-    bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
+    bool isEmptyProd(prod(_, [\alt(alternatives)], _))
+        = alternatives == {};
+    ProductionKind getKind(Production p)
+        = hasNewline(rsc, p) ? multiLine() : singleLine();
+    
     list[ConversionUnit] units
-        = [unit(rsc, p, getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods]
-        + [unit(rsc, p, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)]
-        + [unit(rsc, p, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)];
+        = [unit(rsc, p, getKind(p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods]
+        + [unit(rsc, p, singleLine(), <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)]
+        + [unit(rsc, p, singleLine(), <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)];
 
     return sort(units);
 }
