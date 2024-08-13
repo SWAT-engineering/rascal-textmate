@@ -40,36 +40,36 @@
 ## ^^^^^^^^^^^^ Comment
 
   /* foo
-$ ^^^^^^ Comment
+# ^^^^^^ Comment
   bar */
-$ ^^^^^^ Comment
+# ^^^^^^ Comment
 
   foo /* 
-$ ^^^^   -Comment
-$     ^^ Comment
+# ^^^^   -Comment
+#     ^^ Comment
   bar */
-$ ^^^^^^ Comment
+# ^^^^^^ Comment
 
   /* foo
-$ ^^^^^^ Comment
+# ^^^^^^ Comment
   */ bar
-$ ^^     Comment
-$   ^^^^ -Comment
+# ^^     Comment
+#   ^^^^ -Comment
 
   /* 
-$ ^^ Comment
+# ^^ Comment
   *
-$ ^  Comment
+# ^  Comment
   **
-$ ^^ Comment
+# ^^ Comment
   */
-$ ^^ Comment
+# ^^ Comment
 
   /* 
-$ ^^ Comment
+# ^^ Comment
   *
-$ ^  Comment
+# ^  Comment
   /
-$ ^  Comment
+# ^  Comment
   */
-$ ^^ Comment
+# ^^ Comment

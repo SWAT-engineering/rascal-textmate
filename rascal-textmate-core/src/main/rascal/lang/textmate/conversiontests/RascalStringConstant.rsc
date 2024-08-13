@@ -23,13 +23,13 @@ lexical UnicodeEscape
     | utf32: "\\" [U] (("0" [0-9 A-F a-f]) | "10") [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f]
     | ascii: "\\" [a] [0-7] [0-9A-Fa-f];
 
-Grammar rsc = grammar(#StringConstant);
+Grammar rsc = preprocess(grammar(#StringConstant));
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex("StringConstant"),[lit("\""),label("chars",\iter-star(lex("StringCharacter"))),lit("\"")],{\tag("category"("Constant"))}), <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
-    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\""),lit("\\")})],{}), <nothing(),nothing()>, <nothing(),nothing()>),
-    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("10"),lit("0")})],{\tag("category"("keyword.control"))}), <nothing(),nothing()>, <nothing(),nothing()>)
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'"),lit("\\")})],{}), singleLine(), <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(lex("StringConstant"),[lit("\""),label("chars",\iter-star(lex("StringCharacter"))),lit("\"")],{\tag("category"("Constant"))}), multiLine(), <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
+    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("10"),lit("0")})],{\tag("category"("keyword.control"))}), singleLine(), <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <3, 0, 0>, name = "RascalStringConstant");
+test bool transformTest() = doTransformTest(units, <3, 1, 0>, name = "RascalStringConstant");

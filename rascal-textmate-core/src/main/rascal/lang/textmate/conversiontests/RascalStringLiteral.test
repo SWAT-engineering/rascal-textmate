@@ -1,0 +1,28 @@
+# SYNTAX TEST "RascalStringLiteral"
+
+  "foo<bar
+# ^^^^^    Constant
+#      ^^^ -Constant
+
+  >foo<bar
+# ^^^^^    Constant
+#      ^^^ -Constant
+
+  >foo"bar
+# ^^^^^    Constant
+#      ^^^ -Constant
+
+  "foo"bar
+# ^^^^^    Constant
+#      ^^^ -Constant
+
+  <5, 6>"
+# ^^^^^  -Constant
+#      ^^ Constant
+## TODO: Improve this? (Probably very hard to do with TextMate...)
+
+  "foo <5 > 6> bar"
+# ^^^^^^            Constant
+#       ^^          -Constant
+#         ^^^^^^^^^ Constant
+## TODO: Improve this? (Probably very hard to do with TextMate...)

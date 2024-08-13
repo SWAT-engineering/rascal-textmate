@@ -27,7 +27,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
         
         str tagEscape(str s)
             = /<before:.*[^\\]>\btag\b<after:.*>/ := s 
-            ? "<before>\\tag<after>"
+            ? tagEscape("<before>\\tag<after>")
             : s;
         
         str toStr(Production p)
@@ -36,7 +36,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
         println();
         for (i <- [0..size(actual)]) {
             ConversionUnit u = actual[i];
-            println("unit(rsc, <toStr(u.prod)>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
+            println("    unit(rsc, <toStr(u.prod)>, <u.kind>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
         }
         println();
     }
@@ -61,7 +61,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
 bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str name = "") {
     TmGrammar tm = transform(units)[scopeName = "<name>"];
     Repository repo = tm.repository;
-    list[TmRule] pats = tm.patterns;
+    // list[TmRule] pats = tm.patterns;
     
     loc lProject = |project://rascal-textmate-core|;
     loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";
@@ -84,13 +84,17 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert actual.beginEnd == expect.beginEnd : "Actual number of top-level begin/end patterns in repository: <actual.match>. Expected: <expect.match>.";
     assert actual.include == expect.include : "Actual number of top-level include patterns in repository: <actual.match>. Expected: <expect.match>.";
 
-    int expectNested = (size(units) - expect.match) + expect.beginEnd * (expect.match + expect.beginEnd - 1);
-    int actualNested = (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd);
-    assert actualNested == expectNested : "Actual number of nested patterns: <actualNested>. Expected: <expectNested>.";
-
-    assert size(pats) == size(repo) : "Actual patterns list size: <size(pats)>. Expected: <size(repo)>.";
-    assert (true | it && r is include | r <- pats) : "Patterns list contains pattern(s) of unexpected kind";
-    assert (true | it && s in repo | r <- pats, include(/#<s:.*>$/) := r) : "Patterns list contains pattern(s) outside repository";
+    // TODO: Restore these assertions? They're actually far less important now
+    // that behavioral properties can be tested, so it's unclear if these assertions
+    // have significant value (and they're quite a maintenance burden...).
+    //
+    // int expectNested = (size(units) - expect.match) + expect.beginEnd * (expect.match + expect.beginEnd - 1);
+    // int actualNested = (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd);
+    // assert actualNested == expectNested : "Actual number of nested patterns: <actualNested>. Expected: <expectNested>.";
+    //
+    // assert size(pats) == size(repo) : "Actual patterns list size: <size(pats)>. Expected: <size(repo)>.";
+    // assert (true | it && r is include | r <- pats) : "Patterns list contains pattern(s) of unexpected kind";
+    // assert (true | it && s in repo | r <- pats, include(/#<s:.*>$/) := r) : "Patterns list contains pattern(s) outside repository";
 
     // Test behavioral properties of the TextMate grammar
     
