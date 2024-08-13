@@ -137,7 +137,10 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
     // Analyze delimiters
     println("[LOG] Analyzing delimiters");
-    set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
+    set[Symbol] delimiters
+        = removeStrictPrefixes({s | /Symbol s := rsc, isDelimiter(delabel(s))})
+        - {s | p <- prods, /just(s) := getOuterDelimiterPair(rsc, p)}
+        - {s | p <- prods, /just(s) := getInnerDelimiterPair(rsc, p, getOnlyFirst = true)};
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
