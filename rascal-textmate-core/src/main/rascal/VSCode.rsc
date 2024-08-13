@@ -56,11 +56,11 @@ RscGrammar getRscGrammar() {
         case p: prod(label("real",     sort("Literal")), _, _)   => setCategory(p, "constant.numeric")
         case p: prod(label("rational", sort("Literal")), _, _)   => setCategory(p, "constant.numeric")
         case p: prod(label("location", sort("Literal")), _, _)   => setCategory(p, "markup.underline.link")
-        case p: prod(label("regExp",   sort("Literal")), _, _)   => setCategory(p, "string.regexp")
+        case p: prod(label("regExp",   sort("Literal")), _, _)   => setCategory(p, "constant.regexp")
         case p: prod(lex("StringConstant"), _, _)                => setCategory(p, "string.quoted.double")
         case p: prod(lex("CaseInsensitiveStringConstant"), _, _) => setCategory(p, "string.quoted.single")
-        case p: prod(lex("PreStringChars"), _, _)                => setCategory(p, "string.interpolated")
-        case p: prod(lex("MidStringChars"), _, _)                => setCategory(p, "string.interpolated")
-        case p: prod(lex("PostStringChars"), _, _)               => setCategory(p, "string.interpolated")
+        case p: prod(lex("PreStringChars"), _, _)                => setCategory(p, "string.quoted.double")
+        case p: prod(lex("MidStringChars"), _, _)                => setCategory(p, "string.quoted.double")
+        case p: prod(lex("PostStringChars"), _, _)               => setCategory(p, "string.quoted.double")
     };
 }
