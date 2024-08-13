@@ -88,6 +88,21 @@ Symbol delabel(label(_, Symbol s)) = s;
 default Symbol delabel(Symbol s)   = s;
 
 @synopsis{
+    Removes operators `?` and `*` from symbol `s`, if any
+}
+
+Symbol destar(label(name, symbol))
+    = label(name, destar(symbol));
+Symbol destar(\opt(symbol))
+    = destar(symbol);
+Symbol destar(\iter-star(symbol))
+    = \iter(destar(symbol));
+Symbol destar(\iter-star-seps(symbol, separators))
+    = \iter-seps(destar(symbol), separators);
+
+default Symbol destar(Symbol s) = s;
+
+@synopsis{
     Gets from set `symbols` each symbol that is a strict prefix of any other
     symbol in `symbols`
 }
