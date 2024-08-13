@@ -268,20 +268,22 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
     return tm[patterns = tm.patterns];
 }
 
-@synopsis{
-    Converts a conversion unit to a TextMate rule
-}
-
-TmRule toTmRule(ConversionUnit u, NameGenerator g)
-    = toTmRule(u.rsc, u.prod, g(u.prod));
-
-private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), str name)
-    = !isSynthetic(def) && <just(begin), just(end)> := getOuterDelimiterPair(rsc, p)
-    ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin.string><end.string>", [toTmRule(toRegExp(rsc, p), name)])
-    : toTmRule(toRegExp(rsc, p), name);
+private TmRule toTmRule(RegExp re)
+    = match(
+        re.string,
+        captures = toCaptures(re.categories));
 
 private TmRule toTmRule(RegExp re, str name)
-    = match(re.string, captures = toCaptures(re.categories), name = name);
+    = match(
+        re.string,
+        captures = toCaptures(re.categories),
+        name = name);
 
 private TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
-    = beginEnd(begin.string, end.string, name = name, patterns = patterns);
+    = beginEnd(
+        begin.string,
+        end.string,
+        beginCaptures = toCaptures(begin.categories),
+        endCaptures = toCaptures(end.categories),
+        name = name,
+        patterns = patterns);
