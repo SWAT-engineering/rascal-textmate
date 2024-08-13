@@ -7,6 +7,7 @@ module lang::textmate::Conversion
 import Grammar;
 import IO;
 import ParseTree;
+import String;
 import util::Maybe;
 
 import lang::oniguruma::Conversion;
@@ -46,7 +47,24 @@ data ConversionUnit = unit(
 }
 
 TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName, NameGeneration nameGeneration = long())
-    = transform(analyze(rsc), nameGeneration = nameGeneration) [scopeName = scopeName];
+    = transform(analyze(preprocess(rsc)), nameGeneration = nameGeneration) [scopeName = scopeName];
+
+@synopsis{
+    Preprocess Rascal grammar `rsc` to make it suitable for analysis and
+    transformation
+}
+
+RscGrammar preprocess(RscGrammar rsc) {
+    Symbol replaceIfDelimiter(Symbol old, Symbol new)
+        = isDelimiter(new) ? new : old;
+
+    // Replace occurrences of singleton ranges with just the corresponding
+    // literal. This makes it easier to identify delimiters.
+    return visit (rsc) {
+        case s: \char-class([range(char, char)]) => 
+            replaceIfDelimiter(s, \lit("<stringChar(char)>"))
+    }
+}
 
 @synoposis{
     Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of
