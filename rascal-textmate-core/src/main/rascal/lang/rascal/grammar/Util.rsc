@@ -32,6 +32,15 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
 }
 
 @synopsis{
+    Gets the terminals that occur in production `p`, possibly recursively
+    (default: `true`)
+}
+
+set[Symbol] getTerminals(Grammar g, Production p, bool recur = true)
+    = {s | s <- p.symbols, !isNonTerminalType(s)}
+    + {*getTerminals(g, child) | recur, s <- p.symbols, child <- lookup(g, s)};
+
+@synopsis{
     Lookups a list of productions for symbol `s` in grammar `g`, replacing
     formal parameters with actual parameters when needed
 }
