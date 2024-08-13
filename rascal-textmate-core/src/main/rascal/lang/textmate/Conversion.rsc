@@ -239,34 +239,121 @@ public str KEYWORDS_PRODUCTION_NAME   = "$keywords";
 
 TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = long()) {
 
-    // Transform productions to rules
+    // Transform productions to inner rules
     println("[LOG] Transforming productions to rules");
     NameGenerator g = newNameGenerator([u.prod | u <- units], nameGeneration);
-    list[TmRule] rules = [toTmRule(u, g) | u <- units];
+    units = [u[name = g(u.prod)] | u <- units];
+    units = addInnerRules(units);
+    units = addOuterRules(units);
 
-    // Transform rules to grammar
+    // Transform rules to repository
     println("[LOG] Transforming rules to grammar");
-    TmGrammar tm = lang::textmate::Grammar::grammar((), "", []);
-    for (r <- rules) {
-        // If the repository already contains a rule with the same name as `r`,
-        // then: (1) the patterns of that "old" rule must be combined with the
-        // patterns of the "new" rule; (2) the new rule replaces the old rule.
-        if (tm.repository[r.name]?) {
-            TmRule old = tm.repository[r.name];
-            TmRule new = r;
-            r = r[patterns = old.patterns + new.patterns];
-        }
-        tm = addRule(tm, r);
-    }
-    for (name <- tm.repository, tm.repository[name] is beginEnd) {
-        // Inject top-level patterns into begin/end patterns
-        TmRule r = tm.repository[name]; 
-        tm.repository += (name: r[patterns = r.patterns + tm.patterns - include("#<name>")]);
-    }
+    set[TmRule] innerRules = {*u.innerRules | u <- units};
+    set[TmRule] outerRules = {*u.outerRules | u <- units};
+    Repository repository = ("<r.name>": r | TmRule r <- innerRules + outerRules);
+
+    // Transform rules to top-level patterns
+    bool isTopLevel(ConversionUnit u)
+        = <just(_), just(_)> !:= u.outerDelimiters;
+    list[TmRule] getTopLevelRules(ConversionUnit u)
+        = isTopLevel(u) ? u.innerRules : u.outerRules;
+    list[TmRule] dupLastOccurrenceRemains(list[TmRule] rules) // Instead of the first occurrence (cf. `dup`)
+        = reverse(dup(reverse(rules))); // TODO: Optimize to avoid `reverse`-ing
+    list[TmRule] patterns
+        = dupLastOccurrenceRemains([include("#<r.name>") | u <- units, r <- getTopLevelRules(u)]);
 
     // Return
-    return tm[patterns = tm.patterns];
+    return lang::textmate::Grammar::grammar(repository, "", patterns);
 }
+
+private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
+
+    // Define map to temporarily store inner rules
+    map[ConversionUnit, list[TmRule]] rules = (u: [] | u <- units);
+
+    // Compute and iterate over *sets* of conversion units with a common `begin`
+    // delimiter, if any, to be able to use per-set conversion
+    rel[Maybe[Symbol] begin, ConversionUnit unit] index
+        = {<begin, u> | u <- units, <begin, _> := u.innerDelimiters};
+    for (key <- index.begin, set[ConversionUnit] units := index[key]) {
+
+        // Convert all units generically to match patterns (including,
+        // optimistically, multi-line productions as-if they are single-line)
+        for (u <- units) {
+            TmRule r = toTmRule(
+                toRegExp(u.rsc, u.prod),
+                "/inner/single/<u.name>");
+
+            rules = insertIn(rules, (u: r));
+        }
+
+        // Convert multi-line units, with a common `begin` delimiter, and with a
+        // common category, specifically to begin/end patterns
+        units = {u | u <- units, multiLine() == u.kind, <just(_), just(_)> := u.innerDelimiters};
+        
+        set[RscGrammar] grammars = {u.rsc | u <- units};
+        set[Symbol]     begins   = {begin | u <- units, <just(begin), _> := u.innerDelimiters};
+        set[Symbol]     ends     = {  end | u <- units, <_, just(end)>   := u.innerDelimiters};
+        set[Attr]       tags     = {    t | u <- units, prod(_, _, /t: \tag("category"(_))) := u.prod};
+
+        if ({rsc} := grammars, {begin} := begins, _ <- ends, {t} := tags) {
+
+            // Compute symbols to generate nested patterns for
+            list[Symbol] symbols = [*getTerminals(rsc, u.prod) | u <- units];
+            symbols = [s | s <- symbols, s notin begins && s notin ends];
+            symbols = [destar(s) | s <- symbols];
+            symbols = dup(symbols);
+            symbols = symbols + \char-class([range(1,1114111)]); // Any char (as a fallback)
+            
+            TmRule r = toTmRule(
+                toRegExp(rsc, [begin], {t}),
+                toRegExp(rsc, [\alt(ends)], {t}),
+                "/inner/multi/<intercalate(",", [u.name | u <- units])>",
+                [toTmRule(toRegExp(rsc, [s], {t})) | s <- symbols]);
+            
+            rules = insertIn(rules, (u: r | u <- units));
+        }
+    }
+
+    // Add inner rules to conversion units and return
+    return [u[innerRules = rules[u]] | u <- units];
+}
+
+// TODO: Rethink this approach for outer rules
+private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
+
+    // Define a map to temporarily store outer rules
+    map[ConversionUnit, list[TmRule]] rules = (u: [] | u <- units);
+
+    // Compute and iterate over *sets* of conversion units with a common `begin`
+    // delimiter, if any, to be able to use per-set conversion
+    rel[Maybe[Symbol] begin, ConversionUnit unit] index
+        = {<begin, u> | u <- units, <begin, _> := u.outerDelimiters};
+    for (key <- index.begin, set[ConversionUnit] units := index[key], nothing() !:= key) {
+        units -= {u | u <- units, <_, nothing()> := u.outerDelimiters};
+        units += index[nothing()];
+        
+        set[RscGrammar] grammars = {u.rsc | u <- units};
+        set[Symbol]     begins   = {begin | u <- units, <just(begin), _> := u.outerDelimiters};
+        set[Symbol]     ends     = {  end | u <- units, <_, just(end)>   := u.outerDelimiters};
+
+        if ({rsc} := grammars, {begin} := begins, _ <- ends) {
+            TmRule r = toTmRule(
+                toRegExp(rsc, [begin], {}),
+                toRegExp(rsc, [\alt(ends)], {}),
+                "/outer/<begin.string>",
+                [include("#<r.name>") | u <- sort([*units]), TmRule r <- u.innerRules]);
+            
+            rules = insertIn(rules, (u: r | u <- units));
+        }
+    }
+
+    // Add outer rules to conversion units and return
+    return [u[outerRules = rules[u]] | u <- units];
+}
+
+private map[&K, list[&V]] insertIn(map[&K, list[&V]] m, map[&K, &V] values)
+    = (k: m[k] + (k in values ? [values[k]] : []) | k <- m);
 
 private TmRule toTmRule(RegExp re)
     = match(
