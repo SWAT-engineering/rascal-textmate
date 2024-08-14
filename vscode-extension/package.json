@@ -1,6 +1,6 @@
 {
-  "name": "rascal-syntax-highlighting",
-  "displayName": "Rascal Syntax Highlighting",
+  "name": "rascalmpl-syntax-highlighting",
+  "displayName": "Rascal Metaprogramming Language (Syntax Highlighting)",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -10,11 +10,31 @@
     "Programming Languages"
   ],
   "contributes": {
-    "grammars": [{
-      "language": "rascalmpl",
-      "scopeName": "source.rascalmpl.injection",
-      "path": "./syntaxes/rascal.tmLanguage.json",
-      "injectTo": ["source.rascalmpl"]
-    }]
+    "languages": [
+      {
+        "id": "rascalmpl",
+        "aliases": ["Rascal MPL"],
+        "extensions": [".rsc"],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "pico",
+        "aliases": ["Pico"],
+        "extensions": [".pico"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rascalmpl",
+        "scopeName": "source.rascalmpl",
+        "path": "./syntaxes/rascal.tmLanguage.json"
+      },
+      {
+        "language": "pico",
+        "scopeName": "source.pico",
+        "path": "./syntaxes/pico.tmLanguage.json"
+      }
+    ]
   }
 }
