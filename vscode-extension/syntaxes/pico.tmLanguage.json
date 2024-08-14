@@ -1,0 +1,240 @@
+{
+  "repository": {
+    "/inner/single/type.string": {
+      "match": "(\\bstring\\b)",
+      "name": "/inner/single/type.string",
+      "captures": {
+        "1": {
+          "name": "storage.type"
+        }
+      }
+    },
+    "/inner/multi/expression.strcon": {
+      "begin": "(\\\")",
+      "end": "(\\\")",
+      "patterns": [
+        {
+          "match": "((?:\\\")(?:[\\x{01}-\\!]|[\\#-\\x{10FFFF}])*?(?:\\\"))",
+          "captures": {
+            "1": {
+              "name": "string.quoted.double"
+            }
+          }
+        },
+        {
+          "match": "([\\x{01}-\\x{10FFFF}])",
+          "captures": {
+            "1": {
+              "name": "string.quoted.double"
+            }
+          }
+        }
+      ],
+      "endCaptures": {
+        "1": {
+          "name": "string.quoted.double"
+        }
+      },
+      "name": "/inner/multi/expression.strcon",
+      "beginCaptures": {
+        "1": {
+          "name": "string.quoted.double"
+        }
+      }
+    },
+    "/inner/single/$keywords": {
+      "match": "((?:\\bdo\\b)|(?:\\bdeclare\\b)|(?:\\bfi\\b)|(?:\\belse\\b)|(?:\\bend\\b)|(?:\\bod\\b)|(?:\\bbegin\\b)|(?:\\bnatural\\b)|(?:\\bthen\\b)|(?:\\bif\\b)|(?:\\bwhile\\b)|(?:\\bstring\\b))",
+      "name": "/inner/single/$keywords",
+      "captures": {
+        "1": {
+          "name": "keyword.control"
+        }
+      }
+    },
+    "/inner/single/$delimiters": {
+      "match": "(?:(?:\\-)|(?:\\,)|(?:\\))|(?:\\()|(?:\\+)|(?:\\|\\|)|(?:\\:\\=))",
+      "name": "/inner/single/$delimiters",
+      "captures": {}
+    },
+    "/inner/single/expression.id": {
+      "match": "((?=(?<head>(?:(?:[a-z](?:[0-9]|[a-z])*?)(?!(?:[0-9]|[a-z]))))(?<tail>.*)$)(?!(?:(?:(?:\\bwhile\\b)|(?:\\bthen\\b)|(?:\\bod\\b)|(?:\\bif\\b)|(?:\\belse\\b)|(?:\\bdeclare\\b)|(?:\\bdo\\b)|(?:\\bbegin\\b)|(?:\\bend\\b)|(?:\\bfi\\b)))\\k<tail>$)\\k<head>)",
+      "name": "/inner/single/expression.id",
+      "captures": {
+        "1": {
+          "name": "variable.other"
+        },
+        "2": {
+          "name": ""
+        },
+        "3": {
+          "name": ""
+        }
+      }
+    },
+    "/inner/single/type.natural": {
+      "match": "(\\bnatural\\b)",
+      "name": "/inner/single/type.natural",
+      "captures": {
+        "1": {
+          "name": "storage.type"
+        }
+      }
+    },
+    "/outer/:": {
+      "begin": "(?:\\:)",
+      "end": "(?:\\;)",
+      "patterns": [
+        {
+          "include": "#/inner/single/$delimiters"
+        },
+        {
+          "include": "#/inner/single/type.natural"
+        },
+        {
+          "include": "#/inner/single/type.nil"
+        },
+        {
+          "include": "#/inner/single/type.string"
+        },
+        {
+          "include": "#/inner/single/whitespaceandcomment.1"
+        },
+        {
+          "include": "#/inner/single/whitespaceandcomment.2"
+        },
+        {
+          "include": "#/inner/multi/whitespaceandcomment.2"
+        },
+        {
+          "include": "#/inner/single/expression.strcon"
+        },
+        {
+          "include": "#/inner/multi/expression.strcon"
+        },
+        {
+          "include": "#/inner/single/expression.id"
+        },
+        {
+          "include": "#/inner/single/expression.natcon"
+        },
+        {
+          "include": "#/inner/single/$keywords"
+        }
+      ],
+      "endCaptures": {},
+      "name": "/outer/:",
+      "beginCaptures": {}
+    },
+    "/inner/single/expression.natcon": {
+      "match": "([0-9]+?)",
+      "name": "/inner/single/expression.natcon",
+      "captures": {
+        "1": {
+          "name": "constant.numeric"
+        }
+      }
+    },
+    "/inner/single/type.nil": {
+      "match": "(nil\\-type)",
+      "name": "/inner/single/type.nil",
+      "captures": {
+        "1": {
+          "name": "storage.type"
+        }
+      }
+    },
+    "/inner/single/whitespaceandcomment.1": {
+      "match": "((?:\\%\\%)(?:(?:[\\x{01}-\\t]|[\\x{0B}-\\x{10FFFF}])*?(?:$)))",
+      "name": "/inner/single/whitespaceandcomment.1",
+      "captures": {
+        "1": {
+          "name": "comment.line"
+        }
+      }
+    },
+    "/inner/multi/whitespaceandcomment.2": {
+      "begin": "(\\%)",
+      "end": "(\\%)",
+      "patterns": [
+        {
+          "match": "((?:[\\x{01}-\\$]|[\\&-\\x{10FFFF}])+?)",
+          "captures": {
+            "1": {
+              "name": "comment.block"
+            }
+          }
+        },
+        {
+          "match": "([\\x{01}-\\x{10FFFF}])",
+          "captures": {
+            "1": {
+              "name": "comment.block"
+            }
+          }
+        }
+      ],
+      "endCaptures": {
+        "1": {
+          "name": "comment.block"
+        }
+      },
+      "name": "/inner/multi/whitespaceandcomment.2",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.block"
+        }
+      }
+    },
+    "/inner/single/whitespaceandcomment.2": {
+      "match": "((?:\\%)(?:[\\x{01}-\\$]|[\\&-\\x{10FFFF}])+?(?:\\%))",
+      "name": "/inner/single/whitespaceandcomment.2",
+      "captures": {
+        "1": {
+          "name": "comment.block"
+        }
+      }
+    },
+    "/inner/single/expression.strcon": {
+      "match": "((?:\\\")(?:[\\x{01}-\\!]|[\\#-\\x{10FFFF}])*?(?:\\\"))",
+      "name": "/inner/single/expression.strcon",
+      "captures": {
+        "1": {
+          "name": "string.quoted.double"
+        }
+      }
+    }
+  },
+  "scopeName": "source.pico",
+  "patterns": [
+    {
+      "include": "#/inner/single/$delimiters"
+    },
+    {
+      "include": "#/outer/:"
+    },
+    {
+      "include": "#/inner/single/whitespaceandcomment.1"
+    },
+    {
+      "include": "#/inner/single/whitespaceandcomment.2"
+    },
+    {
+      "include": "#/inner/multi/whitespaceandcomment.2"
+    },
+    {
+      "include": "#/inner/single/expression.strcon"
+    },
+    {
+      "include": "#/inner/multi/expression.strcon"
+    },
+    {
+      "include": "#/inner/single/expression.id"
+    },
+    {
+      "include": "#/inner/single/expression.natcon"
+    },
+    {
+      "include": "#/inner/single/$keywords"
+    }
+  ]
+}
