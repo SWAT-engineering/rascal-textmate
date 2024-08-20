@@ -35,7 +35,7 @@ RegExp toRegExp(Grammar g, prod(_, symbols, attributes))
     Converts a list of symbols and a set of attributes to a regular expression
 }
 
-RegExp toRegExp(Grammar g, symbols, attributes) {
+RegExp toRegExp(Grammar g, list[Symbol] symbols, set[Attr] attributes) {
     RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
     return /\tag("category"(c)) := attributes ? group(re, category = c) : re;
 }
