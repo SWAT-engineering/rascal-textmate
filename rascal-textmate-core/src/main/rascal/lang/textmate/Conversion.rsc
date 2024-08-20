@@ -7,6 +7,7 @@ module lang::textmate::Conversion
 import Grammar;
 import IO;
 import ParseTree;
+import util::Maybe;
 
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
@@ -21,7 +22,9 @@ alias RscGrammar = Grammar;
 
 data ConversionUnit = unit(
     RscGrammar rsc,
-    Production prod);
+    Production prod,
+    DelimiterPair outerDelimiters,
+    DelimiterPair innerDelimiters);
 
 @synopsis{
     Converts Rascal grammar `rsc` to a TextMate grammar
@@ -91,8 +94,8 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
         = p in ancestors;
-    bool isSingleLine(Production p, _, _)
-        = !hasNewline(rsc, p);
+    // bool isSingleLine(Production p, _, _)
+    //     = !hasNewline(rsc, p);
     bool isNonEmpty(prod(def, _, _), _, _)
         = !tryParse(rsc, delabel(def), "");
     bool hasCategory(prod(_, _, attributes), _, _)
@@ -103,7 +106,7 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     Dependencies dependencies = deps(toGraph(rsc));
     list[Production] prods = dependencies
         .removeProds(isCyclic, true) // `true` means "also remove ancestors"
-        .filterProds(isSingleLine)
+        // .filterProds(isSingleLine)
         .filterProds(isNonEmpty)
         .filterProds(hasCategory)
         .getProds();
@@ -111,9 +114,6 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Analyze delimiters
     println("[LOG] Analyzing delimiters");
     set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
-    delimiters -= getStrictPrefixes(delimiters);
-    delimiters -= {s | prod(_, [s, *_], _) <- prods, isDelimiter(delabel(s))};
-    delimiters -= {s | prod(def, _, _) <- prods, /s := getDelimiterPairs(rsc, delabel(def))};
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
@@ -124,15 +124,54 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     // Return
     bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
     list[ConversionUnit] units
-        = [unit(rsc, p) | p <- prodsDelimiters, !isEmptyProd(p)]
-        + [unit(rsc, p) | p <- prods]
-        + [unit(rsc, p) | p <- prodsKeywords, !isEmptyProd(p)];
+        = [unit(rsc, p, getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods]
+        + [unit(rsc, p, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)]
+        + [unit(rsc, p, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)];
 
-    return units;
+    return sort(units, less);
 }
 
-public str DELIMITERS_PRODUCTION_NAME = "$delimiters";
-public str KEYWORDS_PRODUCTION_NAME   = "$keywords";
+private bool less(ConversionUnit u1, ConversionUnit u2) {
+
+    Maybe[Symbol] getKey(ConversionUnit u)
+        = <just(begin), _> := u.outerDelimiters ? just(begin)
+        : <just(begin), _> := u.innerDelimiters ? just(begin)
+        : nothing();
+    
+    Maybe[Symbol] key1 = getKey(u1);
+    Maybe[Symbol] key2 = getKey(u2);
+
+    if (just(begin1) := key1 && just(begin2) := key2) {
+        if (begin2.string < begin1.string) {
+            // If `begin2` is a prefix of `begin1`, then the rule for `u1` should be
+            // tried *before* the rule for `u2` (i.e., `u1` is less than `u2` for
+            // sorting purposes)
+            return true;
+        } else if (begin1.string < begin2.string) {
+            // Symmetrical case
+            return false;
+        } else {
+            // Otherwise, sort arbitrarily by name and stringified production
+            return toName(u1.prod.def) + "<u1.prod>" < toName(u2.prod.def) + "<u2.prod>";
+        }
+    } else if (nothing() != key1 && nothing() == key2) {
+        // If `u1` has a `begin` delimiter, but `u2` hasn't, then `u1` is less
+        // than `u2` for sorting purposes (arbitrarily)
+        return true;
+    } else if (nothing() == key1 && nothing() != key2) {
+        // Symmetrical case
+        return false;
+    } else {
+        // Otherwise, sort arbitrarily by name and stringified production
+        return toName(u1.prod.def) + "<u1.prod>" < toName(u2.prod.def) + "<u2.prod>";
+    }
+}
+
+public str DELIMITERS_PRODUCTION_NAME = "~delimiters";
+public str KEYWORDS_PRODUCTION_NAME   = "~keywords";
+
+private bool isSynthetic(Symbol s)
+    = lex(name) := s && name in {DELIMITERS_PRODUCTION_NAME, KEYWORDS_PRODUCTION_NAME};
 
 @synopsis{
     Transforms a list of productions, in the form of conversion units, to a
@@ -166,6 +205,11 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
         }
         tm = addRule(tm, r);
     }
+    for (name <- tm.repository, tm.repository[name] is beginEnd) {
+        // Inject top-level patterns into begin/end patterns
+        TmRule r = tm.repository[name]; 
+        tm.repository += (name: r[patterns = r.patterns + tm.patterns - include("#<name>")]);
+    }
 
     // Return
     return tm[patterns = tm.patterns];
@@ -179,7 +223,7 @@ TmRule toTmRule(ConversionUnit u, NameGenerator g)
     = toTmRule(u.rsc, u.prod, g(u.prod));
 
 private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), str name)
-    = {<begin, end>} := getDelimiterPairs(rsc, delabel(def)) // TODO: Support non-singleton sets of delimiter pairs
+    = !isSynthetic(def) && <just(begin), just(end)> := getOuterDelimiterPair(rsc, p)
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin.string><end.string>", [toTmRule(toRegExp(rsc, p), name)])
     : toTmRule(toRegExp(rsc, p), name);
 
