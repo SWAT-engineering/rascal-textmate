@@ -133,7 +133,7 @@ private map[Symbol, Maybe[Symbol]] getOuterDelimitersBySymbol(Grammar g, Directi
         = unique({\do(parent.def, rest) | parent <- getParents(g, s), [*_, /s, *rest] := reorder(parent.symbols, direction), /s !:= rest});
 
     Maybe[Symbol] \do(Symbol def, list[Symbol] rest) {
-        for (s <- rest) {
+        for (Symbol s <- rest) {
             s = delabel(s);
             if (isDelimiter(s)) {
                 return just(s);
