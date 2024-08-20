@@ -35,6 +35,8 @@ module lang::textmate::conversiontests::Walkthrough
 
 import Grammar;
 import ParseTree;
+import util::Maybe;
+
 import lang::textmate::Conversion;
 import lang::textmate::ConversionTests;
 
@@ -55,7 +57,8 @@ start syntax Value
     | String
     | RegExp
     | Location
-    | Boolean;
+    | Boolean
+    ;
 
 syntax Map = "{" {(Key ":" Value) ","}* "}";
 
@@ -115,7 +118,8 @@ lexical String = @category="string.quoted.double" "\"" Alnum* "\"";
 
 lexical Comment
     = @category="comment.line.double-slash" line:  "//" (Alnum | Blank)* $
-    | @category="comment.block"             block: "/*" (Alnum | Space)* "*/";
+    | @category="comment.block"             block: "/*" (Alnum | Space)* "*/"
+    ;
 
 layout Layout = (Comment | Space)* !>> "//" !>> [\ \t\n];
 
@@ -155,7 +159,8 @@ lexical RegExpBody
     = @category="markup.italic" alnum: Alnum+ !>> [a-z A-Z 0-9]
     | RegExpBody "?"
     | RegExpBody "+"
-    | RegExpBody "|" RegExpBody;
+    | RegExpBody "|" RegExpBody
+    ;
 
 // Production `alnum` of `RegExpBody` is suitable for conversion. However,
 // except for the `@category` tag, it has exactly the same definition as the
@@ -245,7 +250,8 @@ lexical Segment  = Alnum+ !>> [a-z A-Z 0-9];
 
 lexical Boolean
     = "true"
-    | "false";
+    | "false"
+    ;
 
 // The productions of `Boolean` are *not* suitable for conversion, as they
 // violate condition 4. However, by default, literals like these should be
@@ -280,13 +286,14 @@ lexical Boolean
 Grammar rsc = grammar(#Value);
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("+"),lit("*/"),lit("}"),lit("|"),lit("?"),lit("://"),lit("/*"),lit("{")})],{})),
-    unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))})),
-    unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))})),
-    unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))})),
-    unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))})),
-    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}))
+    unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))}), <nothing(),nothing()>, <just(lit("//")),nothing()>),
+    unit(rsc, prod(label("block",lex("Comment")),[lit("/*"),\iter-star(alt({lex("Alnum"),lex("Space")})),lit("*/")],{\tag("category"("comment.block"))}), <nothing(),nothing()>, <just(lit("/*")),just(lit("*/"))>),
+    unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))}), <just(lit("/")),just(lit("/"))>, <nothing(),nothing()>),
+    unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))}), <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
+    unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))}), <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("/"),lit("+"),lit("*/"),lit("//"),lit("\""),lit("}"),lit("|"),lit("?"),lit("/*"),lit("{"),lit("://"),lit(":")})],{}), <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}), <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <5, 1, 0>);
+test bool transformTest() = doTransformTest(units, <6, 1, 0>);
