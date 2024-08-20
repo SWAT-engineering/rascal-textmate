@@ -16,12 +16,14 @@ lexical StringCharacter
     = "\\" [\" \' \< \> \\ b f n r t] 
     | UnicodeEscape 
     | ![\" \' \< \> \\]
-    | [\n][\ \t \u00A0 \u1680 \u2000-\u200A \u202F \u205F \u3000]* [\'];
+    | [\n][\ \t \u00A0 \u1680 \u2000-\u200A \u202F \u205F \u3000]* [\']
+    ;
 
 lexical UnicodeEscape
     = utf16: "\\" [u] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] 
     | utf32: "\\" [U] (("0" [0-9 A-F a-f]) | "10") [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f]
-    | ascii: "\\" [a] [0-7] [0-9A-Fa-f];
+    | ascii: "\\" [a] [0-7] [0-9A-Fa-f]
+    ;
 
 Grammar rsc = grammar(#StringConstant);
 

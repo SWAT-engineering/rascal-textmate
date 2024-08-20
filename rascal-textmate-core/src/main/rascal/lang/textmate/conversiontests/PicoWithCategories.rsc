@@ -21,12 +21,14 @@ syntax Statement
     = assign: Id var ":=" Expression val 
     | cond: "if" Expression cond "then" {Statement ";"}*  thenPart "else" {Statement ";"}* elsePart "fi"
     | cond: "if" Expression cond "then" {Statement ";"}*  thenPart "fi"
-    | loop: "while" Expression cond "do" {Statement ";"}* body "od";  
+    | loop: "while" Expression cond "do" {Statement ";"}* body "od"
+    ;
      
 syntax Type 
     = @category="storage.type" natural: "natural" 
     | @category="storage.type" string : "string" 
-    | @category="storage.type" nil    : "nil-type";
+    | @category="storage.type" nil    : "nil-type"
+    ;
 
 syntax Expression 
     = @category="variable.other" id: Id name
@@ -35,7 +37,8 @@ syntax Expression
     | bracket "(" Expression e ")"
     > left concat: Expression lhs "||" Expression rhs
     > left ( add: Expression lhs "+" Expression rhs
-           | min: Expression lhs "-" Expression rhs);
+           | min: Expression lhs "-" Expression rhs)
+    ;
            
 lexical Id = [a-z][a-z0-9]* !>> [a-z0-9];
 lexical Natural = [0-9]+;
@@ -46,7 +49,8 @@ layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
 lexical WhitespaceAndComment 
     = [\ \t\n\r]
     | @category="comment.block" "%" ![%]+ "%"
-    | @category="comment.line" "%%" ![\n]* $;
+    | @category="comment.line" "%%" ![\n]* $
+    ;
 
 Grammar rsc = grammar(#Program);
 

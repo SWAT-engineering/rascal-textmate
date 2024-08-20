@@ -9,9 +9,10 @@ import ParseTree;
 import String;
 import lang::rascal::format::Grammar;
 
-data NameGeneration              // Given a production `p` of the form `prod(label(l, sort(s)), _, _)`... 
-    = short()                    // ...the generated name is of the form `<s>.<l>`
-    | long(bool pretty = false); // ...the generated name is of the form `<p>` (optionally pretty-printed)
+data NameGeneration             // Given a production `p` of the form `prod(label(l, sort(s)), _, _)`... 
+    = short()                   // ...the generated name is of the form `<s>.<l>`
+    | long(bool pretty = false) // ...the generated name is of the form `<p>` (optionally pretty-printed)
+    ;
 
 alias NameGenerator = str(Production);
 

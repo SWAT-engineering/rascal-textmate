@@ -12,9 +12,10 @@ import lang::rascal::grammar::Util;
 
 alias DelimiterPair = tuple[Maybe[Symbol] begin, Maybe[Symbol] end];
 
-data Direction    // Traverse lists of symbols (in productions)...
-    = forward()   //   - ...from left to right;
-    | backward(); //   - ...from right to left.
+data Direction   // Traverse lists of symbols (in productions)...
+    = forward()  //   - ...from left to right;
+    | backward() //   - ...from right to left.
+    ;
 
 @synopsis{
     Reorder a list according to the specified direction

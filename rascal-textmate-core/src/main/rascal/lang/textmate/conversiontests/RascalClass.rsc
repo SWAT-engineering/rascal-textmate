@@ -15,21 +15,25 @@ syntax Class
     > left difference: Class lhs "-" Class rhs 
     > left intersection: Class lhs "&&" Class rhs 
     > left union: Class lhs "||" Class rhs 
-    | bracket \bracket: "(" Class charClass ")";
+    | bracket \bracket: "(" Class charClass ")"
+    ;
 
 syntax Range
     = fromTo: Char start "-" Char end 
-    | character: Char character;
+    | character: Char character
+    ;
 
 lexical Char
     = @category="Constant" "\\" [\  \" \' \- \< \> \[ \\ \] b f n r t] 
     | @category="Constant" ![\  \" \' \- \< \> \[ \\ \]] 
-    | @category="Constant" UnicodeEscape;
+    | @category="Constant" UnicodeEscape
+    ;
 
 lexical UnicodeEscape
     = utf16: "\\" [u] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] 
     | utf32: "\\" [U] (("0" [0-9 A-F a-f]) | "10") [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f] [0-9 A-F a-f]
-    | ascii: "\\" [a] [0-7] [0-9A-Fa-f];
+    | ascii: "\\" [a] [0-7] [0-9A-Fa-f]
+    ;
 
 Grammar rsc = grammar(#Class);
 

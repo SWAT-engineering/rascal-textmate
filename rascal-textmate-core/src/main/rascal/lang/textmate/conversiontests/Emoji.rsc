@@ -12,7 +12,8 @@ lexical Unit
 
 lexical Boolean
     = @category="constant.language" [🙂]
-    | @category="constant.language" [🙁];
+    | @category="constant.language" [🙁]
+    ;
 
 Grammar rsc = grammar(#Boolean);
 
