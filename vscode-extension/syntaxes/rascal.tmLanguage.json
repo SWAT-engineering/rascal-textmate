@@ -41,7 +41,7 @@
           }
         },
         {
-          "match": "((?:[\\x{01}-\\t]|[\\x{0B}-\\;]|\\=|[\\?-\\[]|[\\]-\\_]|[a-\\x{10FFFF}])+?(?!(?:[\\x{01}-\\t]|[\\x{0B}-\\;]|\\=|[\\?-\\[]|[\\]-\\_]|[a-\\x{10FFFF}])))",
+          "match": "([\\x{01}-\\t\\x{0B}-\\;\\=\\?-\\[\\]-\\_a-\\x{10FFFF}]+?(?![\\x{01}-\\t\\x{0B}-\\;\\=\\?-\\[\\]-\\_a-\\x{10FFFF}]))",
           "name": "concretepart.text",
           "captures": {
             "1": {
@@ -107,7 +107,7 @@
       "name": "``"
     },
     "comment.2": {
-      "match": "((?:\\/\\*)(?:(?:\\*(?!\\/))|(?:[\\x{01}-\\)]|[\\+-\\x{10FFFF}]))*?(?:\\*\\/))",
+      "match": "((?:\\/\\*)(?:(?:\\*(?!\\/))|[\\x{01}-\\)\\+-\\x{10FFFF}])*?(?:\\*\\/))",
       "name": "comment.2",
       "captures": {
         "1": {
@@ -116,7 +116,7 @@
       }
     },
     "midstringchars": {
-      "match": "(\\>(?:(?:\\n(?:\\t|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000})*?\\')|(?:(?:\\\\)(?:\\\"|\\'|\\<|\\>|\\\\|b|f|n|r|t))|(?:[\\x{01}-\\!]|[\\#-\\&]|[\\(-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}])|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)(?:[0-9]|[A-F]|[a-f])))(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)u(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)a[0-7](?:[0-9]|[A-F]|[a-f]))))*?\\<)",
+      "match": "(\\>(?:(?:\\n[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?\\')|(?:(?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])|[\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}]|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)[0-9A-Fa-f]))[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)a[0-7][0-9A-Fa-f])))*?\\<)",
       "name": "midstringchars",
       "captures": {
         "1": {
@@ -125,7 +125,7 @@
       }
     },
     "prestringchars": {
-      "match": "(\\\"(?:(?:\\n(?:\\t|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000})*?\\')|(?:(?:\\\\)(?:\\\"|\\'|\\<|\\>|\\\\|b|f|n|r|t))|(?:[\\x{01}-\\!]|[\\#-\\&]|[\\(-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}])|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)(?:[0-9]|[A-F]|[a-f])))(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)u(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)a[0-7](?:[0-9]|[A-F]|[a-f]))))*?\\<)",
+      "match": "(\\\"(?:(?:\\n[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?\\')|(?:(?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])|[\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}]|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)[0-9A-Fa-f]))[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)a[0-7][0-9A-Fa-f])))*?\\<)",
       "name": "prestringchars",
       "captures": {
         "1": {
@@ -139,7 +139,7 @@
       "captures": {}
     },
     "output.resultOutput": {
-      "match": "((?:\\x{21E8})(?:[\\x{01}-\\t]|[\\x{0B}-\\x{0C}]|[\\x{0E}-\\x{10FFFF}])*?\\n)",
+      "match": "((?:\\x{21E8})[\\x{01}-\\t\\x{0B}-\\x{0C}\\x{0E}-\\x{10FFFF}]*?\\n)",
       "name": "output.resultOutput",
       "captures": {
         "1": {
@@ -148,7 +148,7 @@
       }
     },
     "poststringchars": {
-      "match": "(\\>(?:(?:\\n(?:\\t|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000})*?\\')|(?:(?:\\\\)(?:\\\"|\\'|\\<|\\>|\\\\|b|f|n|r|t))|(?:[\\x{01}-\\!]|[\\#-\\&]|[\\(-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}])|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)(?:[0-9]|[A-F]|[a-f])))(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)u(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)a[0-7](?:[0-9]|[A-F]|[a-f]))))*?\\\")",
+      "match": "(\\>(?:(?:\\n[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?\\')|(?:(?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])|[\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}]|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)[0-9A-Fa-f]))[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)a[0-7][0-9A-Fa-f])))*?\\\")",
       "name": "poststringchars",
       "captures": {
         "1": {
@@ -157,7 +157,7 @@
       }
     },
     "literal.rational": {
-      "match": "((?:[1-9][0-9]*?r[0-9](?:[0-9]*?(?!(?:[0-9]|[A-Z]|\\_|[a-z]))))|(?:[0-9][0-9]*?r))",
+      "match": "((?:[1-9][0-9]*?r[0-9](?:[0-9]*?(?![0-9A-Z\\_a-z])))|(?:[0-9][0-9]*?r))",
       "name": "literal.rational",
       "captures": {
         "1": {
@@ -166,7 +166,7 @@
       }
     },
     "output.stderrOutput": {
-      "match": "((?:(?:^)(?:\\x{26A0}))(?:[\\x{01}-\\t]|[\\x{0B}-\\x{0C}]|[\\x{0E}-\\x{10FFFF}])*?\\n)",
+      "match": "((?:(?:^)(?:\\x{26A0}))[\\x{01}-\\t\\x{0B}-\\x{0C}\\x{0E}-\\x{10FFFF}]*?\\n)",
       "name": "output.stderrOutput",
       "captures": {
         "1": {
@@ -175,7 +175,7 @@
       }
     },
     "stringconstant": {
-      "match": "((?:\\\")(?:(?:\\n(?:\\t|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000})*?\\')|(?:(?:\\\\)(?:\\\"|\\'|\\<|\\>|\\\\|b|f|n|r|t))|(?:[\\x{01}-\\!]|[\\#-\\&]|[\\(-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}])|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)(?:[0-9]|[A-F]|[a-f])))(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)u(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)a[0-7](?:[0-9]|[A-F]|[a-f]))))*?(?:\\\"))",
+      "match": "((?:\\\")(?:(?:\\n[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?\\')|(?:(?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])|[\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}]|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)[0-9A-Fa-f]))[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)a[0-7][0-9A-Fa-f])))*?(?:\\\"))",
       "name": "stringconstant",
       "captures": {
         "1": {
@@ -184,7 +184,7 @@
       }
     },
     "caseinsensitivestringconstant": {
-      "match": "((?:\\')(?:(?:\\n(?:\\t|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000})*?\\')|(?:(?:\\\\)(?:\\\"|\\'|\\<|\\>|\\\\|b|f|n|r|t))|(?:[\\x{01}-\\!]|[\\#-\\&]|[\\(-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}])|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)(?:[0-9]|[A-F]|[a-f])))(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)u(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f])(?:[0-9]|[A-F]|[a-f]))|(?:(?:\\\\)a[0-7](?:[0-9]|[A-F]|[a-f]))))*?(?:\\'))",
+      "match": "((?:\\')(?:(?:\\n[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?\\')|(?:(?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])|[\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}]|(?:(?:(?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)[0-9A-Fa-f]))[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])|(?:(?:\\\\)a[0-7][0-9A-Fa-f])))*?(?:\\'))",
       "name": "caseinsensitivestringconstant",
       "captures": {
         "1": {
@@ -193,7 +193,7 @@
       }
     },
     "literal.real": {
-      "match": "((?:(?:(?<!\\.)(?:\\.))[0-9]+?(?:E|e)(?:\\+|\\-)??[0-9]+?(?:D|F|d|f)??)|(?:[0-9]+?(?:(?:\\.)(?!(?:\\.)))[0-9]*?(?:D|F|d|f)??)|(?:(?:(?<!\\.)(?:\\.))[0-9]+?(?:D|F|d|f)??)|(?:[0-9]+?(?:E|e)(?:\\+|\\-)??[0-9]+?(?:D|F|d|f)??)|(?:[0-9]+?(?:D|F|d|f))|(?:[0-9]+?(?:\\.)[0-9]*?(?:E|e)(?:\\+|\\-)??[0-9]+?(?:D|F|d|f)??))",
+      "match": "((?:(?:(?<!\\.)(?:\\.))[0-9]+?[Ee][\\+\\-]??[0-9]+?[DFdf]??)|(?:[0-9]+?(?:(?:\\.)(?!(?:\\.)))[0-9]*?[DFdf]??)|(?:(?:(?<!\\.)(?:\\.))[0-9]+?[DFdf]??)|(?:[0-9]+?[Ee][\\+\\-]??[0-9]+?[DFdf]??)|(?:[0-9]+?[DFdf])|(?:[0-9]+?(?:\\.)[0-9]*?[Ee][\\+\\-]??[0-9]+?[DFdf]??))",
       "name": "literal.real",
       "captures": {
         "1": {
@@ -202,7 +202,7 @@
       }
     },
     "literal.integer": {
-      "match": "((?:0(?:[0-7]+?(?!(?:[0-9]|[A-Z]|\\_|[a-z]))))|(?:(?:[1-9](?:[0-9]*?(?!(?:[0-9]|[A-Z]|\\_|[a-z]))))|(?:(?:\\b0\\b)(?!(?:[0-9]|[A-Z]|\\_|[a-z]))))|(?:0(?:X|x)(?:(?:[0-9]|[A-F]|[a-f])+?(?!(?:[0-9]|[A-Z]|\\_|[a-z])))))",
+      "match": "((?:0(?:[0-7]+?(?![0-9A-Z\\_a-z])))|(?:(?:[1-9](?:[0-9]*?(?![0-9A-Z\\_a-z])))|(?:(?:\\b0\\b)(?![0-9A-Z\\_a-z])))|(?:0[Xx](?:[0-9A-Fa-f]+?(?![0-9A-Z\\_a-z]))))",
       "name": "literal.integer",
       "captures": {
         "1": {
@@ -211,7 +211,7 @@
       }
     },
     "comment.1": {
-      "match": "((?:\\/\\/)(?:(?:[\\x{01}-\\t]|[\\x{0B}-\\x{10FFFF}])*?(?!(?:\\t|\\r|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000}))(?:$)))",
+      "match": "((?:\\/\\/)(?:[\\x{01}-\\t\\x{0B}-\\x{10FFFF}]*?(?![\\t\\r\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}])(?:$)))",
       "name": "comment.1",
       "captures": {
         "1": {
@@ -224,7 +224,7 @@
       "end": "(?:\\])",
       "patterns": [
         {
-          "match": "([\\x{01}-\\x{1F}]|\\!|[\\#-\\&]|[\\(-\\,]|[\\.-\\;]|\\=|[\\?-Z]|[\\^-\\x{10FFFF}])",
+          "match": "([\\x{01}-\\x{1F}\\!\\#-\\&\\(-\\,\\.-\\;\\=\\?-Z\\^-\\x{10FFFF}])",
           "name": "char.1",
           "captures": {
             "1": {
@@ -242,7 +242,7 @@
           }
         },
         {
-          "match": "((?:\\\\)(?:\\x{20}|\\\"|\\'|\\-|\\<|\\>|[\\[-\\]]|b|f|n|r|t))",
+          "match": "((?:\\\\)[\\x{20}\\\"\\'\\-\\<\\>\\[-\\]bfnrt])",
           "name": "char.3",
           "captures": {
             "1": {
@@ -317,7 +317,7 @@
       }
     },
     "literal.regExp": {
-      "match": "((?:\\/)(?:(?:\\\\(?!(?:\\/|\\<|\\>|\\\\)))|(?:[\\x{01}-\\.]|[0-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}])|(?:\\\\(?:\\/|\\<|\\>|\\\\))|(?:(?:\\<)(?:(?=(?<head>(?:(?:(?<!(?:[A-Z]|\\_|[a-z]))(?:[A-Z]|\\_|[a-z]))(?:(?:[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:[0-9]|[A-Z]|\\_|[a-z])))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\(?:[A-Z]|\\_|[a-z])(?:(?:\\-|[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:\\-|[0-9]|[A-Z]|\\_|[a-z])))))(?:\\>))|(?:(?:\\<)(?:(?=(?<head>(?:(?:(?<!(?:[A-Z]|\\_|[a-z]))(?:[A-Z]|\\_|[a-z]))(?:(?:[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:[0-9]|[A-Z]|\\_|[a-z])))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\(?:[A-Z]|\\_|[a-z])(?:(?:\\-|[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:\\-|[0-9]|[A-Z]|\\_|[a-z])))))(?:\\:)(?:(?:\\\\(?:\\/|\\<|\\>|\\\\))|(?:(?:\\<)(?:(?=(?<head>(?:(?:(?<!(?:[A-Z]|\\_|[a-z]))(?:[A-Z]|\\_|[a-z]))(?:(?:[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:[0-9]|[A-Z]|\\_|[a-z])))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\(?:[A-Z]|\\_|[a-z])(?:(?:\\-|[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:\\-|[0-9]|[A-Z]|\\_|[a-z])))))(?:\\>))|(?:\\\\(?!(?:\\<|\\>|\\\\)))|(?:[\\x{01}-\\.]|[0-\\;]|\\=|[\\?-\\[]|[\\]-\\x{10FFFF}]))*?(?:\\>)))*?(?:\\/)(?:d|i|m|s)*?)",
+      "match": "((?:\\/)(?:(?:\\\\(?![\\/\\<\\>\\\\]))|[\\x{01}-\\.0-\\;\\=\\?-\\[\\]-\\x{10FFFF}]|(?:\\\\[\\/\\<\\>\\\\])|(?:(?:\\<)(?:(?=(?<head>(?:(?:(?<![A-Z\\_a-z])[A-Z\\_a-z])(?:[0-9A-Z\\_a-z]*?(?![0-9A-Z\\_a-z]))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\[A-Z\\_a-z](?:[\\-0-9A-Z\\_a-z]*?(?![\\-0-9A-Z\\_a-z]))))(?:\\>))|(?:(?:\\<)(?:(?=(?<head>(?:(?:(?<![A-Z\\_a-z])[A-Z\\_a-z])(?:[0-9A-Z\\_a-z]*?(?![0-9A-Z\\_a-z]))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\[A-Z\\_a-z](?:[\\-0-9A-Z\\_a-z]*?(?![\\-0-9A-Z\\_a-z]))))(?:\\:)(?:(?:\\\\[\\/\\<\\>\\\\])|(?:(?:\\<)(?:(?=(?<head>(?:(?:(?<![A-Z\\_a-z])[A-Z\\_a-z])(?:[0-9A-Z\\_a-z]*?(?![0-9A-Z\\_a-z]))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\[A-Z\\_a-z](?:[\\-0-9A-Z\\_a-z]*?(?![\\-0-9A-Z\\_a-z]))))(?:\\>))|(?:\\\\(?![\\<\\>\\\\]))|[\\x{01}-\\.0-\\;\\=\\?-\\[\\]-\\x{10FFFF}])*?(?:\\>)))*?(?:\\/)[dims]*?)",
       "name": "literal.regExp",
       "captures": {
         "1": {
@@ -344,7 +344,7 @@
       }
     },
     "tag.empty": {
-      "match": "((?:\\@)(?:(?:(?:[\\t-\\r]|\\x{20}|\\x{85}|\\x{A0}|\\x{1680}|\\x{180E}|[\\x{2000}-\\x{200A}]|[\\x{2028}-\\x{2029}]|\\x{202F}|\\x{205F}|\\x{3000})|(?:((?:\\/\\/)(?:(?:[\\x{01}-\\t]|[\\x{0B}-\\x{10FFFF}])*?(?!(?:\\t|\\r|\\x{20}|\\x{A0}|\\x{1680}|[\\x{2000}-\\x{200A}]|\\x{202F}|\\x{205F}|\\x{3000}))(?:$)))|((?:\\/\\*)(?:(?:\\*(?!\\/))|(?:[\\x{01}-\\)]|[\\+-\\x{10FFFF}]))*?(?:\\*\\/))))*?(?!(?:[\\t-\\r]|\\x{20}|\\x{85}|\\x{A0}|\\x{1680}|\\x{180E}|[\\x{2000}-\\x{200A}]|[\\x{2028}-\\x{2029}]|\\x{202F}|\\x{205F}|\\x{3000}))(?!(?:\\/\\/))(?!(?:\\/\\*)))(?:(?=(?<head>(?:(?:(?<!(?:[A-Z]|\\_|[a-z]))(?:[A-Z]|\\_|[a-z]))(?:(?:[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:[0-9]|[A-Z]|\\_|[a-z])))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\(?:[A-Z]|\\_|[a-z])(?:(?:\\-|[0-9]|[A-Z]|\\_|[a-z])*?(?!(?:\\-|[0-9]|[A-Z]|\\_|[a-z]))))))",
+      "match": "((?:\\@)(?:(?:[\\t-\\r\\x{20}\\x{85}\\x{A0}\\x{1680}\\x{180E}\\x{2000}-\\x{200A}\\x{2028}-\\x{2029}\\x{202F}\\x{205F}\\x{3000}]|(?:((?:\\/\\/)(?:[\\x{01}-\\t\\x{0B}-\\x{10FFFF}]*?(?![\\t\\r\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}])(?:$)))|((?:\\/\\*)(?:(?:\\*(?!\\/))|[\\x{01}-\\)\\+-\\x{10FFFF}])*?(?:\\*\\/))))*?(?![\\t-\\r\\x{20}\\x{85}\\x{A0}\\x{1680}\\x{180E}\\x{2000}-\\x{200A}\\x{2028}-\\x{2029}\\x{202F}\\x{205F}\\x{3000}])(?!(?:\\/\\/))(?!(?:\\/\\*)))(?:(?=(?<head>(?:(?:(?<![A-Z\\_a-z])[A-Z\\_a-z])(?:[0-9A-Z\\_a-z]*?(?![0-9A-Z\\_a-z]))))(?<tail>.*)$)(?!(?:(?:(?:\\bbreak\\b)|(?:\\bfor\\b)|(?:\\bstr\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bsolve\\b)|(?:\\brat\\b)|(?:\\bdynamic\\b)|(?:\\bassoc\\b)|(?:\\bbag\\b)|(?:\\bset\\b)|(?:\\bo\\b)|(?:\\bstart\\b)|(?:(?:\\bint\\b)|(?:\\blrel\\b)|(?:\\bbool\\b)|(?:\\btype\\b)|(?:\\bset\\b)|(?:\\bbag\\b)|(?:\\brat\\b)|(?:\\breal\\b)|(?:\\bnode\\b)|(?:\\btuple\\b)|(?:\\bmap\\b)|(?:\\bloc\\b)|(?:\\bnum\\b)|(?:\\blist\\b)|(?:\\bvalue\\b)|(?:\\bvoid\\b)|(?:\\brel\\b)|(?:\\bdatetime\\b)|(?:\\bstr\\b))|(?:\\blrel\\b)|(?:\\bcontinue\\b)|(?:\\bbracket\\b)|(?:\\brel\\b)|(?:\\blist\\b)|(?:\\btest\\b)|(?:\\breturn\\b)|(?:\\bfalse\\b)|(?:\\bjoin\\b)|(?:\\belse\\b)|(?:\\bit\\b)|(?:\\bin\\b)|(?:\\bif\\b)|(?:non\\-assoc)|(?:\\blexical\\b)|(?:\\bvalue\\b)|(?:\\bmap\\b)|(?:\\bvisit\\b)|(?:\\ball\\b)|(?:\\btry\\b)|(?:\\bprivate\\b)|(?:\\btrue\\b)|(?:\\bfinally\\b)|(?:\\breal\\b)|(?:\\bvoid\\b)|(?:\\bkeyword\\b)|(?:\\bany\\b)|(?:\\bone\\b)|(?:\\bmodule\\b)|(?:\\bpublic\\b)|(?:\\bthrows\\b)|(?:\\balias\\b)|(?:\\bdefault\\b)|(?:\\bcatch\\b)|(?:\\binsert\\b)|(?:\\banno\\b)|(?:\\bthrow\\b)|(?:\\bbool\\b)|(?:\\bswitch\\b)|(?:\\btype\\b)|(?:\\bwhile\\b)|(?:\\bnotin\\b)|(?:\\bcase\\b)|(?:\\blayout\\b)|(?:\\bmod\\b)|(?:\\bextend\\b)|(?:\\bappend\\b)|(?:\\bfail\\b)|(?:\\bdatetime\\b)|(?:\\bfilter\\b)|(?:\\bloc\\b)|(?:\\bassert\\b)|(?:\\bdata\\b)|(?:\\bimport\\b)|(?:\\bnum\\b)|(?:\\btag\\b)|(?:\\bsyntax\\b)|(?:\\bint\\b)))\\k<tail>$)\\k<head>|(?:\\\\[A-Z\\_a-z](?:[\\-0-9A-Z\\_a-z]*?(?![\\-0-9A-Z\\_a-z])))))",
       "name": "tag.empty",
       "captures": {
         "1": {
@@ -365,7 +365,7 @@
       }
     },
     "output.stdoutOutput": {
-      "match": "((?:(?:^)(?:\\x{226B}))(?:[\\x{01}-\\t]|[\\x{0B}-\\x{0C}]|[\\x{0E}-\\x{10FFFF}])*?\\n)",
+      "match": "((?:(?:^)(?:\\x{226B}))[\\x{01}-\\t\\x{0B}-\\x{0C}\\x{0E}-\\x{10FFFF}]*?\\n)",
       "name": "output.stdoutOutput",
       "captures": {
         "1": {
