@@ -62,7 +62,8 @@ data TmRule
 
     | include(
         str include,
-        Repository repository = ());
+        Repository repository = ())
+    ;
 
 @synopsis{
     Converts a TextMate grammar to JSON, optionally with custom indentation size

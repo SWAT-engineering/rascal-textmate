@@ -19,8 +19,26 @@ import lang::textmate::Grammar;
 bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual = false) {
     list[ConversionUnit] actual = analyze(rsc);
 
-    for (printActual, u <- actual) {
-        println("unit(rsc, <u.prod>),");
+    if (printActual) {
+        str syntheticProductionNameVars(str s)
+            = replaceAll(replaceAll(s,                 
+                "\"<DELIMITERS_PRODUCTION_NAME>\"", "DELIMITERS_PRODUCTION_NAME"),
+                "\"<KEYWORDS_PRODUCTION_NAME>\"",   "KEYWORDS_PRODUCTION_NAME");
+        
+        str tagEscape(str s)
+            = /<before:.*[^\\]>\btag\b<after:.*>/ := s 
+            ? "<before>\\tag<after>"
+            : s;
+        
+        str toStr(Production p)
+            = tagEscape(syntheticProductionNameVars("<p>"));
+
+        println();
+        for (i <- [0..size(actual)]) {
+            ConversionUnit u = actual[i];
+            println("unit(rsc, <toStr(u.prod)>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
+        }
+        println();
     }
 
     for (u <- actual) {
@@ -45,6 +63,10 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     Repository repo = tm.repository;
     list[TmRule] pats = tm.patterns;
     
+    loc lProject = |project://rascal-textmate-core|;
+    loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";
+    toJSON(tm, l = resolveLocation(lGrammar));
+
     // Test structural properties of the TextMate grammar
     
     RepositoryStats actual = <
@@ -61,8 +83,8 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert actual.match == expect.match : "Actual number of top-level match patterns in repository: <actual.match>. Expected: <expect.match>.";
     assert actual.beginEnd == expect.beginEnd : "Actual number of top-level begin/end patterns in repository: <actual.match>. Expected: <expect.match>.";
     assert actual.include == expect.include : "Actual number of top-level include patterns in repository: <actual.match>. Expected: <expect.match>.";
-    
-    int expectNested = size(units) - expect.match - expect.include;
+
+    int expectNested = (size(units) - expect.match) + expect.beginEnd * (expect.match + expect.beginEnd - 1);
     int actualNested = (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd);
     assert actualNested == expectNested : "Actual number of nested patterns: <actualNested>. Expected: <expectNested>.";
 
@@ -71,10 +93,6 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert (true | it && s in repo | r <- pats, include(/#<s:.*>$/) := r) : "Patterns list contains pattern(s) outside repository";
 
     // Test behavioral properties of the TextMate grammar
-
-    loc lProject = |project://rascal-textmate-core|;
-    loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";
-    toJSON(tm, l = resolveLocation(lGrammar));
     
     loc lTest = lProject + "/src/main/rascal/lang/textmate/conversiontests/<name>.test";
     loc lTester = lProject + "/node_modules/vscode-tmgrammar-test";

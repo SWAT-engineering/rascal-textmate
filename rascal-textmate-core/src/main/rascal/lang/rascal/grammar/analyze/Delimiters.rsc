@@ -1,5 +1,5 @@
 @synopsis{
-    Types and functions to analyse delimiters in productions
+    Types and functions to analyze delimiters in productions
 }
 
 module lang::rascal::grammar::analyze::Delimiters
@@ -8,103 +8,175 @@ import Grammar;
 import ParseTree;
 import util::Maybe;
 
+import Prelude;
+
 import lang::rascal::grammar::Util;
 
-alias DelimiterPair = tuple[Symbol begin, Symbol end];
+alias DelimiterPair = tuple[Maybe[Symbol] begin, Maybe[Symbol] end];
+
+data Direction   // Traverse lists of symbols (in productions)...
+    = forward()  //   - ...from left to right;
+    | backward() //   - ...from right to left.
+    ;
 
 @synopsis{
-    Gets all delimiter pairs that enclose symbol `s` in grammar `g` when `s` is
-    always enclosed by delimiters. Returns the empty set when at least one
-    occurrence of `s` in `g` is not enclosed by delimiters.
+    Reorder a list according to the specified direction
 }
 
-set[DelimiterPair] getDelimiterPairs(Grammar g, Symbol s) {
-    map[Symbol, set[DelimiterPair]] index = ();
+list[&T] reorder(list[&T] l, forward())  = l;
+list[&T] reorder(list[&T] l, backward()) = reverse(l);
 
-    set[DelimiterPair] getDelimiterPairs(Symbol s) {
-        set[DelimiterPair] pairs = {};
-        index += (s: pairs); // Provisionally added for cycle detection
+@synopsis{
+    Gets the unique leftmost delimiter (`begin`) and the unique rightmost
+    delimiter (`end`), if any, that occur **inside** production `p` in grammar
+    `g`. If `getOnlyFirst` is `true` (default: `false`), then only the first
+    (resp. last) symbol of the production can be considered as leftmost (resp.
+    rightmost).
+}
 
-        // For each production in which `s` occurs, search for delimiter pairs
-        // that enclose `s`.
-        for (/prod(sParent, symbols: [*_, /s, *_], _) := g) {
+@description{
+    For instance, consider the following grammar:
 
-            // Case 1: The production itself has enclosing delimiters for `s`
-            if (just(DelimiterPair pair) := getDelimiterPair(symbols, s)) {
-                pairs += {pair};
-            }
-            
-            // Case 2: The production itself does not have enclosing delimiters
-            // for `s`. In this case, proceed by searching for delimiter pairs
-            // that enclose the parent of `s`.
-            else {
+    ```
+    lexical X  = Y;
+    lexical Y  = Y1 | Y2;
+    lexical Y1 = "[" Z "]"; 
+    lexical Y2 = "[" Z ")" [a-z];
+    lexical Z  = [a-z];
+    ```
 
-                // Case 2a: `sParent` is already being searched for (i.e., there
-                // is a cyclic dependency). In this case, `sParent` can be
-                // ignored by the present call of this function (top of the call
-                // stack), as it is already dealt with by a past/ongoing call of
-                // this function (middle of the call stack).
-                if (delabel(sParent) in index) {
-                    continue;
+    The unique leftmost delimiter of the `Y1`  production is `[`. The unique
+    leftmost delimiter of the `Y2` production is `[`. The unique leftmost
+    delimiter of the `X` production is `[`. The remaining productions do not
+    have a unique leftmost delimiter.
+
+    The unique rightmost delimiter of the `Y1` production is `]`. The unique
+    rightmost delimiter of the `Y2` production is `)`. The remaining productions
+    do not have a unique rightmost delimiter. In particular, the `X` production
+    has two rightmost delimiters, but not one unique.
+
+    If `getOnlyFirst` is `true`, then the `Y2` production does not have a
+    rightmost delimiter.
+}
+
+DelimiterPair getInnerDelimiterPair(Grammar g, Production p, bool getOnlyFirst = false) {
+    Maybe[Symbol] begin = getInnerDelimiterByProduction(g, forward() , getOnlyFirst = getOnlyFirst)[p];
+    Maybe[Symbol] end   = getInnerDelimiterByProduction(g, backward(), getOnlyFirst = getOnlyFirst)[p];
+    return <begin, end>;
+}
+
+@memo
+private map[Symbol, Maybe[Symbol]] getInnerDelimiterBySymbol(Grammar g, Direction direction, bool getOnlyFirst = false) {
+    map[Production, Maybe[Symbol]] m = getInnerDelimiterByProduction(g, direction, getOnlyFirst = getOnlyFirst);
+    return (s: unique({m[p] | p <- m, s == delabel(p.def)}) | p <- m, s := delabel(p.def));
+}
+
+@memo
+private map[Production, Maybe[Symbol]] getInnerDelimiterByProduction(Grammar g, Direction direction, bool getOnlyFirst = false) {
+    map[Production, Maybe[Symbol]] ret = (p: nothing() | /p: prod(_, _, _) := g);
+        
+    solve (ret) {
+        for (p <- ret, ret[p] == nothing()) {
+            for (s <- reorder(p.symbols, direction)) {
+                s = delabel(s);
+                if (isDelimiter(s)) {
+                    ret[p] = just(s);
+                    break;
                 }
-                
-                // Case 2b: `sParent` has delimiter pairs
-                else if (morePairs := getDelimiterPairs(delabel(sParent)), _ <- morePairs) {
-                    pairs += morePairs;
+                if (isNonTerminalType(s) && just(delimiter) := unique({ret[child] | child <- getChildren(g, s)})) {
+                    ret[p] = just(delimiter);
+                    break;
                 }
-                
-                // Case 2c: `sParent` does not have delimiter pairs. In this
-                // case, at least one occurrence of `s` in `g` is not enclosed
-                // by delimiters. Thus, the empty set is returned (and
-                // registered in the index), while the remaining productions in
-                // which `s` occurs, are ignored.
-                else {
-                    pairs = {};
+                if (getOnlyFirst) {
                     break;
                 }
             }
         }
-
-        index += (s: pairs); // Definitively added 
-        return pairs;
     }
 
-    return getDelimiterPairs(s);
-
-    // TODO: The current version of this function does not find delimiter pairs
-    // that are spread across multiple productions. For instance:
-    //
-    // ```
-    // lexical DelimitedNumber = Left Number Right;
-    //
-    // lexical Left   = "<";
-    // lexical Right  = ">";
-    // lexical Number = [0-9]+ !>> [0-9];
-    // ```
-    //
-    // In this example, `getDelimiterPairs(lex("Number"))` returns the empty
-    // set. This could be further improved.
+    return ret;
 }
+
+private set[Production] getChildren(Grammar g, Symbol s)
+    = {*lookup(g, s)};
 
 @synopsis{
-    Gets the delimiter pair that encloses symbol `s` in a list, if any
+    Gets the unique rightmost delimiter (`begin`) and the unique leftmost
+    delimiter (`end`), if any, that occur **outside** production `p` in grammar
+    `g`.
 }
 
-Maybe[DelimiterPair] getDelimiterPair([*_, Symbol begin, *between, Symbol end, *_], Symbol s)
-    = just(<begin, end>)
-    when isDelimiter(begin) && isDelimiter(end),
-        [*between1, /s, *between2] := between,
-        !containsDelimiter(between1 + between2);
+@description{
+    For instance, consider the following grammar:
 
-default Maybe[DelimiterPair] getDelimiterPair(list[Symbol] _, Symbol _)
-    = nothing();
+    ```
+    lexical X  = Y;
+    lexical Y  = Y1 | Y2;
+    lexical Y1 = "[" Z "]"; 
+    lexical Y2 = "[" Z ")" [a-z];
+    lexical Z  = [a-z];
+    ```
+
+    The unique rightmost delimiter of the `Z` production is `[`. The remaining
+    productions do not have a unique rightmost delimiter.
+
+    The productions do not have a unique leftmost delimiter. In particular, the
+    `Z` productions has two leftmost delimiters, but not one unique.
+}
+
+DelimiterPair getOuterDelimiterPair(Grammar g, Production p)
+    = <getOuterDelimiterByProduction(g, backward())[p], getOuterDelimiterByProduction(g, forward())[p]>;
+
+@memo
+private map[Symbol, Maybe[Symbol]] getOuterDelimiterBySymbol(Grammar g, Direction direction) {
+    map[Symbol, Maybe[Symbol]] ret = (s: nothing() | /p: prod(_, _, _) := g, s := delabel(p.def));
+
+    solve (ret) {
+        for (s <- ret, ret[s] == nothing()) {
+            set[Maybe[Symbol]] delimiters = {};
+            for (prod(def, symbols, _) <- getParents(g, s)) {
+                if ([*_, /s, *rest] := reorder(symbols, direction) && /s !:= rest) {
+                    // Note: `rest` contains the symbols that follow/precede
+                    // (depending on `direction`) `s` in the parent production
+                    Maybe[Symbol] delimiter = nothing();
+                    for (Symbol s <- rest) {
+                        s = delabel(s);
+                        if (isDelimiter(s)) {
+                            delimiter = just(s);
+                            break;
+                        }
+                        if (isNonTerminalType(s) && d: just(_) := getInnerDelimiterBySymbol(g, direction)[s]) {
+                            delimiter = d;
+                            break;
+                        }
+                    }
+                    delimiters += just(_) := delimiter ? delimiter : ret[delabel(def)];
+                }
+            }
+            ret[s] = unique(delimiters);
+        }
+    }
+    
+    return ret;
+}
+
+@memo
+private map[Production, Maybe[Symbol]] getOuterDelimiterByProduction(Grammar g, Direction direction) {
+    map[Symbol, Maybe[Symbol]] m = getOuterDelimiterBySymbol(g, direction);
+    return (p: m[delabel(p.def)] | /p: prod(_, _, _) := g);
+}
+
+private set[Production] getParents(Grammar g, Symbol s)
+    = {parent | /parent: prod(_, [*_, /s, *_], _) := g, s != delabel(parent.def)};
 
 @synopsis{
-    Checks if a list contains a delimiter
+    Returns the single delimiter if set `delimiters` is a singleton. Returns
+    `nothing()` otherwise.
 }
 
-bool containsDelimiter(list[Symbol] symbols)
-    = any(s <- symbols, isDelimiter(s));
+Maybe[Symbol] unique({d: just(Symbol _)}) = d;
+
+default Maybe[Symbol] unique(set[Maybe[Symbol]] _) = nothing();
 
 @synopsis{
     Checks if a symbol is a delimiter
