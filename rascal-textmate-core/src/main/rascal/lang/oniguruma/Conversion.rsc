@@ -63,8 +63,6 @@ RegExp toRegExp(Grammar _, \lit(string))
     = regExp("(?:<encode(chars(string), withBounds = /^\w+$/ := string)>)", []);
 RegExp toRegExp(Grammar _, \cilit(string))
     = regExp("(?i:<encode(chars(string), withBounds = /^\w+$/ := string)>)", []);
-RegExp toRegExp(Grammar g, \char-class(ranges))
-    = infix("|", toRegExps(g, ranges));
 
 // `ParseTree`: Regular expressions
 RegExp toRegExp(Grammar _, \empty())
@@ -165,10 +163,11 @@ default RegExp toRegExp(Grammar _, Condition c) {
     Converts a character range to a regular expression
 }
 
-RegExp toRegExp(Grammar _, range(char, char))
-    = regExp("<encode(char)>", []);
-default RegExp toRegExp(Grammar _, range(begin, end))
-    = regExp("[<encode(begin)>-<encode(end)>]", []);
+
+RegExp toRegExp(Grammar _, \char-class([range(int char, char)])) = regExp(encode(char), []);
+RegExp toRegExp(Grammar _, \char-class(ranges))
+    = regExp("[<("" | it + ((begin == end) ? encode(begin) : "<encode(begin)>-<encode(end)>") | range(int begin, int end) <- ranges)>]", [])
+    ;
 
 @synopsis{
     Encodes a (list of) char(s) to a (list of) code unit(s)

@@ -57,7 +57,8 @@ start syntax Value
     | String
     | RegExp
     | Location
-    | Boolean;
+    | Boolean
+    ;
 
 syntax Map = "{" {(Key ":" Value) ","}* "}";
 
@@ -117,7 +118,8 @@ lexical String = @category="string.quoted.double" "\"" Alnum* "\"";
 
 lexical Comment
     = @category="comment.line.double-slash" line:  "//" (Alnum | Blank)* $
-    | @category="comment.block"             block: "/*" (Alnum | Space)* "*/";
+    | @category="comment.block"             block: "/*" (Alnum | Space)* "*/"
+    ;
 
 layout Layout = (Comment | Space)* !>> "//" !>> [\ \t\n];
 
@@ -157,7 +159,8 @@ lexical RegExpBody
     = @category="markup.italic" alnum: Alnum+ !>> [a-z A-Z 0-9]
     | RegExpBody "?"
     | RegExpBody "+"
-    | RegExpBody "|" RegExpBody;
+    | RegExpBody "|" RegExpBody
+    ;
 
 // Production `alnum` of `RegExpBody` is suitable for conversion. However,
 // except for the `@category` tag, it has exactly the same definition as the
@@ -247,7 +250,8 @@ lexical Segment  = Alnum+ !>> [a-z A-Z 0-9];
 
 lexical Boolean
     = "true"
-    | "false";
+    | "false"
+    ;
 
 // The productions of `Boolean` are *not* suitable for conversion, as they
 // violate condition 4. However, by default, literals like these should be

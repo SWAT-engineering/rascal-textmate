@@ -19,7 +19,8 @@ lexical ConcretePart
     | @category="MetaSkipped" lt: "\\\<"
     | @category="MetaSkipped" gt: "\\\>"
     | @category="MetaSkipped" bq: "\\`"
-    | @category="MetaSkipped" bs: "\\\\";
+    | @category="MetaSkipped" bs: "\\\\"
+    ;
   
 syntax ConcreteHole 
     = \one: "\<" /* Sym symbol Name name */ "\>";

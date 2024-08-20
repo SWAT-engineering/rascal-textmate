@@ -11,7 +11,8 @@ import lang::textmate::ConversionTests;
 
 lexical Comment
     = @category="Comment" "/*" (![*] | [*] !>> [/])* "*/" 
-    | @category="Comment" "//" ![\n]* !>> [\ \t\r \u00A0 \u1680 \u2000-\u200A \u202F \u205F \u3000] $;
+    | @category="Comment" "//" ![\n]* !>> [\ \t\r \u00A0 \u1680 \u2000-\u200A \u202F \u205F \u3000] $
+    ;
 
 Grammar rsc = preprocess(grammar(#Comment));
 
