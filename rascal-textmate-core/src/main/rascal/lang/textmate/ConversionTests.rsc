@@ -60,8 +60,6 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
 
 bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str name = "") {
     TmGrammar tm = transform(units)[scopeName = "<name>"];
-    Repository repo = tm.repository;
-    // list[TmRule] pats = tm.patterns;
     
     loc lProject = |project://rascal-textmate-core|;
     loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";
@@ -69,6 +67,7 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
 
     // Test structural properties of the TextMate grammar
     
+    Repository repo = tm.repository;
     RepositoryStats actual = <
         (0 | it + 1 | s <- repo, repo[s] is match),
         (0 | it + 1 | s <- repo, repo[s] is beginEnd),
@@ -81,20 +80,8 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert size(repo) == actualTopLevel : "Repository contains pattern(s) of unexpected kind";
     assert actualTopLevel == expectTopLevel : "Actual repository size: <actualTopLevel>. Expected: <expectTopLevel>.";
     assert actual.match == expect.match : "Actual number of top-level match patterns in repository: <actual.match>. Expected: <expect.match>.";
-    assert actual.beginEnd == expect.beginEnd : "Actual number of top-level begin/end patterns in repository: <actual.match>. Expected: <expect.match>.";
-    assert actual.include == expect.include : "Actual number of top-level include patterns in repository: <actual.match>. Expected: <expect.match>.";
-
-    // TODO: Restore these assertions? They're actually far less important now
-    // that behavioral properties can be tested, so it's unclear if these assertions
-    // have significant value (and they're quite a maintenance burden...).
-    //
-    // int expectNested = (size(units) - expect.match) + expect.beginEnd * (expect.match + expect.beginEnd - 1);
-    // int actualNested = (0 | it + size(repo[s].patterns) | s <- repo, repo[s] is beginEnd);
-    // assert actualNested == expectNested : "Actual number of nested patterns: <actualNested>. Expected: <expectNested>.";
-    //
-    // assert size(pats) == size(repo) : "Actual patterns list size: <size(pats)>. Expected: <size(repo)>.";
-    // assert (true | it && r is include | r <- pats) : "Patterns list contains pattern(s) of unexpected kind";
-    // assert (true | it && s in repo | r <- pats, include(/#<s:.*>$/) := r) : "Patterns list contains pattern(s) outside repository";
+    assert actual.beginEnd == expect.beginEnd : "Actual number of top-level begin/end patterns in repository: <actual.beginEnd>. Expected: <expect.beginEnd>.";
+    assert actual.include == expect.include : "Actual number of top-level include patterns in repository: <actual.include>. Expected: <expect.include>.";
 
     // Test behavioral properties of the TextMate grammar
     
