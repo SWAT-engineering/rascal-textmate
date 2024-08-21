@@ -160,8 +160,7 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
 
     // Transform productions to inner rules
     println("[LOG] Transforming productions to rules");
-    NameGenerator g = newNameGenerator([u.prod | u <- units], nameGeneration);
-    units = [u[name = g(u.prod)] | u <- units];
+    units = addNames(units, nameGeneration);
     units = addInnerRules(units);
     units = addOuterRules(units);
 
@@ -174,7 +173,12 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
     TmGrammar tm = lang::textmate::Grammar::grammar(repository, "", patterns);
 
     // Return
-    return lang::textmate::Grammar::grammar(repository, "", patterns);
+    return tm;
+}
+
+private list[ConversionUnit] addNames(list[ConversionUnit] units, NameGeneration nameGeneration) {
+    NameGenerator g = newNameGenerator([u.prod | u <- units], nameGeneration);
+    return [u[name = g(u.prod)] | u <- units];
 }
 
 private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
