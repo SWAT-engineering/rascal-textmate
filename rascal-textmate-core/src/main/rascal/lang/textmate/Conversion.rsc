@@ -1,5 +1,5 @@
 @synopsis{
-    Types and functions to transform Rascal grammars to TextMate grammars
+    Types and functions to convert Rascal grammars to TextMate grammars
 }
 
 module lang::textmate::Conversion
@@ -158,13 +158,13 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
 TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = long()) {
 
-    // Transform productions to inner rules
+    // Transform productions to rules
     println("[LOG] Transforming productions to rules");
     units = addNames(units, nameGeneration);
     units = addInnerRules(units);
     units = addOuterRules(units);
 
-    // Transform rules to repository
+    // Transform rules to grammar
     println("[LOG] Transforming rules to grammar");
     set[TmRule] innerRules = {*u.innerRules | u <- units};
     set[TmRule] outerRules = {*u.outerRules | u <- units};
