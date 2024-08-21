@@ -181,52 +181,62 @@ private list[ConversionUnit] addNames(list[ConversionUnit] units, NameGeneration
     return [u[name = g(u.prod)] | u <- units];
 }
 
+// Convenience type to fetch all conversion units that have a common `begin`
+// delimiter, if any
+private alias Index = rel[Maybe[Symbol] begin, ConversionUnit unit];
+
 private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
     // Define map to temporarily store inner rules
     map[ConversionUnit, list[TmRule]] rules = (u: [] | u <- units);
 
-    // Compute and iterate over *sets* of conversion units with a common `begin`
-    // delimiter, if any, to be able to use per-set conversion
-    rel[Maybe[Symbol] begin, ConversionUnit unit] index
-        = {<begin, u> | u <- units, <begin, _> := u.innerDelimiters};
-    for (key <- index.begin, set[ConversionUnit] units := index[key]) {
+    // Compute and iterate over *groups* of units with a common `begin` inner
+    // delimiter, if any. This is needed to convert multi-line units that have a
+    // common `begin` delimiter.
+    Index index = {<u.innerDelimiters.begin, u> | u <- units};
+    for (key <- index.begin, group := index[key]) {
 
-        // Convert all units generically to match patterns (including,
-        // optimistically, multi-line productions as-if they are single-line)
-        for (u <- units) {
-            TmRule r = toTmRule(
-                toRegExp(u.rsc, u.prod),
-                "/inner/single/<u.name>");
-
+        // Convert all units in the group to match patterns (including,
+        // optimistically, multi-line units as-if they are single-line)
+        for (u <- group) {
+            TmRule r = toTmRule(toRegExp(u.rsc, u.prod))
+                       [name = "/inner/single/<u.name>"];
+            
             rules = insertIn(rules, (u: r));
         }
 
-        // Convert multi-line units, with a common `begin` delimiter, and with a
-        // common category, specifically to begin/end patterns
-        units = {u | u <- units, multiLine() == u.kind, <just(_), just(_)> := u.innerDelimiters};
-        
-        set[RscGrammar] grammars = {u.rsc | u <- units};
-        set[Symbol]     begins   = {begin | u <- units, <just(begin), _> := u.innerDelimiters};
-        set[Symbol]     ends     = {  end | u <- units, <_, just(end)>   := u.innerDelimiters};
-        set[Attr]       tags     = {    t | u <- units, prod(_, _, /t: \tag("category"(_))) := u.prod};
+        // Convert multi-line units in the group, with a common `begin` inner
+        // delimiter, and with a common category, to one begin/end pattern
+        group = {u | u <- group, u.multiLine};
+        set[RscGrammar] grammars = {u.rsc | u <- group};
+        set[Symbol]     begins   = {begin | u <- group, <just(begin), _> := u.innerDelimiters};
+        set[Symbol]     ends     = {  end | u <- group, <_, just(end)>   := u.innerDelimiters};
+        set[Attr]       tags     = {    t | u <- group, prod(_, _, /t: \tag("category"(_))) := u.prod};
 
-        if ({rsc} := grammars, {begin} := begins, _ <- ends, {t} := tags) {
+        if ({rsc} := grammars, {begin} := begins, {t} := tags) {
 
-            // Compute symbols to generate nested patterns for
-            list[Symbol] symbols = [*getTerminals(rsc, u.prod) | u <- units];
-            symbols = [s | s <- symbols, s notin begins && s notin ends];
-            symbols = [destar(s) | s <- symbols];
-            symbols = dup(symbols);
-            symbols = symbols + \char-class([range(1,1114111)]); // Any char (as a fallback)
-            
-            TmRule r = toTmRule(
-                toRegExp(rsc, [begin], {t}),
-                toRegExp(rsc, [\alt(ends)], {t}),
-                "/inner/multi/<intercalate(",", [u.name | u <- units])>",
-                [toTmRule(toRegExp(rsc, [s], {t})) | s <- symbols]);
-            
-            rules = insertIn(rules, (u: r | u <- units));
+            // Simple case: each unit does have an `end` inner delimiter
+            if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
+
+                list[Symbol] symbols = [*getTerminals(rsc, u.prod) | u <- group];
+                symbols = [s | s <- symbols, s notin begins && s notin ends];
+                symbols = [destar(s) | s <- symbols];
+                symbols = dup(symbols);
+                symbols = symbols + \char-class([range(1,1114111)]); // Any char (as a fallback)
+                
+                TmRule r = toTmRule(
+                    toRegExp(rsc, [begin], {t}),
+                    toRegExp(rsc, [\alt(ends)], {t}),
+                    [toTmRule(toRegExp(rsc, [s], {t})) | s <- symbols])
+                    [name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
+                
+                rules = insertIn(rules, (u: r | u <- group));
+            }
+
+            // Complex case: some unit doesn't have an `end` inner delimiter
+            else {
+                ; // TODO (part of support for *recursive* multi-line units)
+            }
         }
     }
 
@@ -234,37 +244,50 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
     return [u[innerRules = rules[u]] | u <- units];
 }
 
-// TODO: Rethink this approach for outer rules
 private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
 
     // Define a map to temporarily store outer rules
     map[ConversionUnit, list[TmRule]] rules = (u: [] | u <- units);
 
-    // Compute and iterate over *sets* of conversion units with a common `begin`
-    // delimiter, if any, to be able to use per-set conversion
-    rel[Maybe[Symbol] begin, ConversionUnit unit] index
-        = {<begin, u> | u <- units, <begin, _> := u.outerDelimiters};
-    for (key <- index.begin, set[ConversionUnit] units := index[key], nothing() !:= key) {
-        units -= {u | u <- units, <_, nothing()> := u.outerDelimiters};
-        units += index[nothing()];
-        
-        set[RscGrammar] grammars = {u.rsc | u <- units};
-        set[Symbol]     begins   = {begin | u <- units, <just(begin), _> := u.outerDelimiters};
-        set[Symbol]     ends     = {  end | u <- units, <_, just(end)>   := u.outerDelimiters};
+    // Compute and iterate over *groups* of units with a common `begin` outer
+    // delimiter, if any. This is needed to convert multi-line units that have a
+    // common `begin` delimiter.
+    Index index = {<u.outerDelimiters.begin, u> | u <- units};
+    for (key <- index.begin, group := index[key]) {
 
-        if ({rsc} := grammars, {begin} := begins, _ <- ends) {
+        // Convert multi-line units, with a common `begin` outer delimiter, and
+        // with an `end` outer delimiter, to one begin/end pattern
+        group = {u | u <- group, <just(_), just(_)> := u.outerDelimiters};
+        set[RscGrammar] grammars = {u.rsc | u <- group};
+        set[Symbol]     begins   = {begin | u <- group, <just(begin), _> := u.outerDelimiters};
+        set[Symbol]     ends     = {  end | u <- group, <_, just(end)>   := u.outerDelimiters};
+
+        if ({rsc} := grammars, {begin} := begins) {
+            list[TmRule] innerRules = [*u.innerRules | u <- sort([*group, *index[nothing()]])];
+
             TmRule r = toTmRule(
                 toRegExp(rsc, [begin], {}),
                 toRegExp(rsc, [\alt(ends)], {}),
-                "/outer/<begin.string>",
-                [include("#<r.name>") | u <- sort([*units]), TmRule r <- u.innerRules]);
+                [include("#<r.name>") | TmRule r <- innerRules])
+                [name = "/outer/<begin.string>"];
             
-            rules = insertIn(rules, (u: r | u <- units));
+            rules = insertIn(rules, (u: r | u <- group));
         }
     }
 
     // Add outer rules to conversion units and return
     return [u[outerRules = rules[u]] | u <- units];
+
+    // TODO: The current approach is *unit-driven*: for each (group of) unit(s),
+    // check if it has outer delimiters, and if so, generate a corresponding
+    // outer rule. An alternative approach could be *delimiter-driven*: for each
+    // delimiter that occurs in the grammar, analyze the grammer to figure out
+    // which productions (with a category) follow that delimiter (before the
+    // next delimiter occurs), and generate outer rules accordingly. It could be
+    // worthwhile to explore if a delimiter-driven approach leads to higher
+    // precision than a unit-driven approach; I suspect it might.
+}
+
 // TODO: This function could be moved to a separate, generic module
 private list[&T] dupLast(list[&T] l)
     = reverse(dup(reverse(l))); // TODO: Optimize/avoid `reverse`-ing?
@@ -278,17 +301,10 @@ private TmRule toTmRule(RegExp re)
         re.string,
         captures = toCaptures(re.categories));
 
-private TmRule toTmRule(RegExp re, str name)
-    = match(
-        re.string,
-        captures = toCaptures(re.categories),
-        name = name);
-
-private TmRule toTmRule(RegExp begin, RegExp end, str name, list[TmRule] patterns)
+private TmRule toTmRule(RegExp begin, RegExp end, list[TmRule] patterns)
     = beginEnd(
         begin.string,
         end.string,
         beginCaptures = toCaptures(begin.categories),
         endCaptures = toCaptures(end.categories),
-        name = name,
         patterns = patterns);
