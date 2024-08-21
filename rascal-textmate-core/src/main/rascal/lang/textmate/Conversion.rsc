@@ -218,16 +218,19 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
 
-                list[Symbol] symbols = [*getTerminals(rsc, u.prod) | u <- group];
-                symbols = [s | s <- symbols, s notin begins && s notin ends];
-                symbols = [destar(s) | s <- symbols];
-                symbols = dup(symbols);
-                symbols = symbols + \char-class([range(1,1114111)]); // Any char (as a fallback)
+                // Compute a list of terminals that need to be consumed between
+                // the `begin` delimiter and the `end` delimiters. Each of these
+                // terminals will be converted into a match pattern.
+                list[Symbol] terminals = [*getTerminals(rsc, u.prod) | u <- group];
+                terminals = [s | s <- terminals, s notin begins && s notin ends];
+                terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
+                terminals = dup(terminals);
+                terminals = terminals + \char-class([range(1,1114111)]); // Any char (as a fallback)
                 
                 TmRule r = toTmRule(
                     toRegExp(rsc, [begin], {t}),
                     toRegExp(rsc, [\alt(ends)], {t}),
-                    [toTmRule(toRegExp(rsc, [s], {t})) | s <- symbols])
+                    [toTmRule(toRegExp(rsc, [s], {t})) | s <- terminals])
                     [name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
                 
                 rules = insertIn(rules, (u: r | u <- group));
