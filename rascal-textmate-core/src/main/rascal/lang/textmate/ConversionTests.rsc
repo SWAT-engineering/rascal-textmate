@@ -14,6 +14,8 @@ import util::ShellExec;
 import util::SystemAPI;
 
 import lang::textmate::Conversion;
+import lang::textmate::ConversionConstants;
+import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
 
 bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual = false) {
@@ -36,7 +38,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
         println();
         for (i <- [0..size(actual)]) {
             ConversionUnit u = actual[i];
-            println("    unit(rsc, <toStr(u.prod)>, <u.kind>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
+            println("    unit(rsc, <toStr(u.prod)>, <u.multiLine>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
         }
         println();
     }
