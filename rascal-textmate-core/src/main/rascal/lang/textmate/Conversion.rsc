@@ -192,7 +192,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
     // Compute and iterate over *groups* of units with a common `begin` inner
     // delimiter, if any. This is needed to convert multi-line units that have a
-    // common `begin` delimiter.
+    // common `begin` inner delimiter.
     Index index = {<u.innerDelimiters.begin, u> | u <- units};
     for (key <- index.begin, group := index[key]) {
 
@@ -220,7 +220,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
                 // Compute a list of terminals that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
-                // terminals will be converted into a match pattern.
+                // terminals will be converted to a match pattern.
                 list[Symbol] terminals = [*getTerminals(rsc, u.prod) | u <- group];
                 terminals = [s | s <- terminals, s notin begins && s notin ends];
                 terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
@@ -238,7 +238,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
             // Complex case: some unit doesn't have an `end` inner delimiter
             else {
-                ; // TODO (part of support for *recursive* multi-line units)
+                ; // TODO (part of future support for *recursive* multi-line units)
             }
         }
     }
@@ -254,7 +254,7 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
 
     // Compute and iterate over *groups* of units with a common `begin` outer
     // delimiter, if any. This is needed to convert multi-line units that have a
-    // common `begin` delimiter.
+    // common `begin` outer delimiter.
     Index index = {<u.outerDelimiters.begin, u> | u <- units};
     for (key <- index.begin, group := index[key]) {
 

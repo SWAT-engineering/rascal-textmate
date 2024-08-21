@@ -98,8 +98,8 @@ bool isStrictlyLess(ConversionUnit u1, ConversionUnit u2) {
 
     // Normal cases:
     //  - sort by `begin` delimiter;
-    //  - sort by production name;
-    //  - sort by stringified production.
+    //  - if equal, then sort by production name;
+    //  - if equal, then sort by stringified production.
 
     for (<keygen, compare> <- sorters) {
         str key1 = keygen(u1);

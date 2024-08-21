@@ -103,7 +103,7 @@ Symbol destar(\iter-star-seps(symbol, separators))
 default Symbol destar(Symbol s) = s;
 
 @synopsis{
-    Filter from set `symbols` each symbol that is a strict prefix of any other
+    Filters from set `symbols` each symbol that is a strict prefix of any other
     symbol in `symbols`
 }
 
