@@ -32,8 +32,13 @@ list[RegExp] toRegExps(Grammar g, list[value] values)
 
 RegExp toRegExp(Grammar g, prod(def, symbols, attributes), bool guard = false) {
     if (guard && delabel(def) in g.rules && {\conditional(_, conditions)} := precede(g, def)) {
-        Condition guard = \precede(\alt({s | \not-follow(s) <- conditions}));
-        return toRegExp(g, prod(def, [\conditional(\seq(symbols), {guard})], attributes));
+        set[Symbol] alternatives
+            = {s | \not-follow(s) <- conditions}
+            + {\conditional(\empty(), {\begin-of-line()})};
+
+        Condition guard = \precede(\alt(alternatives));
+        Symbol guarded = \conditional(\seq(symbols), {guard});
+        return toRegExp(g, prod(def, [guarded], attributes));
     }
     
     RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
