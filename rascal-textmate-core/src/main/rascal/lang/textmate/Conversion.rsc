@@ -225,7 +225,7 @@ TmRule toTmRule(ConversionUnit u, NameGenerator g)
 private TmRule toTmRule(RscGrammar rsc, p: prod(def, _, _), str name)
     = !isSynthetic(def) && <just(begin), just(end)> := getOuterDelimiterPair(rsc, p)
     ? toTmRule(toRegExp(rsc, begin), toRegExp(rsc, end), "<begin.string><end.string>", [toTmRule(toRegExp(rsc, p), name)])
-    : toTmRule(toRegExp(rsc, p), name);
+    : toTmRule(toRegExp(rsc, p, guard = true), name);
 
 private TmRule toTmRule(RegExp re, str name)
     = match(re.string, captures = toCaptures(re.categories), name = name);
