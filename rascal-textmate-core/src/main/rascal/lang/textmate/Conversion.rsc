@@ -16,25 +16,12 @@ import lang::rascal::grammar::Util;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
+import lang::textmate::ConversionConstants;
+import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
 import lang::textmate::NameGeneration;
 
 alias RscGrammar = Grammar;
-
-// TODO: Move this type (and related types and functions) to its own module
-data ConversionUnit = unit(
-    RscGrammar rsc,
-    Production prod,
-    ProductionKind kind,
-    DelimiterPair outerDelimiters,
-    DelimiterPair innerDelimiters,
-    str name = "",
-    list[TmRule] innerRules = [],
-    list[TmRule] outerRules = []);
-
-data ProductionKind
-    = singleLine()
-    | multiLine();
 
 @synopsis{
     Converts Rascal grammar `rsc` to a TextMate grammar
@@ -149,82 +136,14 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     list[Production] prodsKeywords = [prod(lex(KEYWORDS_PRODUCTION_NAME), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
     // Return
-    bool isEmptyProd(prod(_, [\alt(alternatives)], _))
-        = alternatives == {};
-    ProductionKind getKind(Production p)
-        = hasNewline(rsc, p) ? multiLine() : singleLine();
-    
+    bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
     list[ConversionUnit] units
-        = [unit(rsc, p, getKind(p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods]
-        + [unit(rsc, p, singleLine(), <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)]
-        + [unit(rsc, p, singleLine(), <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)];
+        = [unit(rsc, p, hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods]
+        + [unit(rsc, p, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)]
+        + [unit(rsc, p, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)];
 
     return sort(units);
 }
-
-private list[ConversionUnit] sort(list[ConversionUnit] units) {
-
-    bool less(ConversionUnit u1, ConversionUnit u2) {
-
-        // Special cases
-
-        if (u1 == u2) {
-            return false;
-        }
-        if (u1.prod.def.name == DELIMITERS_PRODUCTION_NAME) {
-            return true;
-        }
-        if (u2.prod.def.name == DELIMITERS_PRODUCTION_NAME) {
-            return false;
-        }
-        if (u1.prod.def.name == KEYWORDS_PRODUCTION_NAME) {
-            return false;
-        }
-        if (u2.prod.def.name == KEYWORDS_PRODUCTION_NAME) {
-            return true;
-        }
-
-        // Normal cases
-
-        Maybe[Symbol] getKey(ConversionUnit u)
-            = <just(begin), _> := u.outerDelimiters ? just(begin)
-            : <just(begin), _> := u.innerDelimiters ? just(begin)
-            : nothing();
-        
-        Maybe[Symbol] key1 = getKey(u1);
-        Maybe[Symbol] key2 = getKey(u2);
-
-        if (just(begin1) := key1 && just(begin2) := key2) {
-            if (begin2.string < begin1.string) {
-                // If `begin2` is a prefix of `begin1`, then the rule for `u1` should be
-                // tried *before* the rule for `u2` (i.e., `u1` is less than `u2` for
-                // sorting purposes)
-                return true;
-            } else if (begin1.string < begin2.string) {
-                // Symmetrical case
-                return false;
-            } else {
-                // Otherwise, sort arbitrarily by name and stringified production
-                return toName(u1.prod.def) + "<u1.prod>" < toName(u2.prod.def) + "<u2.prod>";
-            }
-        } else if (nothing() != key1 && nothing() == key2) {
-            // If `u1` has a `begin` delimiter, but `u2` hasn't, then `u1` is less
-            // than `u2` for sorting purposes (arbitrarily)
-            return true;
-        } else if (nothing() == key1 && nothing() != key2) {
-            // Symmetrical case
-            return false;
-        } else {
-            // Otherwise, sort arbitrarily by name and stringified production
-            return toName(u1.prod.def) + "<u1.prod>" < toName(u2.prod.def) + "<u2.prod>";
-        }
-    }
-
-    return sort(units, less);
-}
-
-public str DELIMITERS_PRODUCTION_NAME = "$delimiters";
-public str KEYWORDS_PRODUCTION_NAME   = "$keywords";
 
 @synopsis{
     Transforms a list of productions, in the form of conversion units, to a
@@ -251,16 +170,8 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
     set[TmRule] innerRules = {*u.innerRules | u <- units};
     set[TmRule] outerRules = {*u.outerRules | u <- units};
     Repository repository = ("<r.name>": r | TmRule r <- innerRules + outerRules);
-
-    // Transform rules to top-level patterns
-    bool isTopLevel(ConversionUnit u)
-        = <just(_), just(_)> !:= u.outerDelimiters;
-    list[TmRule] getTopLevelRules(ConversionUnit u)
-        = isTopLevel(u) ? u.innerRules : u.outerRules;
-    list[TmRule] dupLastOccurrenceRemains(list[TmRule] rules) // Instead of the first occurrence (cf. `dup`)
-        = reverse(dup(reverse(rules))); // TODO: Optimize to avoid `reverse`-ing
-    list[TmRule] patterns
-        = dupLastOccurrenceRemains([include("#<r.name>") | u <- units, r <- getTopLevelRules(u)]);
+    list[TmRule] patterns = dupLast([include("#<r.name>") | u <- units, r <- getTopLevelRules(u)]);
+    TmGrammar tm = lang::textmate::Grammar::grammar(repository, "", patterns);
 
     // Return
     return lang::textmate::Grammar::grammar(repository, "", patterns);
@@ -350,8 +261,11 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
 
     // Add outer rules to conversion units and return
     return [u[outerRules = rules[u]] | u <- units];
-}
+// TODO: This function could be moved to a separate, generic module
+private list[&T] dupLast(list[&T] l)
+    = reverse(dup(reverse(l))); // TODO: Optimize/avoid `reverse`-ing?
 
+// TODO: This function could be moved to a separate, generic module
 private map[&K, list[&V]] insertIn(map[&K, list[&V]] m, map[&K, &V] values)
     = (k: m[k] + (k in values ? [values[k]] : []) | k <- m);
 
