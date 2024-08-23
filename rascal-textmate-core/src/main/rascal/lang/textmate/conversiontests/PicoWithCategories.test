@@ -27,6 +27,12 @@
 # ^^^     variable.other
 #    ^    -variable.other
 #    ^    -constant.numeric
+#     ^^^ -constant.numeric
+
+  foo 123
+# ^^^     variable.other
+#    ^    -variable.other
+#    ^    -constant.numeric
 #     ^^^ constant.numeric
 
   natural: natural;
