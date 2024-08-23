@@ -32,6 +32,22 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
 }
 
 @synopsis{
+    Checks if symbol `s` is recursive in grammar `g`
+}
+
+bool isRecursive(Grammar g, Symbol s) {
+    set[Symbol] getChildren(Symbol s) 
+        = {s | p <- lookup(g, s), /Symbol s := p.symbols};
+
+    bool check(set[Symbol] checking, Symbol s)
+        = s in checking
+        ? true
+        : any(child <- getChildren(s), check(checking + s, child));
+
+    return check({}, s);
+}
+
+@synopsis{
     Lookups a list of productions for symbol `s` in grammar `g`, replacing
     formal parameters with actual parameters when needed
 }
