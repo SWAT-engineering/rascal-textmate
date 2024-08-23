@@ -58,7 +58,8 @@ data TmRule
         Captures beginCaptures = (),
         Captures endCaptures = (),
         list[TmRule] patterns = [],
-        Repository repository = ())
+        Repository repository = (),
+        bool applyEndPatternLast = false)
 
     | include(
         str include,
