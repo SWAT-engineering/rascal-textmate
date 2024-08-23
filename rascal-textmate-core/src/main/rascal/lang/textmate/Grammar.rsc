@@ -62,7 +62,8 @@ data TmRule
 
     | include(
         str include,
-        Repository repository = ());
+        Repository repository = ())
+    ;
 
 @synopsis{
     Converts a TextMate grammar to JSON, optionally with custom indentation size
@@ -95,4 +96,4 @@ private list[&T] appendIfAbsent(list[&T] vs, &T v)
 }
 
 Captures toCaptures(list[str] names)
-    = ("<n + 1>": ("name": names[n]) | n <- [0..size(names)]);
+    = ("<n + 1>": ("name": names[n]) | n <- [0..size(names)], "" != names[n]);

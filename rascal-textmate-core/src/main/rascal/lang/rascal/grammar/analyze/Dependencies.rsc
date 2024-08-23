@@ -25,9 +25,9 @@ import lang::rascal::grammar::Util;
 }
 
 data Dependencies = deps(
-    // Filters productions that satisfy a predicate (and their dependencies)
+    // Retains productions that satisfy a predicate (and their dependencies)
     // from the underlying dependency graph
-    Dependencies(Predicate[Production]) filterProds,
+    Dependencies(Predicate[Production]) retainProds,
 
     // Removes productions that satisfy a predicate (and their dependencies),
     // from the underlying dependency graph, optionally including (for removal)
@@ -43,14 +43,14 @@ data Dependencies = deps(
 }
 
 Dependencies deps(Graph[Production] g) {
-    Dependencies filterProds(Predicate[Production] p)
-        = deps(filterNodes(g, getNodes(g, p)));
+    Dependencies retainProds(Predicate[Production] p)
+        = deps(retainNodes(g, getNodes(g, p)));
     Dependencies removeProds(Predicate[Production] p, bool removeAncestors)
         = deps(removeNodes(g, getNodes(g, p, getAncestors = removeAncestors)));
     list[Production] getProds()
         = toList(g.nodes);
     
-    return deps(filterProds, removeProds, getProds);
+    return deps(retainProds, removeProds, getProds);
 }
 
 @synopsis{
@@ -110,10 +110,10 @@ set[&Node] getNodes(Graph[&Node] g, Predicate[&Node] p,
 }
 
 @synopsis{
-    Filters nodes (and connected edges) from graph `g`
+    Retains nodes (and connected edges) from graph `g`
 }
 
-Graph[&Node] filterNodes(Graph[&Node] g, set[&Node] nodes)
+Graph[&Node] retainNodes(Graph[&Node] g, set[&Node] nodes)
     = <g.nodes & nodes, carrierR(g.edges, nodes)>;
 
 @synopsis{

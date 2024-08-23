@@ -5,7 +5,9 @@ import ParseTree;
 import util::Maybe;
 
 import lang::textmate::Conversion;
+import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionTests;
+import lang::textmate::ConversionUnit;
 
 // Based on `lang::rascal::\syntax::Rascal`
 
@@ -19,7 +21,8 @@ lexical ConcretePart
     | @category="MetaSkipped" lt: "\\\<"
     | @category="MetaSkipped" gt: "\\\>"
     | @category="MetaSkipped" bq: "\\`"
-    | @category="MetaSkipped" bs: "\\\\";
+    | @category="MetaSkipped" bs: "\\\\"
+    ;
   
 syntax ConcreteHole 
     = \one: "\<" /* Sym symbol Name name */ "\>";
@@ -27,13 +30,13 @@ syntax ConcreteHole
 Grammar rsc = preprocess(grammar(#Concrete));
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'")})],{}), singleLine(), <nothing(),nothing()>, <nothing(),nothing()>),     
-    unit(rsc, prod(label("bq",lex("ConcretePart")),[lit("\\`")],{\tag("category"("MetaSkipped"))}), singleLine(), <just(lit("`")),just(lit("`"))>, <just(lit("\\`")),just(lit("\\`"))>),
-    unit(rsc, prod(label("bs",lex("ConcretePart")),[lit("\\\\")],{\tag("category"("MetaSkipped"))}), singleLine(), <just(lit("`")),just(lit("`"))>, <just(lit("\\\\")),just(lit("\\\\"))>),
-    unit(rsc, prod(label("gt",lex("ConcretePart")),[lit("\\\>")],{\tag("category"("MetaSkipped"))}), singleLine(), <just(lit("`")),just(lit("`"))>, <just(lit("\\\>")),just(lit("\\\>"))>),
-    unit(rsc, prod(label("hole",lex("ConcretePart")),[label("hole",sort("ConcreteHole"))],{\tag("category"("MetaVariable"))}), singleLine(), <just(lit("`")),just(lit("`"))>, <just(lit("\<")),just(lit("\>"))>),
-    unit(rsc, prod(label("lt",lex("ConcretePart")),[lit("\\\<")],{\tag("category"("MetaSkipped"))}), singleLine(), <just(lit("`")),just(lit("`"))>, <just(lit("\\\<")),just(lit("\\\<"))>),
-    unit(rsc, prod(label("text",lex("ConcretePart")),[conditional(iter(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)])),{\not-follow(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)]))})],{\tag("category"("MetaSkipped"))}), singleLine(), <just(lit("`")),just(lit("`"))>, <nothing(),nothing()>)
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'")})],{}), false, <nothing(),nothing()>, <nothing(),nothing()>),     
+    unit(rsc, prod(label("bq",lex("ConcretePart")),[lit("\\`")],{\tag("category"("MetaSkipped"))}), false, <just(lit("`")),just(lit("`"))>, <just(lit("\\`")),just(lit("\\`"))>),
+    unit(rsc, prod(label("bs",lex("ConcretePart")),[lit("\\\\")],{\tag("category"("MetaSkipped"))}), false, <just(lit("`")),just(lit("`"))>, <just(lit("\\\\")),just(lit("\\\\"))>),
+    unit(rsc, prod(label("gt",lex("ConcretePart")),[lit("\\\>")],{\tag("category"("MetaSkipped"))}), false, <just(lit("`")),just(lit("`"))>, <just(lit("\\\>")),just(lit("\\\>"))>),
+    unit(rsc, prod(label("hole",lex("ConcretePart")),[label("hole",sort("ConcreteHole"))],{\tag("category"("MetaVariable"))}), false, <just(lit("`")),just(lit("`"))>, <just(lit("\<")),just(lit("\>"))>),
+    unit(rsc, prod(label("lt",lex("ConcretePart")),[lit("\\\<")],{\tag("category"("MetaSkipped"))}), false, <just(lit("`")),just(lit("`"))>, <just(lit("\\\<")),just(lit("\\\<"))>),
+    unit(rsc, prod(label("text",lex("ConcretePart")),[conditional(iter(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)])),{\not-follow(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)]))})],{\tag("category"("MetaSkipped"))}), false, <just(lit("`")),just(lit("`"))>, <nothing(),nothing()>)
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);

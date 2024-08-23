@@ -8,13 +8,16 @@ import Grammar;
 import ParseTree;
 import util::Maybe;
 
+import Prelude;
+
 import lang::rascal::grammar::Util;
 
 alias DelimiterPair = tuple[Maybe[Symbol] begin, Maybe[Symbol] end];
 
-data Direction    // Traverse lists of symbols (in productions)...
-    = forward()   //   - ...from left to right;
-    | backward(); //   - ...from right to left.
+data Direction   // Traverse lists of symbols (in productions)...
+    = forward()  //   - ...from left to right;
+    | backward() //   - ...from right to left.
+    ;
 
 @synopsis{
     Reorder a list according to the specified direction
@@ -57,44 +60,45 @@ list[&T] reorder(list[&T] l, backward()) = reverse(l);
 }
 
 DelimiterPair getInnerDelimiterPair(Grammar g, Production p, bool getOnlyFirst = false) {
-    Maybe[Symbol] begin = getInnerDelimitersByProduction(g, forward(), getOnlyFirst = getOnlyFirst)[p];
-    Maybe[Symbol] end = getInnerDelimitersByProduction(g, backward(), getOnlyFirst = getOnlyFirst)[p];
+    Maybe[Symbol] begin = getInnerDelimiterByProduction(g, forward() , getOnlyFirst = getOnlyFirst)[p];
+    Maybe[Symbol] end   = getInnerDelimiterByProduction(g, backward(), getOnlyFirst = getOnlyFirst)[p];
     return <begin, end>;
 }
 
 @memo
-private map[Symbol, Maybe[Symbol]] getInnerDelimitersBySymbol(Grammar g, Direction direction, bool getOnlyFirst = false) {
-    map[Production, Maybe[Symbol]] m = getInnerDelimitersByProduction(g, direction, getOnlyFirst = getOnlyFirst);
+private map[Symbol, Maybe[Symbol]] getInnerDelimiterBySymbol(Grammar g, Direction direction, bool getOnlyFirst = false) {
+    map[Production, Maybe[Symbol]] m = getInnerDelimiterByProduction(g, direction, getOnlyFirst = getOnlyFirst);
     return (s: unique({m[p] | p <- m, s == delabel(p.def)}) | p <- m, s := delabel(p.def));
 }
 
 @memo
-private map[Production, Maybe[Symbol]] getInnerDelimitersByProduction(Grammar g, Direction direction, bool getOnlyFirst = false) {
-    map[Production, Maybe[Symbol]] delimiters = (p: nothing() | /p: prod(_, _, _) := g);
-    set[Production] todo() = {p | p <- delimiters, delimiters[p] == nothing()};
-
-    Maybe[Symbol] \do(Production p) {
-        for (s <- reorder(p.symbols, direction)) {
-            s = delabel(s);
-            if (isDelimiter(s)) {
-                return just(s);
-            }
-            if (isNonTerminalType(s) && just(delimiter) := unique({delimiters[child] | child <- getChildren(g, s)})) {
-                return just(delimiter);
-            }
-            if (getOnlyFirst) {
-                return nothing();
+private map[Production, Maybe[Symbol]] getInnerDelimiterByProduction(Grammar g, Direction direction, bool getOnlyFirst = false) {
+    map[Production, Maybe[Symbol]] ret = (p: nothing() | /p: prod(_, _, _) := g);
+        
+    solve (ret) {
+        for (p <- ret, ret[p] == nothing()) {
+            for (s <- reorder(p.symbols, direction)) {
+                s = delabel(s);
+                if (isDelimiter(s)) {
+                    ret[p] = just(s);
+                    break;
+                }
+                if (isNonTerminalType(s) && just(delimiter) := unique({ret[child] | child <- getChildren(g, s)})) {
+                    ret[p] = just(delimiter);
+                    break;
+                }
+                if (getOnlyFirst) {
+                    break;
+                }
             }
         }
-        return nothing();
     }
 
-    solve (delimiters) delimiters = delimiters + (p: \do(p) | p <- todo());
-    return delimiters;
+    return ret;
 }
 
-set[Production] getChildren(Grammar g, Symbol s)
-    = {child | child <- lookup(g, s)};
+private set[Production] getChildren(Grammar g, Symbol s)
+    = {*lookup(g, s)};
 
 @synopsis{
     Gets the unique rightmost delimiter (`begin`) and the unique leftmost
@@ -121,36 +125,44 @@ set[Production] getChildren(Grammar g, Symbol s)
 }
 
 DelimiterPair getOuterDelimiterPair(Grammar g, Production p)
-    = <getOuterDelimitersByProduction(g, backward())[p], getOuterDelimitersByProduction(g, forward())[p]>;
+    = <getOuterDelimiterByProduction(g, backward())[p], getOuterDelimiterByProduction(g, forward())[p]>;
 
 @memo
-private map[Symbol, Maybe[Symbol]] getOuterDelimitersBySymbol(Grammar g, Direction direction) {
-    map[Symbol, Maybe[Symbol]] delimiters = (s: nothing() | /p: prod(_, _, _) := g, s := delabel(p.def));
-    set[Symbol] todo() = {s | s <- delimiters, delimiters[s] == nothing()};
+private map[Symbol, Maybe[Symbol]] getOuterDelimiterBySymbol(Grammar g, Direction direction) {
+    map[Symbol, Maybe[Symbol]] ret = (s: nothing() | /p: prod(_, _, _) := g, s := delabel(p.def));
 
-    Maybe[Symbol] \do(Symbol s)
-        = unique({\do(parent.def, rest) | parent <- getParents(g, s), [*_, /s, *rest] := reorder(parent.symbols, direction), /s !:= rest});
-
-    Maybe[Symbol] \do(Symbol def, list[Symbol] rest) {
-        for (s <- rest) {
-            s = delabel(s);
-            if (isDelimiter(s)) {
-                return just(s);
+    solve (ret) {
+        for (s <- ret, ret[s] == nothing()) {
+            set[Maybe[Symbol]] delimiters = {};
+            for (prod(def, symbols, _) <- getParents(g, s)) {
+                if ([*_, /s, *rest] := reorder(symbols, direction) && /s !:= rest) {
+                    // Note: `rest` contains the symbols that follow/precede
+                    // (depending on `direction`) `s` in the parent production
+                    Maybe[Symbol] delimiter = nothing();
+                    for (Symbol s <- rest) {
+                        s = delabel(s);
+                        if (isDelimiter(s)) {
+                            delimiter = just(s);
+                            break;
+                        }
+                        if (isNonTerminalType(s) && d: just(_) := getInnerDelimiterBySymbol(g, direction)[s]) {
+                            delimiter = d;
+                            break;
+                        }
+                    }
+                    delimiters += just(_) := delimiter ? delimiter : ret[delabel(def)];
+                }
             }
-            if (isNonTerminalType(s) && just(delimiter) := getInnerDelimitersBySymbol(g, direction)[s]) {
-                return just(delimiter);
-            }
+            ret[s] = unique(delimiters);
         }
-        return delimiters[delabel(def)];
     }
-
-    solve (delimiters) delimiters = delimiters + (s: \do(s) | s <- todo());
-    return delimiters;
+    
+    return ret;
 }
 
 @memo
-private map[Production, Maybe[Symbol]] getOuterDelimitersByProduction(Grammar g, Direction direction) {
-    map[Symbol, Maybe[Symbol]] m = getOuterDelimitersBySymbol(g, direction);
+private map[Production, Maybe[Symbol]] getOuterDelimiterByProduction(Grammar g, Direction direction) {
+    map[Symbol, Maybe[Symbol]] m = getOuterDelimiterBySymbol(g, direction);
     return (p: m[delabel(p.def)] | /p: prod(_, _, _) := g);
 }
 
@@ -162,10 +174,9 @@ private set[Production] getParents(Grammar g, Symbol s)
     `nothing()` otherwise.
 }
 
-Maybe[Symbol] unique(set[Maybe[Symbol]] delimiters)
-    = {d: just(_)} := delimiters
-    ? d
-    : nothing();
+Maybe[Symbol] unique({d: just(Symbol _)}) = d;
+
+default Maybe[Symbol] unique(set[Maybe[Symbol]] _) = nothing();
 
 @synopsis{
     Checks if a symbol is a delimiter

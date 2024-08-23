@@ -13,6 +13,7 @@ import util::Math;
 
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
+import lang::rascal::grammar::analyze::Symbols;
 
 @synopsis{
     Converts a set/list of values (presumably: productions, symbols, or
@@ -25,17 +26,28 @@ list[RegExp] toRegExps(Grammar g, list[value] values)
     = [toRegExp(g, v) | v <- values];
 
 @synopsis{
-    Converts a production to a regular expression
+    Converts a production to a regular expression, optionally with a
+    grammar-dependent `\precede` guard (default: `false`)
 }
 
-RegExp toRegExp(Grammar g, prod(_, symbols, attributes))
-    = toRegExp(g, symbols, attributes);
+RegExp toRegExp(Grammar g, prod(def, symbols, attributes), bool guard = false) {
+    if (guard && delabel(def) in g.rules && {\conditional(_, conditions)} := precede(g, def)) {
+        set[Symbol] alternatives
+            = {s | \not-follow(s) <- conditions}
+            + {\conditional(\empty(), {\begin-of-line()})};
+
+        Condition guard = \precede(\alt(alternatives));
+        Symbol guarded = \conditional(\seq(symbols), {guard});
+        return toRegExp(g, [guarded], attributes);
+    }
+    return toRegExp(g, symbols, attributes);
+}
 
 @synopsis{
     Converts a list of symbols and a set of attributes to a regular expression
 }
 
-RegExp toRegExp(Grammar g, symbols, attributes) {
+RegExp toRegExp(Grammar g, list[Symbol] symbols, set[Attr] attributes) {
     RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
     return /\tag("category"(c)) := attributes ? group(re, category = c) : re;
 }
@@ -63,8 +75,6 @@ RegExp toRegExp(Grammar _, \lit(string))
     = regExp("(?:<encode(chars(string), withBounds = /^\w+$/ := string)>)", []);
 RegExp toRegExp(Grammar _, \cilit(string))
     = regExp("(?i:<encode(chars(string), withBounds = /^\w+$/ := string)>)", []);
-RegExp toRegExp(Grammar g, \char-class(ranges))
-    = infix("|", toRegExps(g, ranges));
 
 // `ParseTree`: Regular expressions
 RegExp toRegExp(Grammar _, \empty())
@@ -165,10 +175,11 @@ default RegExp toRegExp(Grammar _, Condition c) {
     Converts a character range to a regular expression
 }
 
-RegExp toRegExp(Grammar _, range(char, char))
-    = regExp("<encode(char)>", []);
-default RegExp toRegExp(Grammar _, range(begin, end))
-    = regExp("[<encode(begin)>-<encode(end)>]", []);
+
+RegExp toRegExp(Grammar _, \char-class([range(int char, char)])) = regExp(encode(char), []);
+RegExp toRegExp(Grammar _, \char-class(ranges))
+    = regExp("[<("" | it + ((begin == end) ? encode(begin) : "<encode(begin)>-<encode(end)>") | range(int begin, int end) <- ranges)>]", [])
+    ;
 
 @synopsis{
     Encodes a (list of) char(s) to a (list of) code unit(s)
