@@ -84,21 +84,26 @@ Symbol expand(\iter-star-seps(symbol, separators))
     Removes the label from symbol `s`, if any
 }
 
-Symbol delabel(label(_, Symbol s)) = s;
-default Symbol delabel(Symbol s)   = s;
+Symbol delabel(\label(_, Symbol s)) = delabel(s);
+default Symbol delabel(Symbol s)    = s;
 
 @synopsis{
     Removes operators `?` and `*` from symbol `s`, if any
 }
 
-Symbol destar(label(name, symbol))
+Symbol destar(\label(name, symbol))
     = label(name, destar(symbol));
+
 Symbol destar(\opt(symbol))
     = destar(symbol);
 Symbol destar(\iter-star(symbol))
     = \iter(destar(symbol));
 Symbol destar(\iter-star-seps(symbol, separators))
     = \iter-seps(destar(symbol), separators);
+Symbol destar(\seq([symbol]))
+    = \seq([destar(symbol)]);
+Symbol destar(\alt({symbol}))
+    = \alt({destar(symbol)});
 
 default Symbol destar(Symbol s) = s;
 
