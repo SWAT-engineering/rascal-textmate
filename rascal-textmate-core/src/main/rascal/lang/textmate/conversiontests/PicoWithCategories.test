@@ -5,8 +5,14 @@
 
   %% foo % bar
 # ^^^^^^^^^^^^ comment.line
+
   %% do
 # ^^^^^ comment.line
+
+  % foo
+# ^^^^^ comment.block
+  bar %
+# ^^^^^ comment.block
 
   do
 # ^^ variable.other
@@ -49,7 +55,7 @@
 # ^^^^^^     string.quoted.double
 #       ^^^^ -string.quoted.double
 
-#  "foo
-## ^^^^ string.quoted.double
-#  bar"
-## ^^^^ string.quoted.double
+  "foo
+# ^^^^ string.quoted.double
+  bar"
+# ^^^^ string.quoted.double

@@ -26,34 +26,34 @@
 #          ^^^ -Constant
 
   "foo
-$ ^^^^ Constant
+# ^^^^ Constant
   bar"
-$ ^^^^ Constant
+# ^^^^ Constant
 
   "foo
-$ ^^^^ Constant
+# ^^^^ Constant
   \"
-$ ^^   Constant
+# ^^   Constant
   bar"
-$ ^^^^ Constant
+# ^^^^ Constant
 
   "foo
-$ ^^^^ Constant
+# ^^^^ Constant
   \\"
-$ ^^^  Constant
+# ^^^  Constant
   bar
-$ ^^^  -Constant
+# ^^^  -Constant
 
   "foo
-$ ^^^  Constant
+# ^^^  Constant
   \\\"
-$ ^^^^ Constant
+# ^^^^ Constant
   bar"
-$ ^^^^ Constant
+# ^^^^ Constant
 
   "foo
-$ ^^^^ Constant
+# ^^^^ Constant
   \\\\"
-$ ^^^  Constant
+# ^^^  Constant
   bar
-$ ^^^  -Constant
+# ^^^  -Constant

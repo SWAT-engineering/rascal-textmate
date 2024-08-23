@@ -38,7 +38,9 @@ import ParseTree;
 import util::Maybe;
 
 import lang::textmate::Conversion;
+import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionTests;
+import lang::textmate::ConversionUnit;
 
 import lang::rascal::grammar::analyze::Delimiters;
 
@@ -283,17 +285,17 @@ lexical Boolean
 // The following code tests the conversion algorithm on input of the grammar
 // defined above.
 
-Grammar rsc = grammar(#Value);
+Grammar rsc = preprocess(grammar(#Value));
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))}), <nothing(),nothing()>, <just(lit("//")),nothing()>),
-    unit(rsc, prod(label("block",lex("Comment")),[lit("/*"),\iter-star(alt({lex("Alnum"),lex("Space")})),lit("*/")],{\tag("category"("comment.block"))}), <nothing(),nothing()>, <just(lit("/*")),just(lit("*/"))>),
-    unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))}), <just(lit("/")),just(lit("/"))>, <nothing(),nothing()>),
-    unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))}), <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
-    unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))}), <nothing(),nothing()>, <nothing(),nothing()>),
-    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("/"),lit("+"),lit("*/"),lit("//"),lit("\""),lit("}"),lit("|"),lit("?"),lit("/*"),lit("{"),lit("://"),lit(":")})],{}), <nothing(),nothing()>, <nothing(),nothing()>),
-    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}), <nothing(),nothing()>, <nothing(),nothing()>)
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("+"),lit("}"),lit("|"),lit("?"),lit("{"),lit("://")})],{}), false, <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))}), false, <nothing(),nothing()>, <just(lit("//")),nothing()>),
+    unit(rsc, prod(label("block",lex("Comment")),[lit("/*"),\iter-star(alt({lex("Alnum"),lex("Space")})),lit("*/")],{\tag("category"("comment.block"))}), true, <nothing(),nothing()>, <just(lit("/*")),just(lit("*/"))>),
+    unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))}), false, <just(lit("/")),just(lit("/"))>, <nothing(),nothing()>),
+    unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))}), false, <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
+    unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))}), false, <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}), false, <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <6, 1, 0>);
+test bool transformTest() = doTransformTest(units, <7, 2, 0>);

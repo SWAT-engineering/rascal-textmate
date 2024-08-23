@@ -17,7 +17,7 @@ import lang::rascal::grammar::analyze::Symbols;
 
 @synopsis{
     Converts a set/list of values (presumably: productions, symbols, or
-    conditions) to a list of regular expressions.
+    conditions) to a list of regular expressions
 }
 
 list[RegExp] toRegExps(Grammar g, set[value] values)
@@ -38,15 +38,22 @@ RegExp toRegExp(Grammar g, prod(def, symbols, attributes), bool guard = false) {
 
         Condition guard = \precede(\alt(alternatives));
         Symbol guarded = \conditional(\seq(symbols), {guard});
-        return toRegExp(g, prod(def, [guarded], attributes));
+        return toRegExp(g, [guarded], attributes);
     }
-    
+    return toRegExp(g, symbols, attributes);
+}
+
+@synopsis{
+    Converts a list of symbols and a set of attributes to a regular expression
+}
+
+RegExp toRegExp(Grammar g, list[Symbol] symbols, set[Attr] attributes) {
     RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
     return /\tag("category"(c)) := attributes ? group(re, category = c) : re;
 }
 
 @synopsis{
-    Converts a symbol to a regular expression.
+    Converts a symbol to a regular expression
 }
 
 // `Type`
@@ -138,7 +145,7 @@ default RegExp toRegExp(Grammar _, Symbol s) {
 }
 
 @synopsis{
-    Converts a condition to a regular expression.
+    Converts a condition to a regular expression
 }
 
 RegExp toRegExp(Grammar g, \follow(symbol))
@@ -165,7 +172,7 @@ default RegExp toRegExp(Grammar _, Condition c) {
 }
 
 @synopsis{
-    Converts a character range to a regular expression.
+    Converts a character range to a regular expression
 }
 
 
@@ -175,7 +182,7 @@ RegExp toRegExp(Grammar _, \char-class(ranges))
     ;
 
 @synopsis{
-    Encodes a (list of) char(s) to a (list of) code unit(s).
+    Encodes a (list of) char(s) to a (list of) code unit(s)
 }
 
 str encode(list[int] chars, bool withBounds = false)
