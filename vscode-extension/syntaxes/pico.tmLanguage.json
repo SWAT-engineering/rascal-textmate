@@ -14,7 +14,7 @@
       "end": "(\\\")",
       "patterns": [
         {
-          "match": "((?:\\\")[\\x{01}-\\!\\#-\\x{10FFFF}]*?(?:\\\"))",
+          "match": "([\\x{01}-\\!\\#-\\x{10FFFF}]+?)",
           "captures": {
             "1": {
               "name": "string.quoted.double"
