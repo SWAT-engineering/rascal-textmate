@@ -90,9 +90,9 @@ RscGrammar preprocess(RscGrammar rsc) {
     (specifically: `prod` constructors) is created. This dependency graph is
     subsequently pruned to keep only the suitable-for-conversion productions:
       - first, productions with a cyclic dependency on themselves are removed;
-      - next, productions that only involve single-line matching are filtered;
-      - next, productions that only involve non-empty word matching are filtered;
-      - next, productions that have a `@category` tag are filtered.
+      - next, productions that only involve single-line matching are retained;
+      - next, productions that only involve non-empty word matching are retained;
+      - next, productions that have a `@category` tag are retained.
 
     In stage 2, the set of all delimiters that occur in `rsc` is created. This
     set is subsequently reduced by removing:
@@ -118,8 +118,8 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     Dependencies dependencies = deps(toGraph(rsc));
     list[Production] prods = dependencies
         .removeProds(isCyclic, true) // `true` means "also remove ancestors"
-        .filterProds(isNonEmpty)
-        .filterProds(hasCategory)
+        .retainProds(isNonEmpty)
+        .retainProds(hasCategory)
         .getProds();
 
     // Analyze delimiters
