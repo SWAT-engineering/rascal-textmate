@@ -13,6 +13,7 @@ import util::Math;
 
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
+import lang::rascal::grammar::analyze::Symbols;
 
 @synopsis{
     Converts a set/list of values (presumably: productions, symbols, or
@@ -25,10 +26,21 @@ list[RegExp] toRegExps(Grammar g, list[value] values)
     = [toRegExp(g, v) | v <- values];
 
 @synopsis{
-    Converts a production to a regular expression.
+    Converts a production to a regular expression, optionally with a
+    grammar-dependent `\precede` guard (default: `false`)
 }
 
-RegExp toRegExp(Grammar g, prod(_, symbols, attributes)) {
+RegExp toRegExp(Grammar g, prod(def, symbols, attributes), bool guard = false) {
+    if (guard && delabel(def) in g.rules && {\conditional(_, conditions)} := precede(g, def)) {
+        set[Symbol] alternatives
+            = {s | \not-follow(s) <- conditions}
+            + {\conditional(\empty(), {\begin-of-line()})};
+
+        Condition guard = \precede(\alt(alternatives));
+        Symbol guarded = \conditional(\seq(symbols), {guard});
+        return toRegExp(g, prod(def, [guarded], attributes));
+    }
+    
     RegExp re = infix("", toRegExps(g, symbols)); // Empty separator for concatenation
     return /\tag("category"(c)) := attributes ? group(re, category = c) : re;
 }

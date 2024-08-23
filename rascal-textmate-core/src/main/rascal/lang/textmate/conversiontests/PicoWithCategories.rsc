@@ -41,7 +41,7 @@ syntax Expression
     ;
            
 lexical Id = [a-z][a-z0-9]* !>> [a-z0-9];
-lexical Natural = [0-9]+;
+lexical Natural = [0-9]+ !>> [0-9];
 lexical String = "\"" ![\"]* "\"";
 
 layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
