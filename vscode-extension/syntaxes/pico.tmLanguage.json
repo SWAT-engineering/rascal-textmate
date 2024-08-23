@@ -1,7 +1,7 @@
 {
   "repository": {
     "/inner/single/type.string": {
-      "match": "(\\bstring\\b)",
+      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:\\bstring\\b))",
       "name": "/inner/single/type.string",
       "captures": {
         "1": {
@@ -14,7 +14,7 @@
       "end": "(\\\")",
       "patterns": [
         {
-          "match": "((?:\\\")(?:[\\x{01}-\\!]|[\\#-\\x{10FFFF}])*?(?:\\\"))",
+          "match": "((?:\\\")[\\x{01}-\\!\\#-\\x{10FFFF}]*?(?:\\\"))",
           "captures": {
             "1": {
               "name": "string.quoted.double"
@@ -57,22 +57,16 @@
       "captures": {}
     },
     "/inner/single/expression.id": {
-      "match": "((?=(?<head>(?:(?:[a-z](?:[0-9]|[a-z])*?)(?!(?:[0-9]|[a-z]))))(?<tail>.*)$)(?!(?:(?:(?:\\bwhile\\b)|(?:\\bthen\\b)|(?:\\bod\\b)|(?:\\bif\\b)|(?:\\belse\\b)|(?:\\bdeclare\\b)|(?:\\bdo\\b)|(?:\\bbegin\\b)|(?:\\bend\\b)|(?:\\bfi\\b)))\\k<tail>$)\\k<head>)",
+      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?=(?<head>(?:(?:[a-z][0-9a-z]*?)(?![0-9a-z])))(?<tail>.*)$)(?!(?:(?:(?:\\bwhile\\b)|(?:\\bthen\\b)|(?:\\bod\\b)|(?:\\bif\\b)|(?:\\belse\\b)|(?:\\bdeclare\\b)|(?:\\bdo\\b)|(?:\\bbegin\\b)|(?:\\bend\\b)|(?:\\bfi\\b)))\\k<tail>$)\\k<head>)",
       "name": "/inner/single/expression.id",
       "captures": {
         "1": {
           "name": "variable.other"
-        },
-        "2": {
-          "name": ""
-        },
-        "3": {
-          "name": ""
         }
       }
     },
     "/inner/single/type.natural": {
-      "match": "(\\bnatural\\b)",
+      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:\\bnatural\\b))",
       "name": "/inner/single/type.natural",
       "captures": {
         "1": {
@@ -126,7 +120,7 @@
       "beginCaptures": {}
     },
     "/inner/single/expression.natcon": {
-      "match": "([0-9]+?)",
+      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:[0-9]+?(?![0-9])))",
       "name": "/inner/single/expression.natcon",
       "captures": {
         "1": {
@@ -135,7 +129,7 @@
       }
     },
     "/inner/single/type.nil": {
-      "match": "(nil\\-type)",
+      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:nil\\-type))",
       "name": "/inner/single/type.nil",
       "captures": {
         "1": {
@@ -144,7 +138,7 @@
       }
     },
     "/inner/single/whitespaceandcomment.1": {
-      "match": "((?:\\%\\%)(?:(?:[\\x{01}-\\t]|[\\x{0B}-\\x{10FFFF}])*?(?:$)))",
+      "match": "((?:\\%\\%)(?:[\\x{01}-\\t\\x{0B}-\\x{10FFFF}]*?(?:$)))",
       "name": "/inner/single/whitespaceandcomment.1",
       "captures": {
         "1": {
@@ -157,7 +151,7 @@
       "end": "(\\%)",
       "patterns": [
         {
-          "match": "((?:[\\x{01}-\\$]|[\\&-\\x{10FFFF}])+?)",
+          "match": "([\\x{01}-\\$\\&-\\x{10FFFF}]+?)",
           "captures": {
             "1": {
               "name": "comment.block"
@@ -186,7 +180,7 @@
       }
     },
     "/inner/single/whitespaceandcomment.2": {
-      "match": "((?:\\%)(?:[\\x{01}-\\$]|[\\&-\\x{10FFFF}])+?(?:\\%))",
+      "match": "((?:\\%)[\\x{01}-\\$\\&-\\x{10FFFF}]+?(?:\\%))",
       "name": "/inner/single/whitespaceandcomment.2",
       "captures": {
         "1": {
@@ -195,7 +189,7 @@
       }
     },
     "/inner/single/expression.strcon": {
-      "match": "((?:\\\")(?:[\\x{01}-\\!]|[\\#-\\x{10FFFF}])*?(?:\\\"))",
+      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:(?:\\\")[\\x{01}-\\!\\#-\\x{10FFFF}]*?(?:\\\")))",
       "name": "/inner/single/expression.strcon",
       "captures": {
         "1": {
