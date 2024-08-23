@@ -51,14 +51,11 @@ TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName, NameGeneration nameGe
 }
 
 RscGrammar preprocess(RscGrammar rsc) {
-    Symbol replaceIfDelimiter(Symbol old, Symbol new)
-        = isDelimiter(new) ? new : old;
-
     // Replace occurrences of singleton ranges with just the corresponding
     // literal. This makes it easier to identify delimiters.
     return visit (rsc) {
-        case s: \char-class([range(char, char)]) => 
-            replaceIfDelimiter(s, \lit("<stringChar(char)>"))
+        case s: \char-class([range(char, char)]) => d
+            when d := \lit("<stringChar(char)>"), isDelimiter(d)
     }
 }
 
