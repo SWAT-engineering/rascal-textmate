@@ -20,6 +20,7 @@ import ParseTree;
 import util::Maybe;
 
 import lang::rascal::grammar::Util;
+import util::MaybeUtil;
 
 @synopsis{
     Representation of a traversal direction along a list of symbols
@@ -111,16 +112,6 @@ private map[Symbol, Maybe[set[Symbol]]] followBySymbol(Grammar g, bool(Symbol) p
 
     return ret;
 }
-
-private set[Symbol] unmaybe(just(set[Symbol] \set))
-    = \set;
-private set[Symbol] unmaybe(nothing())
-    = {};
-
-private Maybe[set[Symbol]] union(just(set[Symbol] \set1), just(set[Symbol] \set2))
-    = just(\set1 + \set2);
-private default Maybe[set[Symbol]] union(Maybe[set[Symbol]] _, Maybe[set[Symbol]] _)
-    = nothing();
 
 @synopsis{
     Checks if symbol `s` is a terminal
