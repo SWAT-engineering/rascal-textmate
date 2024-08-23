@@ -215,11 +215,17 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
 
-                // Compute a list of terminals that need to be consumed between
+                // Compute a list of segments that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
-                // terminals will be converted to a match pattern.
-                list[Symbol] terminals = [*getTerminals(rsc, u.prod) | u <- group];
-                terminals = [s | s <- terminals, s notin begins && s notin ends];
+                // segments will be converted to a match pattern.
+                set[list[Symbol]] segments = {*getSegments(rsc, u.prod) | u <- group};
+
+                list[Symbol] terminals
+                    = [\seq([   *ys   ]) | [x, *ys, z] <- segments, x == begin, z    in ends]
+                    + [\seq([   *ys, z]) | [x, *ys, z] <- segments, x == begin, z notin ends]
+                    + [\seq([x, *ys   ]) | [x, *ys, z] <- segments, x != begin, z    in ends]
+                    + [\seq([x, *ys, z]) | [x, *ys, z] <- segments, x != begin, z notin ends];
+
                 terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
                 terminals = dup(terminals);
                 terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
