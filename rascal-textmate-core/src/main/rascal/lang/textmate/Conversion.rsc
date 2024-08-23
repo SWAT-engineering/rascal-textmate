@@ -222,7 +222,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 terminals = [s | s <- terminals, s notin begins && s notin ends];
                 terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
                 terminals = dup(terminals);
-                terminals = terminals + \char-class([range(1,1114111)]); // Any char (as a fallback)
+                terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
                 
                 TmRule r = toTmRule(
                     toRegExp(rsc, [begin], {t}),
@@ -294,6 +294,12 @@ private list[&T] dupLast(list[&T] l)
 
 // TODO: This function could be moved to a separate, generic module
 private map[&K, list[&V]] insertIn(map[&K, list[&V]] m, map[&K, &V] values)
+    // Updates the mapping of each key `k` in map of lists `m` to be the union
+    // of: (1) the existing list `m[k]`, and (2) the new elements-to-be-inserted
+    // `values[k]`. For instance:
+    //   - m      = ("foo": [1, 2, 3],       "bar": [],    "baz": [1, 2])
+    //   - values = ("foo": [4, 5],          "bar": [123], "qux": [3, 4])
+    //   - return = ("foo": [1, 2, 3, 4, 5], "bar": [123], "baz": [1, 2])
     = (k: m[k] + (k in values ? [values[k]] : []) | k <- m);
 
 private TmRule toTmRule(RegExp re)
