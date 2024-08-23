@@ -56,7 +56,8 @@ keyword Keyword
     | "fi"
     | "while"
     | "do"
-    | "od";
+    | "od"
+    ;
 
 layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
 
