@@ -115,7 +115,14 @@ Symbol destar(\alt({symbol}))
 default Symbol destar(Symbol s) = s;
 
 @synopsis{
-    Retain from set `symbols` each symbol that is a strict prefix of any other
+    Removes the conditional from symbol `s`, if any
+}
+
+Symbol decond(\conditional(Symbol s, _)) = decond(s);
+default Symbol decond(Symbol s)          = s;
+
+@synopsis{
+    Retains from set `symbols` each symbol that is a strict prefix of any other
     symbol in `symbols`
 }
 
