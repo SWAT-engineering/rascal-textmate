@@ -112,6 +112,9 @@ Symbol destar(\seq([symbol]))
 Symbol destar(\alt({symbol}))
     = \alt({destar(symbol)});
 
+Symbol destar(\conditional(symbol, conditions))
+    = \conditional(destar(symbol), conditions);
+
 default Symbol destar(Symbol s) = s;
 
 @synopsis{
