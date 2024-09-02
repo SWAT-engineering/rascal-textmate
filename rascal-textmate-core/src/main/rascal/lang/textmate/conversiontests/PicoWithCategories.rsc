@@ -42,9 +42,22 @@ syntax Expression
            | min: Expression lhs "-" Expression rhs)
     ;
            
-lexical Id = [a-z][a-z0-9]* !>> [a-z0-9];
+lexical Id = ([a-z][a-z0-9]*) !>> [a-z0-9] \ Keyword;
 lexical Natural = [0-9]+ !>> [0-9];
 lexical String = "\"" ![\"]* "\"";
+
+keyword Keyword
+    = "begin"
+    | "end"
+    | "declare"
+    | "if"
+    | "then"
+    | "else"
+    | "fi"
+    | "while"
+    | "do"
+    | "od"
+    ;
 
 layout Layout = WhitespaceAndComment* !>> [\ \t\n\r%];
 

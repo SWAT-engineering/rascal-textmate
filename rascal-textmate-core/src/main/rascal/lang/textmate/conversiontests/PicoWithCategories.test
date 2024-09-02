@@ -15,7 +15,8 @@
 # ^^^^^ comment.block
 
   do
-# ^^ variable.other
+# ^^ -variable.other
+# ^^ keyword.control
 
   123
 # ^^^ constant.numeric
@@ -38,10 +39,6 @@
   natural: natural;
 # ^^^^^^^           variable.other
 #          ^^^^^^^  storage.type
-
-#begin
-## <----- keyword.control
-## TODO: `begin` outside `begin`-`end` can never be an identifier in Pico
 
   "foo bar"
 # ^^^^^^^^^ string.quoted.double

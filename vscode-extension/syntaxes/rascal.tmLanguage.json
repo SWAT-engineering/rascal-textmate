@@ -548,7 +548,7 @@
       }
     }
   },
-  "scopeName": "source.rascalmpl.injection",
+  "scopeName": "source.rascalmpl",
   "patterns": [
     {
       "include": "#/inner/single/$delimiters"
@@ -619,6 +619,5 @@
     {
       "include": "#/inner/single/$keywords"
     }
-  ],
-  "injectionSelector": "R:source.rascalmpl"
+  ]
 }
