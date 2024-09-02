@@ -43,7 +43,7 @@ data ConversionUnit = unit(
     // The following parameters are set when a unit is created during analysis:
     Grammar rsc,
     Production prod,
- /* bool recursive, */ // TODO: Add support for recursive productions
+    bool recursive,
     bool multiLine,
     DelimiterPair outerDelimiters,
     DelimiterPair innerDelimiters,
