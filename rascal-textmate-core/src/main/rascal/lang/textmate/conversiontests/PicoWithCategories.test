@@ -48,9 +48,16 @@
 #      ^      -string.quoted.double
 #       ^^^^^ string.quoted.double
 
-  "foo\" bar
-# ^^^^^^     string.quoted.double
-#       ^^^^ -string.quoted.double
+  "foo" bar
+# ^^^^^     string.quoted.double
+#      ^^^^ -string.quoted.double
+
+  "foo\" bar"
+# ^^^^^^^^^^^ string.quoted.double
+
+  "foo\\" bar
+# ^^^^^^^     string.quoted.double
+#        ^^^^ -string.quoted.double
 
   "foo
 # ^^^^ string.quoted.double

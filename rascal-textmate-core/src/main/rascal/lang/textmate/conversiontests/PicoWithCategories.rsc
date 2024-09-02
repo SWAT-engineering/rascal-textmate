@@ -44,7 +44,11 @@ syntax Expression
            
 lexical Id = ([a-z][a-z0-9]*) !>> [a-z0-9] \ Keyword;
 lexical Natural = [0-9]+ !>> [0-9];
-lexical String = "\"" ![\"]* "\"";
+lexical String = "\"" Char* "\"";
+
+lexical Char
+    = ![\"]
+    | "\\" [\"];
 
 keyword Keyword
     = "begin"
@@ -70,7 +74,7 @@ lexical WhitespaceAndComment
 Grammar rsc = preprocess(grammar(#Program));
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("-"),lit(","),lit(")"),lit("("),lit("+"),lit("||"),lit(":=")})],{}), false, <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("-"),lit(","),lit(")"),lit("("),lit("+"),lit("||"),lit(":="),lit("\\")})],{}), false, <nothing(),nothing()>, <nothing(),nothing()>),
     unit(rsc, prod(label("natural",sort("Type")),[lit("natural")],{\tag("category"("storage.type"))}), false, <just(lit(":")),just(lit(";"))>, <nothing(),nothing()>),
     unit(rsc, prod(label("nil",sort("Type")),[lit("nil-type")],{\tag("category"("storage.type"))}), false, <just(lit(":")),just(lit(";"))>, <just(lit("nil-type")),just(lit("nil-type"))>),
     unit(rsc, prod(label("string",sort("Type")),[lit("string")],{\tag("category"("storage.type"))}), false, <just(lit(":")),just(lit(";"))>, <nothing(),nothing()>),
