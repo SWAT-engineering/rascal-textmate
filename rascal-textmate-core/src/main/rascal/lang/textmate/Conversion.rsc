@@ -218,14 +218,22 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 // Compute a list of segments that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
                 // segments will be converted to a match pattern.
-                set[list[Symbol]] segments = {*getSegments(rsc, u.prod) | u <- group};
+                list[Segment] segments = [*getSegments(rsc, u.prod) | u <- group];
+                
+                Segment removeBeginEnd(Segment seg) {
+                    list[Symbol] symbols = seg.symbols;
+                    if (seg.initial, _ <- symbols, symbols[0] == begin) {
+                        symbols = symbols[1..];
+                    }
+                    if (seg.final, _ <- symbols, symbols[-1] in ends) {
+                        symbols = symbols[..-1];
+                    }
+                    
+                    return seg[symbols = symbols];
+                }
 
-                list[Symbol] terminals // Remove `begin` and `end` from the segments
-                    = [\seq([   *ys   ]) | [x, *ys, z] <- segments, x == begin, z    in ends]
-                    + [\seq([   *ys, z]) | [x, *ys, z] <- segments, x == begin, z notin ends]
-                    + [\seq([x, *ys   ]) | [x, *ys, z] <- segments, x != begin, z    in ends]
-                    + [\seq([x, *ys, z]) | [x, *ys, z] <- segments, x != begin, z notin ends];
-
+                list[Symbol] terminals = [\seq(removeBeginEnd(seg).symbols) | seg <- segments];
+                terminals = [s | s <- terminals, [] != s.symbols];
                 terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
                 terminals = dup(terminals);
                 terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)

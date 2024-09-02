@@ -13,10 +13,15 @@ import lang::rascal::grammar::Util;
 import util::MaybeUtil;
 
 @synopsis{
-    Representation of a *newline-free* segment of symbols
+    Representation of a *newline-free* segment of symbols. A segment is
+    *initial* when it occurs first in a production/list of symbols; it is
+    *final* when it occurs last.
 }
 
-alias Segment = list[Symbol];
+data Segment = segment(
+    list[Symbol] symbols,
+    bool initial = false,
+    bool final = false);
 
 @synopsis{
     Gets the (newline-free) segments of a production/list of symbols in grammar
@@ -58,26 +63,44 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
     // symbol that has a newline is encountered, finish/collect the running
     // segment, and start a new one for the remainder of `symbols`.
 
-    // Final case: No symbols remaining
-    Maybe[set[Segment]] get(Segment runningSegment, []) {
-        return just(_ <- runningSegment ? {runningSegment} : {});
+    // Base case: No symbols remaining
+    Maybe[set[Segment]] get(Segment running, [], bool final = true) {
+        return just(_ <- running.symbols ? {running[final = final]} : {});
     }
 
     // Recursive case: At least one symbol remaining
-    Maybe[set[Segment]] get(Segment segment, [Symbol head, *Symbol tail]) {
+    Maybe[set[Segment]] get(Segment running, [Symbol head, *Symbol tail]) {
         set[Symbol] nested = {s | /Symbol s := head};
+
+        Maybe[set[Segment]] finished = get(running, [], final = tail == []);
         
         // If the head contains a non-terminal, then: (1) finish the running
         // segment; (2) lookup the segments of the non-terminals in the
         // environment, if any; (3) compute the segments of the tail. Return the
         // union of 1-3.
         if (any(s <- nested, isNonTerminalType(s))) {
+            list[Maybe[set[Segment]]] sets = [];
 
-            list[Maybe[set[Segment]]] sets
-                = [get(segment, [])] // (1)
-                + [env[p] | s <- nested, isNonTerminalType(s), p <- lookup(g, s)] // (2)
-                + [get([], tail)]; // (3)
-            
+            // (1)
+            sets += finished;
+
+            // (2)
+            sets += for (s <- nested, isNonTerminalType(s), p <- lookup(g, s)) {
+
+                bool isInitial(Segment seg)
+                    = seg.initial && running.initial && running.symbols == [];
+                bool isFinal(Segment seg)
+                    = seg.final && tail == [];
+                Segment update(Segment seg)
+                    = seg[initial = isInitial(seg)][final = isFinal(seg)];
+                
+                append just(segs) := env[p] ? just({update(seg) | seg <- segs}) : nothing();
+            }
+
+            // (3)
+            sets += get(segment([]), tail);
+
+            // Return union
             return (sets[0] | union(it, \set) | \set <- sets[1..]);
         }
         
@@ -86,18 +109,20 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
         // tail. Return the union of 1-2. Note: the head, as it has a newline,
         // is ignored and won't be part of any segment.
         else if (any(s <- nested, hasNewline(g, s))) {
-            return union(get(segment, []), get([], tail));
+            return union(finished, get(segment([]), tail));
         }
         
         // If the head doesn't contain a non-terminal, and if it doesn't have a
         // newline, then add the head to the running segment and proceed with
         // the tail.
         else {
-            return get(segment + head, tail);
+            Segment old = running;
+            Segment new = old[symbols = old.symbols + head]; 
+            return get(new, tail);
         }
     }
 
-    return get([], symbols);
+    return get(segment([], initial = true), symbols);
 }
 
 @synopsis{
