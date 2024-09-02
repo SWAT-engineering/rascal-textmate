@@ -79,13 +79,12 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
                 + [get([], tail)]; // (3)
             
             return (sets[0] | union(it, \set) | \set <- sets[1..]);
-        
         }
         
         // If the head doesn't contain a non-terminal, but it has a newline,
         // then: (1) finish the running segment; (2) compute the segments of the
-        // tail. Return the union of 1-2. Note: the head is ignored and won't be
-        // part of any segment.
+        // tail. Return the union of 1-2. Note: the head, as it has a newline,
+        // is ignored and won't be part of any segment.
         else if (any(s <- nested, hasNewline(g, s))) {
             return union(get(segment, []), get([], tail));
         }

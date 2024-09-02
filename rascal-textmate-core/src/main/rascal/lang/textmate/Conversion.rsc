@@ -220,7 +220,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 // segments will be converted to a match pattern.
                 set[list[Symbol]] segments = {*getSegments(rsc, u.prod) | u <- group};
 
-                list[Symbol] terminals
+                list[Symbol] terminals // Remove `begin` and `end` from the segments
                     = [\seq([   *ys   ]) | [x, *ys, z] <- segments, x == begin, z    in ends]
                     + [\seq([   *ys, z]) | [x, *ys, z] <- segments, x == begin, z notin ends]
                     + [\seq([x, *ys   ]) | [x, *ys, z] <- segments, x != begin, z    in ends]
