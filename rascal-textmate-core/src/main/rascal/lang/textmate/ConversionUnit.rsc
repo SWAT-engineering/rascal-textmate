@@ -138,3 +138,36 @@ private list[tuple[Keygen, Compare]] sorters = [
     // Sort by stringified production
     <getStringifiedProduction, bool(str s1, str s2) { return s1 < s2; }>
 ];
+
+@synopsis{
+    Retains from set `units` each unit that is a prefix (i.e., the symbols of
+    its production) of any other unit in `units`
+}
+
+set[ConversionUnit] retainStrictPrefixes(set[ConversionUnit] units)
+    = {u1 | u1 <- units, any(u2 <- units, u1 != u2, isStrictPrefix(u1, u2))};
+
+@synopsis{
+    Removes from set `units` each units that is a prefix (i.e., the symbols of
+    its production) of any other unit in `units`
+}
+
+set[ConversionUnit] removeStrictPrefixes(set[ConversionUnit] units)
+    = units - retainStrictPrefixes(units);
+
+@synopsis{
+    Checks if unit `u1` is a strict prefix of unit `u2`
+}
+
+bool isStrictPrefix(ConversionUnit u1, ConversionUnit u2)
+    = isStrictPrefix(u1.prod.symbols, u2.prod.symbols);
+
+// TODO: This function could be moved to a separate, generic module
+private bool isStrictPrefix([], [])
+    = false;
+private bool isStrictPrefix([], [_, *_])
+    = true;
+private bool isStrictPrefix([_, *_], [])
+    = false;
+private bool isStrictPrefix([head1, *tail1], [head2, *tail2])
+    = head1 == head2 && isStrictPrefix(tail1, tail2);
