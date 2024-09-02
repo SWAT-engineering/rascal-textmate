@@ -60,8 +60,8 @@ list[&T] reorder(list[&T] l, backward()) = reverse(l);
 }
 
 DelimiterPair getInnerDelimiterPair(Grammar g, Symbol s, bool getOnlyFirst = false) {
-    Maybe[Symbol] begin = getInnerDelimitersBySymbol(g, forward(), getOnlyFirst = getOnlyFirst)[s];
-    Maybe[Symbol] end = getInnerDelimitersBySymbol(g, backward(), getOnlyFirst = getOnlyFirst)[s];
+    Maybe[Symbol] begin = getInnerDelimiterBySymbol(g, forward(), getOnlyFirst = getOnlyFirst)[s];
+    Maybe[Symbol] end = getInnerDelimiterBySymbol(g, backward(), getOnlyFirst = getOnlyFirst)[s];
     return <begin, end>;
 }
 
