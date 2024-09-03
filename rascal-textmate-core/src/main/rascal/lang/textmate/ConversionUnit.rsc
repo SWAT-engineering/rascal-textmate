@@ -7,8 +7,10 @@ module lang::textmate::ConversionUnit
 
 import Grammar;
 import ParseTree;
+import util::Math;
 import util::Maybe;
 
+import lang::rascal::grammar::Util;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::textmate::ConversionConstants;
 import lang::textmate::Grammar;
@@ -140,16 +142,16 @@ private list[tuple[Keygen, Compare]] sorters = [
 ];
 
 @synopsis{
-    Retains from set `units` each unit that is a prefix (i.e., the symbols of
-    its production) of any other unit in `units`
+    Retains from set `units` each unit that is a prefix (i.e., the list of
+    symbols of its production) of any other unit in `units`
 }
 
 set[ConversionUnit] retainStrictPrefixes(set[ConversionUnit] units)
     = {u1 | u1 <- units, any(u2 <- units, u1 != u2, isStrictPrefix(u1, u2))};
 
 @synopsis{
-    Removes from set `units` each units that is a prefix (i.e., the symbols of
-    its production) of any other unit in `units`
+    Removes from set `units` each units that is a prefix (i.e., the list of
+    symbols of its production) of any other unit in `units`
 }
 
 set[ConversionUnit] removeStrictPrefixes(set[ConversionUnit] units)
@@ -171,3 +173,51 @@ private bool isStrictPrefix([_, *_], [])
     = false;
 private bool isStrictPrefix([head1, *tail1], [head2, *tail2])
     = head1 == head2 && isStrictPrefix(tail1, tail2);
+
+@synopsis{
+    Representation of a decomposition of a list of units (i.e., the lists of
+    symbols of their productions) into their maximally common non-recursive
+    prefix and their minimally disjoint suffixes. See also function `decompose`.
+}
+
+alias Decomposition = tuple[
+    list[Symbol] prefix,
+    list[list[Symbol]] suffixes
+];
+
+@synopsis{
+    Decomposes list `units`. See also type `Decomposition`.
+}
+
+Decomposition decompose(list[ConversionUnit] units) {
+    list[Symbol] prefix = [];
+    list[list[Symbol]] suffixes = [];
+
+    list[Production] prods    = [u.prod | u <- units];
+    set[Grammar]     grammars = {u.rsc  | u <- units};
+
+    if (_ <- prods && {rsc} := grammars) {
+        list[int] sizes = [size(p.symbols) | p <- prods];
+        int n = (sizes[0] | min(it, size) | size <- sizes[1..]);
+
+        // Compute prefix (at most of size `n`)
+        prefix = for (i <- [0..n]) {
+            set[Symbol] iths = {p.symbols[i] | p <- prods};
+            if ({ith} := iths && !isRecursive(rsc, delabel(ith))) {
+                append ith;
+            } else {
+                break;
+            }
+        }
+
+        // Compute suffixes
+        suffixes = for (p <- prods) {
+            list[Symbol] suffix = p.symbols[size(prefix)..];
+            if (_ <- suffix) {
+                append suffix;
+            }
+        }
+    }
+
+    return <prefix, suffixes>;    
+}
