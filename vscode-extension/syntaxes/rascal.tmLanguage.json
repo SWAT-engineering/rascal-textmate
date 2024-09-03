@@ -229,7 +229,7 @@
           }
         },
         {
-          "match": "((?:\\n)[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?(?:\\'))",
+          "match": "([\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}])",
           "captures": {
             "1": {
               "name": "string.quoted.double"
@@ -238,6 +238,14 @@
         },
         {
           "match": "((?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])",
+          "captures": {
+            "1": {
+              "name": "string.quoted.double"
+            }
+          }
+        },
+        {
+          "match": "((?:\\n)[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?(?:\\'))",
           "captures": {
             "1": {
               "name": "string.quoted.double"
@@ -294,7 +302,7 @@
           }
         },
         {
-          "match": "((?:\\n)[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?(?:\\'))",
+          "match": "([\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}])",
           "captures": {
             "1": {
               "name": "string.quoted.double"
@@ -303,6 +311,14 @@
         },
         {
           "match": "((?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])",
+          "captures": {
+            "1": {
+              "name": "string.quoted.double"
+            }
+          }
+        },
+        {
+          "match": "((?:\\n)[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?(?:\\'))",
           "captures": {
             "1": {
               "name": "string.quoted.double"
@@ -533,14 +549,6 @@
       "end": "(\\')",
       "patterns": [
         {
-          "match": "((?:\\n)[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?)",
-          "captures": {
-            "1": {
-              "name": "string.quoted.single"
-            }
-          }
-        },
-        {
           "match": "((?:\\\\)U(?:(?:\\b10\\b)|(?:(?:\\b0\\b)[0-9A-Fa-f]))[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])",
           "captures": {
             "1": {
@@ -549,7 +557,23 @@
           }
         },
         {
+          "match": "([\\x{01}-\\!\\#-\\&\\(-\\;\\=\\?-\\[\\]-\\x{10FFFF}])",
+          "captures": {
+            "1": {
+              "name": "string.quoted.single"
+            }
+          }
+        },
+        {
           "match": "((?:\\\\)[\\\"\\'\\<\\>\\\\bfnrt])",
+          "captures": {
+            "1": {
+              "name": "string.quoted.single"
+            }
+          }
+        },
+        {
+          "match": "((?:\\n)[\\t\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]*?(?:\\'))",
           "captures": {
             "1": {
               "name": "string.quoted.single"
