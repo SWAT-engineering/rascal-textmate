@@ -112,12 +112,10 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
     // Analyze dependencies among productions
     println("[LOG] Analyzing dependencies among productions");
-    Dependencies dependencies = deps(toGraph(rsc));
-    list[Production] prods = dependencies
-        .removeProds(isCyclic, true) // `true` means "also remove ancestors"
-        .retainProds(isNonEmpty)
-        .retainProds(hasCategory)
-        .getProds();
+    Graph[Production] graph = toGraph(rsc);
+    list[Production] prods             = deps(graph).retainProds(isNonEmpty).retainProds(hasCategory).getProds();
+    list[Production] prodsNonRecursive = prods & deps(graph).removeProds(isCyclic, true).getProds();
+    list[Production] prodsRecursive    = prods - prodsNonRecursive;
 
     // Analyze delimiters
     println("[LOG] Analyzing delimiters");
@@ -134,12 +132,13 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
 
     // Return
     bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
-    list[ConversionUnit] units
-        = [unit(rsc, p, hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods]
-        + [unit(rsc, p, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)]
-        + [unit(rsc, p, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)];
+    set[ConversionUnit] units
+        = {unit(rsc, p, false, hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prodsNonRecursive}
+        + {unit(rsc, p, true, hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prodsRecursive}
+        + {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)}
+        + {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)};
 
-    return sort(units);
+    return sort([*removeStrictPrefixes(units)]);
 }
 
 @synopsis{
@@ -195,7 +194,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
         // Convert all units in the group to match patterns (including,
         // optimistically, multi-line units as-if they are single-line)
-        for (u <- group) {
+        for (u <- group, !u.recursive) {
             TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = true))
                        [name = "/inner/single/<u.name>"];
             
@@ -215,41 +214,93 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
 
-                // Compute a list of segments that need to be consumed between
+                // Compute a set of segments that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
                 // segments will be converted to a match pattern.
-                list[Segment] segments = [*getSegments(rsc, u.prod) | u <- group];
-                
-                Segment removeBeginEnd(Segment seg) {
-                    list[Symbol] symbols = seg.symbols;
-                    if (seg.initial, _ <- symbols, symbols[0] == begin) {
-                        symbols = symbols[1..];
-                    }
-                    if (seg.final, _ <- symbols, symbols[-1] in ends) {
-                        symbols = symbols[..-1];
-                    }
-                    
-                    return seg[symbols = symbols];
-                }
+                set[Segment] segs = {*getSegments(rsc, u.prod) | u <- group};
+                segs = {removeBeginEnd(seg, begins, ends) | seg <- segs};
 
-                list[Symbol] terminals = [\seq(removeBeginEnd(seg).symbols) | seg <- segments];
-                terminals = [s | s <- terminals, [] != s.symbols];
-                terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
-                terminals = dup(terminals);
-                terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
-                
                 TmRule r = toTmRule(
                     toRegExp(rsc, [begin], {t}),
                     toRegExp(rsc, [\alt(ends)], {t}),
-                    [toTmRule(toRegExp(rsc, [s], {t})) | s <- terminals])
+                    [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)])
                     [name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
                 
                 rules = insertIn(rules, (u: r | u <- group));
             }
 
-            // Complex case: some unit doesn't have an `end` inner delimiter
+            // Complex case: some unit doesn't have an `end` inner delimiter.
+            // This requires (substantial) extra care, as there is no obvious
+            // marker to close the begin/end pattern with.
             else {
-                ; // TODO (part of future support for *recursive* multi-line units)
+                Decomposition decomposition = decompose([*group]);
+
+                // TODO: The following condition can be true (even though there
+                // has to be a `begin` delimiter) because `decompose` doesn't
+                // expand non-terminals. Consider if it should, to maybe improve
+                // accuracy.
+                if ([] == decomposition.prefix) {
+                    continue;
+                }
+
+                RegExp reBegin = toRegExp(rsc, decomposition.prefix, {t});
+                RegExp reEnd   = regExp("(?=.)", []);
+
+                patterns = for (suffix <- decomposition.suffixes) {
+                    if (just(Symbol begin) := getInnerDelimiterPair(rsc, suffix[0], getOnlyFirst = true).begin) {
+                        if (just(Symbol end) := getInnerDelimiterPair(rsc, suffix[-1], getOnlyFirst = true).end) {
+                            set[Segment] segs = getSegments(rsc, suffix);
+                            segs = {removeBeginEnd(seg, {begin}, {end}) | seg <- segs};
+
+                            append toTmRule(
+                                toRegExp(rsc, [begin], {t}),
+                                toRegExp(rsc, [end], {t}),
+                                [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)]);
+                        }
+                        
+                        else {
+                            append toTmRule(toRegExp(rsc, [begin], {t}));
+                        }
+                    }
+                }
+
+                TmRule r = toTmRule(reBegin, reEnd, patterns);
+                r = r[name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
+                r = r[applyEndPatternLast = true];
+
+                rules = insertIn(rules, (u: r | u <- group));
+
+                // TODO: The current approach produces "partially"
+                // newline-sensitive rules, in the sense that newlines are
+                // accepted between the prefix and the suffixes, but not between
+                // symbols in the prefix. This approach could be improved to
+                // produce "totally" newline-sensitive rules (at the cost of
+                // much more complicated rule generation and generated rules) by
+                // adopting an approach in which the rules for each symbol in
+                // the prefix looks something like the following three:
+                //
+                // ```
+                // "foo": {
+                //   "name": "foo",
+                //   "begin": "(\\@)",
+                //   "end": "(?!\\G)|(?:(?!$)(?![a-z]+))",
+                //   "patterns": [{ "include": "#foo.$" }, { "match": "[a-z]+" }],
+                //   "contentName": "comment",
+                //   "beginCaptures": { "1": { "name": "comment" } }
+                // },
+                // "foo.$": {
+                //   "begin": "$",
+                //   "end": "(?<=^.+)|(?:(?!$)(?![a-z]+))",
+                //   "name": "foo.$",
+                //   "patterns": [ { "include": "#foo.^" }]
+                // },
+                // "foo.^": {
+                //   "begin": "^",
+                //   "end": "(?!\\G)|(?:(?!$)(?![a-z]+))",
+                //   "name": "foo.^",
+                //   "patterns": [{ "include": "#foo.$" }, { "match": "[a-z]+" }]
+                // }
+                // ```
             }
         }
     }
@@ -300,6 +351,27 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
     // next delimiter occurs), and generate outer rules accordingly. It could be
     // worthwhile to explore if a delimiter-driven approach leads to higher
     // precision than a unit-driven approach; I suspect it might.
+}
+
+private Segment removeBeginEnd(Segment seg, set[Symbol] begins, set[Symbol] ends) {
+    list[Symbol] symbols = seg.symbols;
+    if (seg.initial, _ <- symbols, symbols[0] in begins) {
+        symbols = symbols[1..];
+    }
+    if (seg.final, _ <- symbols, symbols[-1] in ends) {
+        symbols = symbols[..-1];
+    }
+    
+    return seg[symbols = symbols];
+}
+
+private list[Symbol] toTerminals(set[Segment] segs) {
+    list[Symbol] terminals = [\seq(seg.symbols) | seg <- segs];
+    terminals = [s | s <- terminals, [] != s.symbols];
+    terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
+    terminals = dup(terminals);
+    terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
+    return terminals;
 }
 
 // TODO: This function could be moved to a separate, generic module
