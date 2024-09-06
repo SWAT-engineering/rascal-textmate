@@ -16,6 +16,7 @@ import lang::rascal::grammar::Util;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
+import lang::rascal::grammar::analyze::Symbols;
 import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
@@ -215,13 +216,18 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
 
-                // Compute a list of terminals that need to be consumed between
+                // Compute a list of segments that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
-                // terminals will be converted to a match pattern.
-                list[Symbol] terminals = [*getTerminals(rsc, u.prod) | u <- group];
-                terminals = [s | s <- terminals, s notin begins && s notin ends];
+                // segments will be converted to a match pattern.
+                set[Segment] segs = {*getSegments(rsc, u.prod) | u <- group};
+                segs = {removeBeginEnd(seg, begins, ends) | seg <- segs};
+
+                list[Symbol] terminals = [\seq(seg.symbols) | seg <- segs];
+                terminals = [s | s <- terminals, [] != s.symbols];
                 terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
                 terminals = dup(terminals);
+                terminals = sortByMinimumLength(terminals); // Small symbols first
+                terminals = reverse(terminals); // Large symbols first
                 terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
                 
                 TmRule r = toTmRule(
@@ -286,6 +292,18 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
     // next delimiter occurs), and generate outer rules accordingly. It could be
     // worthwhile to explore if a delimiter-driven approach leads to higher
     // precision than a unit-driven approach; I suspect it might.
+}
+
+private Segment removeBeginEnd(Segment seg, set[Symbol] begins, set[Symbol] ends) {
+    list[Symbol] symbols = seg.symbols;
+    if (seg.initial, _ <- symbols, symbols[0] in begins) {
+        symbols = symbols[1..];
+    }
+    if (seg.final, _ <- symbols, symbols[-1] in ends) {
+        symbols = symbols[..-1];
+    }
+    
+    return seg[symbols = symbols];
 }
 
 // TODO: This function could be moved to a separate, generic module

@@ -32,15 +32,6 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
 }
 
 @synopsis{
-    Gets the terminals that occur in production `p`, possibly recursively
-    (default: `true`)
-}
-
-set[Symbol] getTerminals(Grammar g, Production p, bool recur = true)
-    = {s | s <- p.symbols, !isNonTerminalType(s)}
-    + {*getTerminals(g, child) | recur, s <- p.symbols, child <- lookup(g, s)};
-
-@synopsis{
     Lookups a list of productions for symbol `s` in grammar `g`, replacing
     formal parameters with actual parameters when needed
 }
@@ -84,21 +75,26 @@ Symbol expand(\iter-star-seps(symbol, separators))
     Removes the label from symbol `s`, if any
 }
 
-Symbol delabel(label(_, Symbol s)) = s;
-default Symbol delabel(Symbol s)   = s;
+Symbol delabel(\label(_, Symbol s)) = delabel(s);
+default Symbol delabel(Symbol s)    = s;
 
 @synopsis{
     Removes operators `?` and `*` from symbol `s`, if any
 }
 
-Symbol destar(label(name, symbol))
+Symbol destar(\label(name, symbol))
     = label(name, destar(symbol));
+
 Symbol destar(\opt(symbol))
     = destar(symbol);
 Symbol destar(\iter-star(symbol))
     = \iter(destar(symbol));
 Symbol destar(\iter-star-seps(symbol, separators))
     = \iter-seps(destar(symbol), separators);
+Symbol destar(\seq([symbol]))
+    = \seq([destar(symbol)]);
+Symbol destar(\alt({symbol}))
+    = \alt({destar(symbol)});
 
 default Symbol destar(Symbol s) = s;
 
