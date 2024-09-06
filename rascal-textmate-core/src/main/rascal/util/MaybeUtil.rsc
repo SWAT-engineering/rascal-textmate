@@ -17,8 +17,8 @@ set[&T] unmaybe(Maybe[set[&T]] _: just(set[&T] \set))
     = \set;
 
 @synopsis{
-    Returns just the union of the sets of two `Maybe` values when present.
-    Returns nothing if absent.
+    Returns just the union of the sets of two `Maybe` values when both are
+    present. Returns nothing if at least one is absent.
 }
 
 Maybe[set[&T]] union(just(set[&T] set1), just(set[&T] set2))
