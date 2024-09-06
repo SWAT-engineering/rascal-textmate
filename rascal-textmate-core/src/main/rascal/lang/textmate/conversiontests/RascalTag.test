@@ -1,0 +1,41 @@
+# SYNTAX TEST "RascalTag"
+
+  @memo foo
+# ^^^^^     Comment
+#       ^^^ -Comment
+
+  @synopsis{foo} bar
+# ^^^^^^^^^^^^^^     Comment
+#               ^^^^ -Comment
+
+  @synopsis{
+# ^^^^^^^^^^ Comment
+    foo bar 
+# ^^^^^^^^^  Comment
+  } baz
+# ^          Comment
+#  ^^^^      -Comment
+
+  @category={;}
+# ^^^^^^^^^^^^^ Comment
+
+### TODO: The following tests show that, currently, no newlines are allowed
+### between `@` and the tag name. Starting from commit 6ba991d, there is a TODO
+### comment in module `lang::textmate::Conversion` that outlines an approach to
+### improve this, but "at the cost of much more complicated rule generation and
+### generated rules"
+
+  @
+# ^    -Comment
+  memo
+# ^^^^ -Comment
+
+  @
+# ^             -Comment
+  synopsis{foo}
+# ^^^^^^^^^^^^^ -Comment
+
+  @
+# ^             -Comment
+  category={;}
+# ^^^^^^^^^^^^^ -Comment
