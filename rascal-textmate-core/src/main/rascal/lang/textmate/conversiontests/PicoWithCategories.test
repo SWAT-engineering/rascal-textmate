@@ -64,9 +64,19 @@
   bar"
 # ^^^^ string.quoted.double
 
+  "foo\"
+# ^^^^^^ string.quoted.double
+  bar"
+# ^^^^ string.quoted.double
+
   "foo
 # ^^^^ string.quoted.double
   \"
 # ^^   string.quoted.double
   bar"
 # ^^^^ string.quoted.double
+
+  "foo
+# ^^^^ string.quoted.double
+  \"bar"
+# ^^^^^^ string.quoted.double
