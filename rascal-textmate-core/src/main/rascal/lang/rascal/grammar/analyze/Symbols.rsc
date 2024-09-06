@@ -17,6 +17,8 @@ module lang::rascal::grammar::analyze::Symbols
 
 import Grammar;
 import ParseTree;
+import String;
+import util::Math;
 import util::Maybe;
 
 import lang::rascal::grammar::Util;
@@ -56,9 +58,9 @@ private map[Symbol, Maybe[set[Symbol]]] firstBySymbol(Grammar g, bool(Symbol) pr
 
     Maybe[set[Symbol]] firstOf([])
         = just({});
-    Maybe[set[Symbol]] firstOf([h, *t])
+    Maybe[set[Symbol]] firstOf([Symbol h, *Symbol t])
         = \set: just({\empty(), *_}) := ret[delabel(h)]
-        ? union(\set, firstOf(t))
+        ? util::MaybeUtil::union(\set, firstOf(t))
         : ret[delabel(h)];
 
     solve (ret) {
@@ -119,3 +121,55 @@ private map[Symbol, Maybe[set[Symbol]]] followBySymbol(Grammar g, bool(Symbol) p
 
 bool isTerminal(Symbol s)
     = !isNonTerminalType(s);
+
+@synposis{
+    Sorts list of terminals `symbols` by minimum length (in ascending order)
+}
+
+list[Symbol] sortByMinimumLength(list[Symbol] symbols) {
+    bool less(Symbol s1, Symbol s2) = length(s1).min < length(s2).min;
+    return sort(symbols, less);
+}
+
+@synopsis{
+    Representation of the minimum length and the maximum length of the text
+    produced by a symbol. If `max` is `nothing()`, then the text produced is
+    statically unbounded.
+}
+
+alias Range = tuple[int min, Maybe[int] max];
+
+private Range ZERO = <0, just(0)>;
+private Range seq(Range r1, Range r2) = <r1.min + r2.min, add(r1.max, r2.max)>;
+private Range alt(Range r1, Range r2) = <min(r1.min, r2.min), max(r1.max, r2.max)>;
+
+private Maybe[int] add(just(int i), just(int j)) = just(i + j);
+private default Maybe[int] add(Maybe[int] _, Maybe[int] _) = nothing();
+
+private Maybe[int] max(just(int i), just(int j)) = just(max(i, j));
+private default Maybe[int] max(Maybe[int] _, Maybe[int] _) = nothing();
+
+@synopsis{
+    Computes the length of a terminal symbol as a range
+}
+
+Range length(\lit(string))   = <size(string), just(size(string))>;
+Range length(\cilit(string)) = <size(string), just(size(string))>;
+Range length(\char-class(_)) = <1, just(1)>;
+
+Range length(\empty())                   = ZERO;
+Range length(\opt(symbol))               = length(symbol)[min = 0];
+Range length(\iter(symbol))              = length(symbol)[max = issue2007];
+Range length(\iter-star(symbol))         = <0, max: just(0) := length(symbol).max ? max : nothing()>;
+Range length(\iter-seps(symbol, _))      = length(symbol)[max = issue2007];
+Range length(\iter-star-seps(symbol, _)) = <0, max: just(0) := length(symbol).max ? max : nothing()>;
+Range length(\alt(alternatives))         = {Symbol first, *Symbol rest} := alternatives
+                                         ? (length(first) | alt(it, length(s)) | s <- rest)
+                                         : ZERO;
+Range length(\seq(symbols))              = (ZERO | seq(it, length(s)) | s <- symbols);
+
+Range length(\conditional(symbol, _)) = length(symbol);
+
+// TODO: Remove this workaround when issue #2007 is fixed:
+//   - https://github.com/usethesource/rascal/issues/2007
+private Maybe[int] issue2007 = nothing();
