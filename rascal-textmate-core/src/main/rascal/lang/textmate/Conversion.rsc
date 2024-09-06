@@ -16,6 +16,7 @@ import lang::rascal::grammar::Util;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
+import lang::rascal::grammar::analyze::Symbols;
 import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
@@ -361,7 +362,6 @@ private Segment removeBeginEnd(Segment seg, set[Symbol] begins, set[Symbol] ends
     if (seg.final, _ <- symbols, symbols[-1] in ends) {
         symbols = symbols[..-1];
     }
-    
     return seg[symbols = symbols];
 }
 
@@ -370,6 +370,8 @@ private list[Symbol] toTerminals(set[Segment] segs) {
     terminals = [s | s <- terminals, [] != s.symbols];
     terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
     terminals = dup(terminals);
+    terminals = sortByMinimumLength(terminals); // Small symbols first
+    terminals = reverse(terminals); // Large symbols first
     terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
     return terminals;
 }

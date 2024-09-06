@@ -47,8 +47,8 @@ lexical Natural = [0-9]+ !>> [0-9];
 lexical String = "\"" Char* "\"";
 
 lexical Char
-    = ![\"]
-    | "\\" [\"];
+    = ![\\\"]
+    | "\\" [\\\"];
 
 keyword Keyword
     = "begin"
