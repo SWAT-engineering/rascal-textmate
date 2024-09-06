@@ -219,21 +219,10 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 // Compute a list of segments that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
                 // segments will be converted to a match pattern.
-                list[Segment] segments = [*getSegments(rsc, u.prod) | u <- group];
-                
-                Segment removeBeginEnd(Segment seg) {
-                    list[Symbol] symbols = seg.symbols;
-                    if (seg.initial, _ <- symbols, symbols[0] == begin) {
-                        symbols = symbols[1..];
-                    }
-                    if (seg.final, _ <- symbols, symbols[-1] in ends) {
-                        symbols = symbols[..-1];
-                    }
-                    
-                    return seg[symbols = symbols];
-                }
+                set[Segment] segs = {*getSegments(rsc, u.prod) | u <- group};
+                segs = {removeBeginEnd(seg, begins, ends) | seg <- segs};
 
-                list[Symbol] terminals = [\seq(removeBeginEnd(seg).symbols) | seg <- segments];
+                list[Symbol] terminals = [\seq(seg.symbols) | seg <- segs];
                 terminals = [s | s <- terminals, [] != s.symbols];
                 terminals = [destar(s) | s <- terminals]; // The tokenization engine always tries to apply rules repeatedly
                 terminals = dup(terminals);
@@ -303,6 +292,18 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
     // next delimiter occurs), and generate outer rules accordingly. It could be
     // worthwhile to explore if a delimiter-driven approach leads to higher
     // precision than a unit-driven approach; I suspect it might.
+}
+
+private Segment removeBeginEnd(Segment seg, set[Symbol] begins, set[Symbol] ends) {
+    list[Symbol] symbols = seg.symbols;
+    if (seg.initial, _ <- symbols, symbols[0] in begins) {
+        symbols = symbols[1..];
+    }
+    if (seg.final, _ <- symbols, symbols[-1] in ends) {
+        symbols = symbols[..-1];
+    }
+    
+    return seg[symbols = symbols];
 }
 
 // TODO: This function could be moved to a separate, generic module
