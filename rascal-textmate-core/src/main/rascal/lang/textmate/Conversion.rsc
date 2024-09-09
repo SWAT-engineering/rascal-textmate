@@ -302,6 +302,11 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 //   "patterns": [{ "include": "#foo.$" }, { "match": "[a-z]+" }]
                 // }
                 // ```
+                //
+                // Note: This alternative approach would likely render the
+                // present distinction between the "simple case" and the
+                // "complex case" unneeded, so in that sense, rule generation
+                // would actually become simpler.
             }
         }
     }

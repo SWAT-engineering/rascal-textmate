@@ -176,8 +176,18 @@ private bool isStrictPrefix([head1, *tail1], [head2, *tail2])
 
 @synopsis{
     Representation of a decomposition of a list of units (i.e., the lists of
-    symbols of their productions) into their maximally common non-recursive
-    prefix and their minimally disjoint suffixes. See also function `decompose`.
+    symbols of their productions) into their maximally common prefix
+    (non-recursive) and their minimally disjoint suffixes. See also function
+    `decompose`.
+}
+
+@description{
+    For instance, consider the following lists of symbols:
+      - `[lit("foo"), lit("bar"), lit("baz")]`;
+      - `[lit("foo"), lit("bar"), lit("qux"), lit("quux")]`.
+    
+    The maximally common prefix is `[lit("foo"), lit("bar")]`. The minimally
+    disjoint suffixes are `[lit("baz")]` and `[lit("qux"), lit("quux")]]`.
 }
 
 alias Decomposition = tuple[
