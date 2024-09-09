@@ -250,6 +250,11 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 patterns = for (suffix <- decomposition.suffixes) {
                     if (just(Symbol begin) := getInnerDelimiterPair(rsc, suffix[0], getOnlyFirst = true).begin) {
                         if (just(Symbol end) := getInnerDelimiterPair(rsc, suffix[-1], getOnlyFirst = true).end) {
+                            // If the suffix has has both a `begin` delimiter
+                            // and an `end` delimiter, then generate a
+                            // begin/end pattern to highlight these delimiters
+                            // and all content in between.
+                            
                             set[Segment] segs = getSegments(rsc, suffix);
                             segs = {removeBeginEnd(seg, {begin}, {end}) | seg <- segs};
 
@@ -260,8 +265,21 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                         }
                         
                         else {
+                            // If the suffix has a `begin` delimiter, but not
+                            // an `end` delimiter, then generate a match pattern
+                            // just to highlight that `begin` delimiter. Ignore
+                            // the remainder of the suffix (because it's
+                            // recursive, so no regular expression can be
+                            // generated for it).
                             append toTmRule(toRegExp(rsc, [begin], {t}));
                         }
+                    }
+
+                    else {
+                        // If the suffix doesn't have a `begin` delimiter, then
+                        // ignore it (because it's recursive, so no regular
+                        // expression can be generated for it).
+                        ;
                     }
                 }
 

@@ -175,9 +175,9 @@ private bool isStrictPrefix([head1, *tail1], [head2, *tail2])
     = head1 == head2 && isStrictPrefix(tail1, tail2);
 
 @synopsis{
-    Representation of a decomposition of a list of units (i.e., the lists of
-    symbols of their productions) into their maximally common prefix
-    (non-recursive) and their minimally disjoint suffixes. See also function
+    Representation of a *decomposition* of a list of units (i.e., the lists of
+    symbols of their productions) into their maximally common *prefix*
+    (non-recursive) and their minimally disjoint *suffixes*. See also function
     `decompose`.
 }
 
