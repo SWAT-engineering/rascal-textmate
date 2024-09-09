@@ -32,6 +32,22 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
 }
 
 @synopsis{
+    Checks if symbol `s` is recursive in grammar `g`
+}
+
+bool isRecursive(Grammar g, Symbol s) {
+    set[Symbol] getChildren(Symbol s) 
+        = {s | p <- lookup(g, s), /Symbol s := p.symbols};
+
+    bool check(set[Symbol] checking, Symbol s)
+        = s in checking
+        ? true
+        : any(child <- getChildren(s), check(checking + s, child));
+
+    return check({}, s);
+}
+
+@synopsis{
     Lookups a list of productions for symbol `s` in grammar `g`, replacing
     formal parameters with actual parameters when needed
 }
@@ -96,10 +112,20 @@ Symbol destar(\seq([symbol]))
 Symbol destar(\alt({symbol}))
     = \alt({destar(symbol)});
 
+Symbol destar(\conditional(symbol, conditions))
+    = \conditional(destar(symbol), conditions);
+
 default Symbol destar(Symbol s) = s;
 
 @synopsis{
-    Retain from set `symbols` each symbol that is a strict prefix of any other
+    Removes the conditional from symbol `s`, if any
+}
+
+Symbol decond(\conditional(Symbol s, _)) = decond(s);
+default Symbol decond(Symbol s)          = s;
+
+@synopsis{
+    Retains from set `symbols` each symbol that is a strict prefix of any other
     symbol in `symbols`
 }
 

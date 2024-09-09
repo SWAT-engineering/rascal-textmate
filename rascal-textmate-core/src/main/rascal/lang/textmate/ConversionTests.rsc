@@ -38,7 +38,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
         println();
         for (i <- [0..size(actual)]) {
             ConversionUnit u = actual[i];
-            println("    unit(rsc, <toStr(u.prod)>, <u.multiLine>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
+            println("    unit(rsc, <toStr(u.prod)>, <u.recursive>, <u.multiLine>, <u.outerDelimiters>, <u.innerDelimiters>)<i < size(actual) - 1 ? "," : "">");
         }
         println();
     }

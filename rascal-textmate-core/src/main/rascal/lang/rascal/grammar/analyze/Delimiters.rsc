@@ -28,6 +28,28 @@ list[&T] reorder(list[&T] l, backward()) = reverse(l);
 
 @synopsis{
     Gets the unique leftmost delimiter (`begin`) and the unique rightmost
+    delimiter `end`, if any, that occur **inside** productions of symbol `s`
+    (when `s` is a non-terminal) or `s` itself (when `s` is a delimiter). If
+    `getOnlyFirst` is `true` (default: `false`), then only the first (resp.
+    last) symbol of the productions can be considered as leftmost (resp.
+    rightmost).
+}
+
+DelimiterPair getInnerDelimiterPair(Grammar g, Symbol s, bool getOnlyFirst = false) {
+    s = delabel(s);
+    if (isDelimiter(s)) {
+        return <just(s), just(s)>;
+    } else if (isNonTerminalType(s)) {
+        Maybe[Symbol] begin = getInnerDelimiterBySymbol(g, forward(),  getOnlyFirst = getOnlyFirst)[s];
+        Maybe[Symbol] end   = getInnerDelimiterBySymbol(g, backward(), getOnlyFirst = getOnlyFirst)[s];
+        return <begin, end>;
+    } else {
+        return <nothing(), nothing()>;
+    }
+}
+
+@synopsis{
+    Gets the unique leftmost delimiter (`begin`) and the unique rightmost
     delimiter (`end`), if any, that occur **inside** production `p` in grammar
     `g`. If `getOnlyFirst` is `true` (default: `false`), then only the first
     (resp. last) symbol of the production can be considered as leftmost (resp.
@@ -60,7 +82,7 @@ list[&T] reorder(list[&T] l, backward()) = reverse(l);
 }
 
 DelimiterPair getInnerDelimiterPair(Grammar g, Production p, bool getOnlyFirst = false) {
-    Maybe[Symbol] begin = getInnerDelimiterByProduction(g, forward() , getOnlyFirst = getOnlyFirst)[p];
+    Maybe[Symbol] begin = getInnerDelimiterByProduction(g, forward(),  getOnlyFirst = getOnlyFirst)[p];
     Maybe[Symbol] end   = getInnerDelimiterByProduction(g, backward(), getOnlyFirst = getOnlyFirst)[p];
     return <begin, end>;
 }
@@ -79,6 +101,7 @@ private map[Production, Maybe[Symbol]] getInnerDelimiterByProduction(Grammar g, 
         for (p <- ret, ret[p] == nothing()) {
             for (s <- reorder(p.symbols, direction)) {
                 s = delabel(s);
+                s = decond(s);
                 if (isDelimiter(s)) {
                     ret[p] = just(s);
                     break;

@@ -19,9 +19,9 @@ lexical Boolean
 Grammar rsc = preprocess(grammar(#Boolean));
 
 list[ConversionUnit] units = [
-    unit(rsc, prod(lex("Boolean"),[lit("🙂")],{\tag("category"("constant.language"))}), false, <nothing(),nothing()>, <just(lit("🙂")),just(lit("🙂"))>),
-    unit(rsc, prod(lex("Boolean"),[lit("🙁")],{\tag("category"("constant.language"))}), false, <nothing(),nothing()>, <just(lit("🙁")),just(lit("🙁"))>),
-    unit(rsc, prod(lex("Unit"),[lit("🌊")],{\tag("category"("constant.language"))}), false, <nothing(),nothing()>, <just(lit("🌊")),just(lit("🌊"))>)
+    unit(rsc, prod(lex("Boolean"),[lit("🙂")],{\tag("category"("constant.language"))}), false, false, <nothing(),nothing()>, <just(lit("🙂")),just(lit("🙂"))>),
+    unit(rsc, prod(lex("Boolean"),[lit("🙁")],{\tag("category"("constant.language"))}), false, false, <nothing(),nothing()>, <just(lit("🙁")),just(lit("🙁"))>),
+    unit(rsc, prod(lex("Unit"),[lit("🌊")],{\tag("category"("constant.language"))}), false, false, <nothing(),nothing()>, <just(lit("🌊")),just(lit("🌊"))>)
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
