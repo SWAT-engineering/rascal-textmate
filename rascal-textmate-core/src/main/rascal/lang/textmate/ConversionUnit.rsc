@@ -165,14 +165,8 @@ bool isStrictPrefix(ConversionUnit u1, ConversionUnit u2)
     = isStrictPrefix(u1.prod.symbols, u2.prod.symbols);
 
 // TODO: This function could be moved to a separate, generic module
-private bool isStrictPrefix([], [])
-    = false;
-private bool isStrictPrefix([], [_, *_])
-    = true;
-private bool isStrictPrefix([_, *_], [])
-    = false;
-private bool isStrictPrefix([head1, *tail1], [head2, *tail2])
-    = head1 == head2 && isStrictPrefix(tail1, tail2);
+private bool isStrictPrefix(list[&T] l1, list[&T] l2)
+    = size(l1) < size(l2) && !any(i <- [0..size(l1)], l1[i] != l2[i]);
 
 @synopsis{
     Representation of a *decomposition* of a list of units (i.e., the lists of

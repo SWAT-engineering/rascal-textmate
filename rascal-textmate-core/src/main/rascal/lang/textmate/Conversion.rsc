@@ -55,7 +55,7 @@ RscGrammar preprocess(RscGrammar rsc) {
     // Replace occurrences of singleton ranges with just the corresponding
     // literal. This makes it easier to identify delimiters.
     return visit (rsc) {
-        case s: \char-class([range(char, char)]) => d
+        case \char-class([range(char, char)]) => d
             when d := \lit("<stringChar(char)>"), isDelimiter(d)
     }
 }
@@ -132,13 +132,14 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     list[Production] prodsKeywords = [prod(lex(KEYWORDS_PRODUCTION_NAME), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
     // Return
-    bool isEmptyProd(prod(_, [\alt(alternatives)], _)) = alternatives == {};
-    set[ConversionUnit] units
-        = {unit(rsc, p, false, hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prodsNonRecursive}
-        + {unit(rsc, p, true, hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prodsRecursive}
-        + {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters, !isEmptyProd(p)}
-        + {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsKeywords, !isEmptyProd(p)};
-
+    bool isRecursive(Production p)
+        = p in prodsRecursive;
+    bool isEmptyProd(prod(_, [\alt(alternatives)], _))
+        = alternatives == {};
+    
+    set[ConversionUnit] units = {};
+    units += {unit(rsc, p, isRecursive(p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
+    units += {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters + prodsKeywords, !isEmptyProd(p)};
     return sort([*removeStrictPrefixes(units)]);
 }
 
