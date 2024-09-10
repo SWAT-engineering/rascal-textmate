@@ -47,8 +47,8 @@ private map[Symbol, Maybe[set[Symbol]]] firstBySymbol(Grammar g, bool(Symbol) pr
 
     Maybe[set[Symbol]] firstOf([])
         = just({});
-    Maybe[set[Symbol]] firstOf([Symbol h, *Symbol t])
-        = \set: just({\empty(), *_}) := ret[delabel(h)]
+    Maybe[set[Symbol]] firstOf([h, *t])
+        = Maybe[set[Symbol]] \set: just({\empty(), *_}) := ret[delabel(h)]
         ? util::MaybeUtil::union(\set, firstOf(t))
         : ret[delabel(h)];
 
