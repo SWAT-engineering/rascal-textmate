@@ -137,7 +137,7 @@
       }
     },
     "/inner/single/type.nil": {
-      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:nil\\-type))",
+      "match": "(nil\\-type)",
       "name": "/inner/single/type.nil",
       "captures": {
         "1": {
@@ -197,7 +197,7 @@
       }
     },
     "/inner/single/expression.strcon": {
-      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:(?:\\\")(?:(?:(?:\\\\)[\\\"\\\\])|[\\x{01}-\\!\\#-\\[\\]-\\x{10FFFF}])*?(?:\\\")))",
+      "match": "((?:\\\")(?:(?:(?:\\\\)[\\\"\\\\])|[\\x{01}-\\!\\#-\\[\\]-\\x{10FFFF}])*?(?:\\\"))",
       "name": "/inner/single/expression.strcon",
       "captures": {
         "1": {
