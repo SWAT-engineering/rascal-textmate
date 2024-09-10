@@ -1,6 +1,8 @@
 module util::ListUtil
 
 import List;
+import util::Benchmark;
+import IO;
 
 @synopsis{
     Representation of a traversal direction along a list
@@ -30,4 +32,4 @@ list[&T] dupLast(list[&T] l) = reverse(dup(reverse(l))); // TODO: Optimize/avoid
 }
 
 bool isStrictPrefix(list[&T] l1, list[&T] l2)
-    = size(l1) < size(l2) && !any(i <- [0..size(l1)], l1[i] != l2[i]);
+    = size(l1) < size(l2) && l1 == l2[..size(l2)];
