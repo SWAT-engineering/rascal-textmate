@@ -1,8 +1,6 @@
 module util::ListUtil
 
 import List;
-import util::Benchmark;
-import IO;
 
 @synopsis{
     Representation of a traversal direction along a list
