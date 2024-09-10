@@ -15,6 +15,7 @@ import lang::rascal::grammar::analyze::Delimiters;
 import lang::textmate::ConversionConstants;
 import lang::textmate::Grammar;
 import lang::textmate::NameGeneration;
+import util::ListUtil;
 
 @synopsis{
     Representation of a production in a Rascal grammar to be converted to a rule
@@ -163,10 +164,6 @@ set[ConversionUnit] removeStrictPrefixes(set[ConversionUnit] units)
 
 bool isStrictPrefix(ConversionUnit u1, ConversionUnit u2)
     = isStrictPrefix(u1.prod.symbols, u2.prod.symbols);
-
-// TODO: This function could be moved to a separate, generic module
-private bool isStrictPrefix(list[&T] l1, list[&T] l2)
-    = size(l1) < size(l2) && !any(i <- [0..size(l1)], l1[i] != l2[i]);
 
 @synopsis{
     Representation of a *decomposition* of a list of units (i.e., the lists of

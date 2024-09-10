@@ -21,6 +21,7 @@ import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
 import lang::textmate::NameGeneration;
+import util::ListUtil;
 import util::MapUtil;
 
 alias RscGrammar = Grammar;
@@ -400,10 +401,6 @@ private list[Symbol] toTerminals(set[Segment] segs) {
     terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
     return terminals;
 }
-
-// TODO: This function could be moved to a separate, generic module
-private list[&T] dupLast(list[&T] l)
-    = reverse(dup(reverse(l))); // TODO: Optimize/avoid `reverse`-ing?
 
 private TmRule toTmRule(RegExp re)
     = match(
