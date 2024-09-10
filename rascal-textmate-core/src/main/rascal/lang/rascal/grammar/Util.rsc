@@ -1,5 +1,5 @@
 @synopsis{
-    Utility functions to work with grammars, productions, and symbols.
+    Utility functions to work with grammars, productions, and symbols
 }
 
 module lang::rascal::grammar::Util
@@ -8,6 +8,8 @@ import Exception;
 import Grammar;
 import ParseTree;
 import String;
+
+import util::ListUtil;
 
 @synopsis{
     Utility functions for grammars
@@ -45,6 +47,62 @@ bool isRecursive(Grammar g, Symbol s) {
         : any(child <- getChildren(s), check(checking + s, child));
 
     return check({}, s);
+}
+
+@synopsis{
+    Representation of a pointer to a symbol in (the list of symbols of) a
+    production. This is useful to distinguish between different occurrences of
+    the same symbol in a grammar (i.e., they have different pointers).
+}
+
+alias Pointer = tuple[Production p, int index];
+
+@synopsis{
+    Finds the list of pointers -- a *trace* -- to the first occurrence of symbol
+    `s`, if any, starting from production `p`, optionally in a particular
+    direction (default: `forward()`). That is: if `<p1,i>` is followed by
+    `<p2,_>` in the returned list, then `p1.symbols[i]` is a non-terminal and
+    `p2` is one of its productions.
+}
+
+@description{
+    For instance, consider the following grammar:
+
+    ```
+    lexical X  = Y;
+    lexical Y  = alt1: "[" "[" "[" Z1 "]" "]" "]" | alt2: "<" Z2 ">"; 
+    lexical Z1 = "foo" "bar";
+    lexical Z2 = "baz";
+    ```
+
+    The list of pointers to `"bar"`, starting from `X`, is:
+
+      - `<X,0>`
+      - `<Y.alt1,3>`
+      - `<Z1,1>`
+    
+    The list of pointers to `"qux"` is just empty.
+}
+
+list[Pointer] find(Grammar g, Production p, Symbol s, Direction dir = forward()) {
+
+    list[Pointer] doFind(set[Production] doing, Production haystack, Symbol needle) {
+        for (haystack notin doing, i <- reorder([0..size(haystack.symbols)], dir)) {
+            Symbol ith = delabel(haystack.symbols[i]);
+            if (ith == needle) {
+                return [<haystack, i>];
+            }
+            for (isNonTerminalType(ith), child <- lookup(g, ith)) {
+                if (list[Pointer] l: [_, *_] := doFind(doing + haystack, child, s)) {
+                    return [<haystack, i>] + l;
+                }
+            }
+        }
+
+        return [];
+    }
+
+    return doFind({}, p, s);
 }
 
 @synopsis{
