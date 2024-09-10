@@ -39,4 +39,4 @@ list[ConversionUnit] units = [
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <20, 8, 0>);
+test bool transformTest() = doTransformTest(units, <20, 4, 0>, name = "Rascal");
