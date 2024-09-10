@@ -32,4 +32,4 @@ list[&T] dupLast(list[&T] l) = reverse(dup(reverse(l))); // TODO: Optimize/avoid
 }
 
 bool isStrictPrefix(list[&T] l1, list[&T] l2)
-    = size(l1) < size(l2) && l1 == l2[..size(l2)];
+    = size(l1) < size(l2) && l1 == l2[..size(l1)];
