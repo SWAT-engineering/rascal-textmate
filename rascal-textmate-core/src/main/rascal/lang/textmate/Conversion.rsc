@@ -199,7 +199,8 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
         // Convert all units in the group to match patterns (including,
         // optimistically, multi-line units as-if they are single-line)
         for (u <- group, !u.recursive) {
-            TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = true))
+            bool guard = nothing() := u.innerDelimiters.begin;
+            TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = guard))
                        [name = "/inner/single/<u.name>"];
             
             rules = insertIn(rules, (u: r));
@@ -217,6 +218,25 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
+                
+                // Create a set of pointers to the first (resp. last) occurrence 
+                // of `pivot` in each unit, when `pivot` is a `begin` delimiter
+                // (resp. an `end` delimiter) of the group. If `pivot` occurs
+                // elsewhere in the grammar as well, then skip the conversion
+                // of these multi-line units to a begin/end pattern. This is to
+                // avoid tokenization mistakes in which the other occurrences of
+                // `pivot` in the input are mistakenly interpreted as the
+                // beginning or ending of a unit in the group.
+                
+                Symbol pivot = key.val;
+                
+                set[Pointer] pointers = {};
+                pointers += pivot in begins ? {*find(rsc, u.prod, pivot, dir = forward()) [-1..] | u <- group} : {};
+                pointers += pivot in ends   ? {*find(rsc, u.prod, pivot, dir = backward())[-1..] | u <- group} : {};
+
+                if (any(/p: prod(_, [*before, pivot, *_], _) := rsc.rules, <p, size(before)> notin pointers)) {
+                    continue;
+                }
 
                 // Compute a set of segments that need to be consumed between
                 // the `begin` delimiter and the `end` delimiters. Each of these
