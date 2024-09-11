@@ -22,19 +22,8 @@ import util::Math;
 import util::Maybe;
 
 import lang::rascal::grammar::Util;
+import util::ListUtil;
 import util::MaybeUtil;
-
-@synopsis{
-    Representation of a traversal direction along a list of symbols
-}
-
-data Direction   // Traverse lists of symbols (in productions)...
-    = forward()  //   - ...from left to right;
-    | backward() //   - ...from right to left.
-    ;
-
-private list[&T] reorder(list[&T] l, forward())  = l;
-private list[&T] reorder(list[&T] l, backward()) = reverse(l);
 
 @synopsis{
     Computes the *last* set of symbol `s` in grammar `g`
@@ -58,8 +47,8 @@ private map[Symbol, Maybe[set[Symbol]]] firstBySymbol(Grammar g, bool(Symbol) pr
 
     Maybe[set[Symbol]] firstOf([])
         = just({});
-    Maybe[set[Symbol]] firstOf([Symbol h, *Symbol t])
-        = \set: just({\empty(), *_}) := ret[delabel(h)]
+    Maybe[set[Symbol]] firstOf([h, *t])
+        = Maybe[set[Symbol]] \set: just({\empty(), *_}) := ret[delabel(h)]
         ? util::MaybeUtil::union(\set, firstOf(t))
         : ret[delabel(h)];
 

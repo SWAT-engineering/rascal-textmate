@@ -21,6 +21,8 @@ import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
 import lang::textmate::NameGeneration;
+import util::ListUtil;
+import util::MapUtil;
 
 alias RscGrammar = Grammar;
 
@@ -399,20 +401,6 @@ private list[Symbol] toTerminals(set[Segment] segs) {
     terminals = terminals + \char-class([range(1,0x10FFFF)]); // Any char (as a fallback)
     return terminals;
 }
-
-// TODO: This function could be moved to a separate, generic module
-private list[&T] dupLast(list[&T] l)
-    = reverse(dup(reverse(l))); // TODO: Optimize/avoid `reverse`-ing?
-
-// TODO: This function could be moved to a separate, generic module
-private map[&K, list[&V]] insertIn(map[&K, list[&V]] m, map[&K, &V] values)
-    // Updates the mapping of each key `k` in map of lists `m` to be the union
-    // of: (1) the existing list `m[k]`, and (2) the new elements-to-be-inserted
-    // `values[k]`. For instance:
-    //   - m      = ("foo": [1, 2, 3],       "bar": [],    "baz": [1, 2])
-    //   - values = ("foo": [4, 5],          "bar": [123], "qux": [3, 4])
-    //   - return = ("foo": [1, 2, 3, 4, 5], "bar": [123], "baz": [1, 2])
-    = (k: m[k] + (k in values ? [values[k]] : []) | k <- m);
 
 private TmRule toTmRule(RegExp re)
     = match(

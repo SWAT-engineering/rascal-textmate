@@ -8,23 +8,10 @@ import Grammar;
 import ParseTree;
 import util::Maybe;
 
-import Prelude;
-
 import lang::rascal::grammar::Util;
+import util::ListUtil;
 
 alias DelimiterPair = tuple[Maybe[Symbol] begin, Maybe[Symbol] end];
-
-data Direction   // Traverse lists of symbols (in productions)...
-    = forward()  //   - ...from left to right;
-    | backward() //   - ...from right to left.
-    ;
-
-@synopsis{
-    Reorder a list according to the specified direction
-}
-
-list[&T] reorder(list[&T] l, forward())  = l;
-list[&T] reorder(list[&T] l, backward()) = reverse(l);
 
 @synopsis{
     Gets the unique leftmost delimiter (`begin`) and the unique rightmost
