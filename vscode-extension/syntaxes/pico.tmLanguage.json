@@ -51,7 +51,7 @@
       }
     },
     "/inner/single/$keywords": {
-      "match": "((?:\\bdo\\b)|(?:\\bdeclare\\b)|(?:\\bfi\\b)|(?:\\belse\\b)|(?:\\bend\\b)|(?:\\bod\\b)|(?:\\bbegin\\b)|(?:\\bnatural\\b)|(?:\\bthen\\b)|(?:\\bif\\b)|(?:\\bwhile\\b)|(?:\\bstring\\b))",
+      "match": "((?:\\bdo\\b)|(?:\\bdeclare\\b)|(?:\\bfi\\b)|(?:\\belse\\b)|(?:\\bend\\b)|(?:\\bod\\b)|(?:nil\\-type)|(?:\\bbegin\\b)|(?:\\bnatural\\b)|(?:\\bthen\\b)|(?:\\bif\\b)|(?:\\bwhile\\b)|(?:\\bstring\\b))",
       "name": "/inner/single/$keywords",
       "captures": {
         "1": {
@@ -197,7 +197,7 @@
       }
     },
     "/inner/single/expression.strcon": {
-      "match": "((?<=(?:[\\t-\\n\\r\\x{20}\\%]|(?:(?:^))))(?:(?:\\\")(?:(?:(?:\\\\)[\\\"\\\\])|[\\x{01}-\\!\\#-\\[\\]-\\x{10FFFF}])*?(?:\\\")))",
+      "match": "((?:\\\")(?:(?:(?:\\\\)[\\\"\\\\])|[\\x{01}-\\!\\#-\\[\\]-\\x{10FFFF}])*?(?:\\\"))",
       "name": "/inner/single/expression.strcon",
       "captures": {
         "1": {
