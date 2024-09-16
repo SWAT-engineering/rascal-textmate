@@ -199,8 +199,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
         // Convert all units in the group to match patterns (including,
         // optimistically, multi-line units as-if they are single-line)
         for (u <- group, !u.recursive) {
-            bool guard = nothing() := u.innerDelimiters.begin;
-            TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = guard))
+            TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = true))
                        [name = "/inner/single/<u.name>"];
             
             rules = insertIn(rules, (u: r));

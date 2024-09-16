@@ -4,7 +4,7 @@
 # ^^^^^^^^^ Constant
 
 ### TODO: The following test shows that, currently, multi-line strings are
-### currently disabled. This is because the converter determines that:
+### disabled. This is because the converter determines that:
 ###   - `>` doesn't uniquely delineate interpolation (it could also be
 ###     greater-than in expressions or prioritize-before in grammars);
 ###   - `"` doesn't uniquely delineate strings (it could also be the end of
