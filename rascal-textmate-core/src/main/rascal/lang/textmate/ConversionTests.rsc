@@ -86,7 +86,6 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert actual.include == expect.include : "Actual number of top-level include patterns in repository: <actual.include>. Expected: <expect.include>.";
 
     // Test behavioral properties of the TextMate grammar
-    
     loc lTest = lProject + "/src/main/rascal/lang/textmate/conversiontests/<name>.test";
     loc lTester = lProject + "/node_modules/vscode-tmgrammar-test";
     if (!exists(lTest)) {
@@ -103,8 +102,28 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
             resolveLocation(lTest).path[(windows ? 1 : 0)..]
         ];
 
-        if (<output, exitCode> := execWithCode(lExec, args = args) && exitCode != 0) {
-            println(output);
+        str result = "";
+        int code = 0;
+        try {
+            // Presumably, this block does *exactly the same* as function
+            // `execWithCode` (which was used previously). However, using that
+            // function caused inexplicable errors in the presence of >7 test
+            // modules. For reference:
+            //
+            //   - Failing GitHub workflow: https://github.com/SWAT-engineering/rascal-textmate/actions/runs/10883111847/job/30195540047
+            //   - Code of `execWithCode`:  https://github.com/usethesource/rascal/blob/5bba6e40b9d3b9af560cf3482c346bed650a1854/src/org/rascalmpl/library/util/ShellExec.rsc#L67-L75
+            pid = createProcess(lExec, args = args);
+            println("[LOG] Running <lExec> (args: <args>; pid: <pid>)");
+            result = readEntireStream(pid);
+            code = exitCode(pid);
+            killProcess(pid);
+        } catch e: {
+            println("[ERROR] Unexpected error: <e>");
+            return false;
+        }
+
+        if (code != 0) {
+            println(result);
             assert false : "Actual tokenization does not match expected tokenization (see output above for details)";
         }
     }
