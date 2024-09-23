@@ -195,7 +195,7 @@ default Maybe[Symbol] unique(set[Maybe[Symbol]] _) = nothing();
 bool isDelimiter(lit(string))
     = /^\W+$/ := string;
 bool isDelimiter(cilit(string))
-    = /^\W+$/ := string;
+    = isDelimiter(lit(string));
 
 default bool isDelimiter(Symbol _)
     = false;
@@ -207,7 +207,7 @@ default bool isDelimiter(Symbol _)
 bool isKeyword(lit(string))
     = /^\w.*$/ := string;
 bool isKeyword(cilit(string))
-    = /^\w.*$/ := string;
+    = isKeyword(lit(string));
 
 default bool isKeyword(Symbol _)
     = false;
