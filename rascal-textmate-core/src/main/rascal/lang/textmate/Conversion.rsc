@@ -201,7 +201,12 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
         for (u <- group, !u.recursive) {
 
             // Add the guard (i.e., look-behind condition to match layout) only
-            // when the units in the group don't begin with a delimiter
+            // when the units in the group don't begin with a delimiter. Why is
+            // is this? We *don't* want `32` to be highlighted as a number in
+            // `int aer32 = 34`. However, we *do* want `>bar"` to be highlighted
+            // as a string in `"foo<x==5>bar"`. As a heuristic, if the token
+            // starts with a delimiter (e.g., `>`), then it should be allowed
+            // for its occurrence to not be preceded by layout.
             bool guard = nothing() := u.innerDelimiters.begin;
             TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = guard))
                        [name = "/inner/single/<u.name>"];
