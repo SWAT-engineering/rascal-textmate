@@ -1,0 +1,23 @@
+# SYNTAX TEST "Rascal"
+
+  "foo bar"
+# ^^^^^^^^^ Constant
+
+  "foo<x + 1>bar"
+# ^^^^^     ^^^^^ Constant
+#      ^^^^^      -Constant
+
+### TODO: The following test shows that, currently, multi-line strings are
+### disabled. This is because the converter determines that:
+###   - `>` doesn't uniquely delineate interpolation (it could also be
+###     greater-than in expressions or prioritize-before in grammars);
+###   - `"` doesn't uniquely delineate strings (it could also be the end of
+###     interpolation).
+### Therefore, to avoid excessive tokenization errors, the converter doesn't
+### generate begin/end patterns that begin with `>` or `"`. This might be
+### improved in the future.
+
+  "foo
+# ^^^^ -Constant
+  bar"
+# ^^^^ -Constant

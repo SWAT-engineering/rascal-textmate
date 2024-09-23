@@ -78,4 +78,4 @@ list[ConversionUnit] units = [
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units);
-test bool transformTest() = doTransformTest(units, <6, 2, 0>, name = "RascalStringLiteral");
+test bool transformTest() = doTransformTest(units, <6, 0, 0>, name = "RascalStringLiteral");

@@ -86,7 +86,6 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
     assert actual.include == expect.include : "Actual number of top-level include patterns in repository: <actual.include>. Expected: <expect.include>.";
 
     // Test behavioral properties of the TextMate grammar
-    
     loc lTest = lProject + "/src/main/rascal/lang/textmate/conversiontests/<name>.test";
     loc lTester = lProject + "/node_modules/vscode-tmgrammar-test";
     if (!exists(lTest)) {
@@ -103,7 +102,21 @@ bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str nam
             resolveLocation(lTest).path[(windows ? 1 : 0)..]
         ];
 
-        if (<output, exitCode> := execWithCode(lExec, args = args) && exitCode != 0) {
+        // TODO: The following function serves as a workaround for a race
+        // in (the Java-part of) the implementation of `execWithCode`. A fix is
+        // already available but not yet released. When it is, this function
+        // should be removed (and `execWithCode` called directly). See also:
+        // https://github.com/usethesource/rascal/commit/1ce9e59dfd7098327bbaf55a985c2a643ff52861
+        tuple[str, int] execWithCodeUntilSuccess() {
+            try {
+                return execWithCode(lExec, args = args);
+            } catch e: {
+                println("[LOG] Retrying after unexpected exception: <e>");
+                return execWithCodeUntilSuccess();
+            }
+        }
+        
+        if (<output, exitCode> := execWithCodeUntilSuccess() && exitCode != 0) {
             println(output);
             assert false : "Actual tokenization does not match expected tokenization (see output above for details)";
         }
