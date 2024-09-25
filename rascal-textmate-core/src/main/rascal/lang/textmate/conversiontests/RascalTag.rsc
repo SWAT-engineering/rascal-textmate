@@ -45,5 +45,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(label("expression",sort("Tag")),[lit("@"),layouts("LAYOUTLIST"),label("name",lex("Name")),layouts("LAYOUTLIST"),lit("="),layouts("LAYOUTLIST"),conditional(label("expression",sort("Expression")),{\not-follow(lit("@"))})],{\tag("Folded"()),\tag("category"("Comment"))}), false, true, <nothing(),nothing()>, <just(lit("@")),nothing()>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "RascalTag");
 test bool transformTest() = doTransformTest(units, <2, 1, 0>, name = "RascalTag");

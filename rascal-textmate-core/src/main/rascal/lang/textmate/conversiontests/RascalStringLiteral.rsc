@@ -77,5 +77,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("for"),lit("do"),lit("if"),lit("10"),lit("else"),lit("while"),lit("0")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "RascalStringLiteral");
 test bool transformTest() = doTransformTest(units, <6, 0, 0>, name = "RascalStringLiteral");

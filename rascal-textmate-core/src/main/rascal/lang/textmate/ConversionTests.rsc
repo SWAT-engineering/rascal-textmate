@@ -18,8 +18,8 @@ import lang::textmate::ConversionConstants;
 import lang::textmate::ConversionUnit;
 import lang::textmate::Grammar;
 
-bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual = false) {
-    list[ConversionUnit] actual = analyze(rsc);
+bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, str name = "", bool printActual = false) {
+    list[ConversionUnit] actual = analyze(rsc, name);
 
     if (printActual) {
         str syntheticProductionNameVars(str s)
@@ -61,7 +61,7 @@ bool doAnalyzeTest(RscGrammar rsc, list[ConversionUnit] expect, bool printActual
 }
 
 bool doTransformTest(list[ConversionUnit] units, RepositoryStats expect, str name = "") {
-    TmGrammar tm = transform(units)[scopeName = "<name>"];
+    TmGrammar tm = transform(units, name);
     
     loc lProject = |project://rascal-textmate-core|;
     loc lGrammar = lProject + "/target/generated-test-grammars/<name>.tmLanguage.json";

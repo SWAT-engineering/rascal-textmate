@@ -22,5 +22,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(lex("Comment"),[lit("/*"),\iter-star(alt({\char-class([range(1,41),range(43,1114111)]),conditional(lit("*"),{\not-follow(lit("/"))})})),lit("*/")],{\tag("category"("Comment"))}), false, true, <nothing(),nothing()>, <just(lit("/*")),just(lit("*/"))>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "RascalComment");
 test bool transformTest() = doTransformTest(units, <2, 1, 0>, name = "RascalComment");
