@@ -31,14 +31,17 @@ alias RscGrammar = Grammar;
 }
 
 @description{
-    The conversion consists of two stages:
+    The conversion consists of three stages:
+      - preprocessing (function `preprocess`);
       - analysis (function `analyze`);
       - transformation (function `transform`).
 
-    The aim of the analysis stage is to select those productions of the Rascal
-    grammar that are "suitable for conversion" to TextMate rules. The aim of the
-    transformation stage is to subsequently convert those productions and
-    produce a TextMate grammar.
+    The aim of the preprocessing stage is to slightly massage the Rascal grammar
+    to make analysis and transformation easier (e.g., replace singleton ranges
+    with just the corresponding literal). The aim of the analysis stage is to
+    select those productions of the Rascal grammar that are "suitable for
+    conversion" to TextMate rules. The aim of the transformation stage is to
+    subsequently convert those productions and produce a TextMate grammar.
 
     To be able to cleanly separate analysis and transformation, productions
     selected during the analysis stage are wrapped into *conversion units* that
@@ -72,8 +75,6 @@ RscGrammar preprocess(RscGrammar rsc) {
     Each production in the list (including the synthetic ones) is *suitable for
     conversion* to a TextMate rule. A production is "suitable for conversion"
     when it satisfies each of the following conditions:
-      - it is non-recursive;
-      - it does not match newlines;
       - it does not match the empty word;
       - it has a `@category` tag.
     
@@ -84,23 +85,31 @@ RscGrammar preprocess(RscGrammar rsc) {
     The analysis consists of three stages:
       1. selection of user-defined productions;
       2. creation of synthetic delimiters production;
-      3. creation of synthetic keywords production.
+      3. creation of synthetic keywords production;
+      4. wrapping of productions inside conversion units.
 
     In stage 1, a dependency graph among all productions that occur in `rsc`
     (specifically: `prod` constructors) is created. This dependency graph is
     subsequently pruned to keep only the suitable-for-conversion productions:
-      - first, productions with a cyclic dependency on themselves are removed;
-      - next, productions that only involve single-line matching are retained;
-      - next, productions that only involve non-empty word matching are retained;
+      - first, productions that involve non-empty word matching are retained;
       - next, productions that have a `@category` tag are retained.
+    The resulting list of productions is split into lists of recursive
+    productions and non-recursive productions.
 
     In stage 2, the set of all delimiters that occur in `rsc` is created. This
     set is subsequently reduced by removing:
       - strict prefixes of delimiters;
-      - delimiters that enclose user-defined productions;
-      - delimiters that occur at the beginning of user-defined productions.
+      - delimiters that also occur as outer delimiters of
+        suitable-for-conversion productions;
+      - delimiters that also occur as inner delimiters of
+        suitable-for-conversion productions.
 
     In stage 3, the set of all keywords that occur in `rsc` is created.
+
+    In stage 4, each suitable-for-conversion production is wrapped in a
+    conversion unit with additional metadata (e.g., the inner/outer delimiters
+    of the production). The list of conversion units is subsequently reduced
+    by removing strict prefixes, and sorted.
 }
 
 list[ConversionUnit] analyze(RscGrammar rsc) {
@@ -154,6 +163,11 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     The transformation consists of two stages:
       1. creation of TextMate rules;
       2. composition of TextMate rules into a TextMate grammar.
+    
+    Stage 1 is organizes as a pipeline that, step-by-step, adds names and rules
+    to the conversion units. First, it adds unique names. Next, it adds "inner
+    rules". Last, it adds "outer rules". See module
+    `lang::textmate::ConversionUnit` for an explanation of inner/outer rules.
 }
 
 TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = long()) {
