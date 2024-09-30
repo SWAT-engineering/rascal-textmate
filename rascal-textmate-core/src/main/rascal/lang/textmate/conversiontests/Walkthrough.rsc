@@ -297,5 +297,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "Walkthrough");
 test bool transformTest() = doTransformTest(units, <7, 2, 0>, name = "Walkthrough");

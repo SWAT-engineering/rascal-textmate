@@ -24,5 +24,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(lex("Unit"),[lit("🌊")],{\tag("category"("constant.language"))}), false, false, <nothing(),nothing()>, <just(lit("🌊")),just(lit("🌊"))>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "Emoji");
 test bool transformTest() = doTransformTest(units, <3, 0, 0>, name = "Emoji");

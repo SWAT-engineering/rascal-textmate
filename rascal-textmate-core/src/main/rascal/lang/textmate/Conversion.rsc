@@ -5,10 +5,10 @@
 module lang::textmate::Conversion
 
 import Grammar;
-import IO;
 import ParseTree;
 import String;
 import util::Maybe;
+import util::Monitor;
 
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
@@ -48,8 +48,8 @@ alias RscGrammar = Grammar;
     may contain additional meta-data needed during the transformation stage.
 }
 
-TmGrammar toTmGrammar(RscGrammar rsc, ScopeName scopeName, NameGeneration nameGeneration = long())
-    = transform(analyze(preprocess(rsc)), nameGeneration = nameGeneration) [scopeName = scopeName];
+TmGrammar toTmGrammar(RscGrammar rsc, str name, NameGeneration nameGeneration = long())
+    = transform(analyze(preprocess(rsc), name), name, nameGeneration = nameGeneration);
 
 @synopsis{
     Preprocess Rascal grammar `rsc` to make it suitable for analysis and
@@ -112,7 +112,9 @@ RscGrammar preprocess(RscGrammar rsc) {
     by removing strict prefixes, and sorted.
 }
 
-list[ConversionUnit] analyze(RscGrammar rsc) {
+list[ConversionUnit] analyze(RscGrammar rsc, str name) {
+    str jobLabel = "Analyzing<name == "" ? "" : " (<name>)">";
+    jobStart(jobLabel, work = 4);
 
     // Define auxiliary predicates
     bool isCyclic(Production p, set[Production] ancestors, _)
@@ -123,14 +125,14 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
         = /\tag("category"(_)) := attributes;
 
     // Analyze dependencies among productions
-    println("[LOG] Analyzing dependencies among productions");
+    jobStep(jobLabel, "Analyzing productions");
     Graph[Production] graph = toGraph(rsc);
     list[Production] prods             = deps(graph).retainProds(isNonEmpty).retainProds(hasCategory).getProds();
     list[Production] prodsNonRecursive = prods & deps(graph).removeProds(isCyclic, true).getProds();
     list[Production] prodsRecursive    = prods - prodsNonRecursive;
 
     // Analyze delimiters
-    println("[LOG] Analyzing delimiters");
+    jobStep(jobLabel, "Analyzing delimiters");
     set[Symbol] delimiters
         = removeStrictPrefixes({s | /Symbol s := rsc, isDelimiter(delabel(s))})
         - {s | p <- prods, /just(s) := getOuterDelimiterPair(rsc, p)}
@@ -138,11 +140,13 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
-    println("[LOG] Analyzing keywords");
+    jobStep(jobLabel, "Analyzing keywords");
     set[Symbol] keywords = {s | /Symbol s := rsc, isKeyword(delabel(s))};
     list[Production] prodsKeywords = [prod(lex(KEYWORDS_PRODUCTION_NAME), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
-    // Return
+    // Prepare units
+    jobStep(jobLabel, "Preparing units");
+
     bool isRecursive(Production p)
         = p in prodsRecursive;
     bool isEmptyProd(prod(_, [\alt(alternatives)], _))
@@ -151,7 +155,11 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     set[ConversionUnit] units = {};
     units += {unit(rsc, p, isRecursive(p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
     units += {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters + prodsKeywords, !isEmptyProd(p)};
-    return sort([*removeStrictPrefixes(units)]);
+    list[ConversionUnit] ret = sort([*removeStrictPrefixes(units)]);
+
+    // Return
+    jobEnd(jobLabel);
+    return ret;
 }
 
 @synopsis{
@@ -170,16 +178,18 @@ list[ConversionUnit] analyze(RscGrammar rsc) {
     `lang::textmate::ConversionUnit` for an explanation of inner/outer rules.
 }
 
-TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = long()) {
+TmGrammar transform(list[ConversionUnit] units, str name, NameGeneration nameGeneration = long()) {
+    str jobLabel = "Transforming<name == "" ? "" : " (<name>)">";
+    jobStart(jobLabel, work = 2);
 
     // Transform productions to rules
-    println("[LOG] Transforming productions to rules");
+    jobStep(jobLabel, "Transforming productions to rules");
     units = addNames(units, nameGeneration);
     units = addInnerRules(units);
     units = addOuterRules(units);
 
     // Transform rules to grammar
-    println("[LOG] Transforming rules to grammar");
+    jobStep(jobLabel, "Transforming rules to grammar");
     set[TmRule] innerRules = {*u.innerRules | u <- units};
     set[TmRule] outerRules = {*u.outerRules | u <- units};
     Repository repository = ("<r.name>": r | TmRule r <- innerRules + outerRules);
@@ -187,7 +197,8 @@ TmGrammar transform(list[ConversionUnit] units, NameGeneration nameGeneration = 
     TmGrammar tm = lang::textmate::Grammar::grammar(repository, "", patterns);
 
     // Return
-    return tm;
+    jobEnd(jobLabel);
+    return tm[scopeName = name];
 }
 
 private list[ConversionUnit] addNames(list[ConversionUnit] units, NameGeneration nameGeneration) {
