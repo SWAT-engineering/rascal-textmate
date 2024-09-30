@@ -39,5 +39,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(label("text",lex("ConcretePart")),[conditional(iter(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)])),{\not-follow(\char-class([range(1,9),range(11,59),range(61,61),range(63,91),range(93,95),range(97,1114111)]))})],{\tag("category"("MetaSkipped"))}), false, false, <just(lit("`")),just(lit("`"))>, <nothing(),nothing()>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "RascalConcrete");
 test bool transformTest() = doTransformTest(units, <7, 1, 0>, name = "RascalConcrete");

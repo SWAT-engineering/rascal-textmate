@@ -35,5 +35,5 @@ list[ConversionUnit] units = [
     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("10"),lit("0")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 
-test bool analyzeTest()   = doAnalyzeTest(rsc, units);
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "RascalStringConstant");
 test bool transformTest() = doTransformTest(units, <3, 1, 0>, name = "RascalStringConstant");
