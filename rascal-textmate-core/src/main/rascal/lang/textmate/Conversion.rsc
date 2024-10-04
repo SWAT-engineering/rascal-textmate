@@ -4,6 +4,8 @@
 
 module lang::textmate::Conversion
 
+import IO;
+
 import Grammar;
 import ParseTree;
 import String;
@@ -107,20 +109,26 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     str jobLabel = "Analyzing<name == "" ? "" : " (<name>)">";
     jobStart(jobLabel, work = 4);
 
-    // Define auxiliary predicates
-    bool isCyclic(Production p, set[Production] ancestors, _)
-        = p in ancestors;
-    bool isNonEmpty(prod(def, _, _), _, _)
-        = !tryParse(rsc, delabel(def), "");
-    bool hasCategory(prod(_, _, attributes), _, _)
-        = /\tag("category"(_)) := attributes;
-
     // Analyze dependencies among productions
     jobStep(jobLabel, "Analyzing productions");
     Graph[Production] graph = toGraph(rsc);
-    list[Production] prods             = deps(graph).retainProds(isNonEmpty).retainProds(hasCategory).getProds();
-    list[Production] prodsNonRecursive = prods & deps(graph).removeProds(isCyclic, true).getProds();
-    list[Production] prodsRecursive    = prods - prodsNonRecursive;
+    Production marker = prod(\empty(), [], {});
+
+    bool hasCategory(Production p)
+        = /\tag("category"(_)) := p;
+    bool hasActiveCategory(Production p)
+        = hasCategory(p) && marker in getClosestAncestors(graph, hasCategory, p, \default = just(marker));
+    bool isNonEmpty(prod(def, _, _))
+        = !tryParse(rsc, delabel(def), "");
+    
+    list[Production] prods = deps(graph)
+        .retainProds(hasActiveCategory)
+        .retainProds(isNonEmpty)
+        .getProds();
+
+    // for (p <- prods) {
+    //     println("<p.def>");
+    // }
 
     // Analyze delimiters
     jobStep(jobLabel, "Analyzing delimiters");
@@ -137,16 +145,17 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
 
     // Prepare units
     jobStep(jobLabel, "Preparing units");
-
-    bool isRecursive(Production p)
-        = p in prodsRecursive;
     bool isEmptyProd(prod(_, [\alt(alternatives)], _))
         = alternatives == {};
-    
+
     set[ConversionUnit] units = {};
-    units += {unit(rsc, p, isRecursive(p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
+    units += {unit(rsc, p, isRecursive(rsc, p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
     units += {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters + prodsKeywords, !isEmptyProd(p)};
     list[ConversionUnit] ret = sort([*removeStrictPrefixes(units)]);
+
+    // for (u <- units) {
+    //     println("<u.prod.def>: <u.recursive>");
+    // }
 
     // Return
     jobEnd(jobLabel);
