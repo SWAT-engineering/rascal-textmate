@@ -142,6 +142,8 @@ private default Maybe[int] max(Maybe[int] _, Maybe[int] _) = nothing();
     Computes the length of a terminal symbol as a range
 }
 
+Range length(label(_, symbol)) = length(symbol);
+
 Range length(\lit(string))   = <size(string), just(size(string))>;
 Range length(\cilit(string)) = <size(string), just(size(string))>;
 Range length(\char-class(_)) = <1, just(1)>;
