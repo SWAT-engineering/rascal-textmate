@@ -1,59 +1,59 @@
 # SYNTAX TEST "RascalStringConstant"
 
   "foo bar"
-# ^^^^^^^^^ Constant
+# ^^^^^^^^^ string
 
   foo "bar"
-# ^^^^      -Constant
-#     ^^^^^ Constant
+# ^^^^      -string
+#     ^^^^^ string
 
   "foo" bar
-# ^^^^^     Constant
-#      ^^^^ -Constant
+# ^^^^^     string
+#      ^^^^ -string
 
   "foo\"bar"
-# ^^^^^^^^^^ Constant
+# ^^^^^^^^^^ string
 
   "foo\\"bar
-# ^^^^^^^    Constant
-#        ^^^ -Constant
+# ^^^^^^^    string
+#        ^^^ -string
 
   "foo\\\"bar"
-# ^^^^^^^^^^^^ Constant
+# ^^^^^^^^^^^^ string
 
   "foo\\\\"bar
-# ^^^^^^^^^    Constant
-#          ^^^ -Constant
+# ^^^^^^^^^    string
+#          ^^^ -string
 
   "foo
-# ^^^^ Constant
+# ^^^^ string
   bar"
-# ^^^^ Constant
+# ^^^^ string
 
   "foo
-# ^^^^ Constant
+# ^^^^ string
   \"
-# ^^   Constant
+# ^^   string
   bar"
-# ^^^^ Constant
+# ^^^^ string
 
   "foo
-# ^^^^ Constant
+# ^^^^ string
   \\"
-# ^^^  Constant
+# ^^^  string
   bar
-# ^^^  -Constant
+# ^^^  -string
 
   "foo
-# ^^^  Constant
+# ^^^  string
   \\\"
-# ^^^^ Constant
+# ^^^^ string
   bar"
-# ^^^^ Constant
+# ^^^^ string
 
   "foo
-# ^^^^ Constant
+# ^^^^ string
   \\\\"
-# ^^^  Constant
+# ^^^  string
   bar
-# ^^^  -Constant
+# ^^^  -string

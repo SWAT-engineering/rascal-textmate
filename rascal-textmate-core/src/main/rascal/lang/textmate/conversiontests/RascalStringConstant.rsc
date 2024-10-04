@@ -31,7 +31,7 @@ Grammar rsc = preprocess(grammar(#StringConstant));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'"),lit("\\")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
-    unit(rsc, prod(lex("StringConstant"),[lit("\""),label("chars",\iter-star(lex("StringCharacter"))),lit("\"")],{\tag("category"("Constant"))}), false, true, <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
+    unit(rsc, prod(lex("StringConstant"),[lit("\""),label("chars",\iter-star(lex("StringCharacter"))),lit("\"")],{\tag("category"("string"))}), false, true, <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("10"),lit("0")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 

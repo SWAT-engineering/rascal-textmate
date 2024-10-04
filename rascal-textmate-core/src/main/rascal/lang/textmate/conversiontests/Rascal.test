@@ -1,11 +1,11 @@
 # SYNTAX TEST "Rascal"
 
   "foo bar"
-# ^^^^^^^^^ Constant
+# ^^^^^^^^^ string
 
   "foo<x + 1>bar"
-# ^^^^^     ^^^^^ Constant
-#      ^^^^^      -Constant
+# ^^^^^     ^^^^^ string
+#      ^^^^^      -string
 
 ### TODO: The following test shows that, currently, multi-line strings are
 ### disabled. This is because the converter determines that:
@@ -18,6 +18,6 @@
 ### improved in the future.
 
   "foo
-# ^^^^ -Constant
+# ^^^^ -string
   bar"
-# ^^^^ -Constant
+# ^^^^ -string

@@ -1,75 +1,75 @@
 # SYNTAX TEST "RascalComment"
 
   // foo bar
-# ^^^^^^^^^^ Comment
+# ^^^^^^^^^^ comment
 
   foo // bar
-# ^^^^       -Comment
-#     ^^^^^^ Comment
+# ^^^^       -comment
+#     ^^^^^^ comment
 
   /* foo bar */
-# ^^^^^^^^^^^^^ Comment
+# ^^^^^^^^^^^^^ comment
 
   foo /* bar */
-# ^^^^          -Comment
-#     ^^^^^^^^^ Comment
+# ^^^^          -comment
+#     ^^^^^^^^^ comment
 
   /* foo */ bar
-# ^^^^^^^^^     Comment
-#          ^^^^ -Comment
+# ^^^^^^^^^     comment
+#          ^^^^ -comment
 
   /* *** */
-# ^^^^^^^^^ Comment
+# ^^^^^^^^^ comment
 
   /* * / */
-# ^^^^^^^^^ Comment
+# ^^^^^^^^^ comment
 
   /* /* */ foo
-# ^^^^^^^^     Comment
-#         ^^^^ -Comment
+# ^^^^^^^^     comment
+#         ^^^^ -comment
 
   /* /* */ */
-# ^^^^^^^^    Comment
-#         ^^^ -Comment
+# ^^^^^^^^    comment
+#         ^^^ -comment
 
   /* // */ foo
-# ^^^^^^^^     Comment
-#         ^^^^ -Comment
+# ^^^^^^^^     comment
+#         ^^^^ -comment
 
   // /* */ foo
-## ^^^^^^^^^^^^ Comment
+## ^^^^^^^^^^^^ comment
 
   /* foo
-# ^^^^^^ Comment
+# ^^^^^^ comment
   bar */
-# ^^^^^^ Comment
+# ^^^^^^ comment
 
   foo /* 
-# ^^^^   -Comment
-#     ^^ Comment
+# ^^^^   -comment
+#     ^^ comment
   bar */
-# ^^^^^^ Comment
+# ^^^^^^ comment
 
   /* foo
-# ^^^^^^ Comment
+# ^^^^^^ comment
   */ bar
-# ^^     Comment
-#   ^^^^ -Comment
+# ^^     comment
+#   ^^^^ -comment
 
   /* 
-# ^^ Comment
+# ^^ comment
   *
-# ^  Comment
+# ^  comment
   **
-# ^^ Comment
+# ^^ comment
   */
-# ^^ Comment
+# ^^ comment
 
   /* 
-# ^^ Comment
+# ^^ comment
   *
-# ^  Comment
+# ^  comment
   /
-# ^  Comment
+# ^  comment
   */
-# ^^ Comment
+# ^^ comment
