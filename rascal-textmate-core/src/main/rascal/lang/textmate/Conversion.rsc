@@ -61,6 +61,35 @@ RscGrammar preprocess(RscGrammar rsc) {
             when d := \lit("<stringChar(char)>"), isDelimiter(d)
     }
 
+    // Replace current semantic token types with TextMate scopes based on:
+    //   - https://github.com/microsoft/vscode/blob/9f3a7b5bc8a2758584b33d0385b227f25ae8d3fb/src/vs/platform/theme/common/tokenClassificationRegistry.ts#L543-L571
+    rsc = visit (rsc) {
+        case \tag("category"("comment"))       => \tag("category"("comment"))
+        case \tag("category"("string"))        => \tag("category"("string"))
+        case \tag("category"("keyword"))       => \tag("category"("keyword.control"))
+        case \tag("category"("number"))        => \tag("category"("constant.numeric"))
+        case \tag("category"("regexp"))        => \tag("category"("constant.regexp"))
+        case \tag("category"("operator"))      => \tag("category"("keyword.operator"))
+        case \tag("category"("namespace"))     => \tag("category"("entity.name.namespace"))
+        case \tag("category"("type"))          => \tag("category"("support.type")) // Alternative: support.type
+        case \tag("category"("struct"))        => \tag("category"("entity.name.type.struct"))
+        case \tag("category"("class"))         => \tag("category"("entity.name.type.class")) // Alternative: support.class
+        case \tag("category"("interface"))     => \tag("category"("entity.name.type.interface"))
+        case \tag("category"("enum"))          => \tag("category"("entity.name.type.enum"))
+        case \tag("category"("typeParameter")) => \tag("category"("entity.name.type.parameter"))
+        case \tag("category"("function"))      => \tag("category"("entity.name.function")) // Alternative: support.function
+        case \tag("category"("method"))        => \tag("category"("entity.name.function.member")) // Alternative: support.function
+        case \tag("category"("macro"))         => \tag("category"("entity.name.function.preprocessor"))
+        case \tag("category"("variable"))      => \tag("category"("variable.other.readwrite")) // Alternative: entity.name.variable
+        case \tag("category"("parameter"))     => \tag("category"("variable.parameter"))
+        case \tag("category"("property"))      => \tag("category"("variable.other.property"))
+        case \tag("category"("enumMember"))    => \tag("category"("variable.other.enummember"))
+        case \tag("category"("event"))         => \tag("category"("variable.other.event"))
+        case \tag("category"("decorator"))     => \tag("category"("entity.name.decorator")) // Alternative: entity.name.function
+        // Note: Categories types `member` and `label` are deprecated/undefined
+        // and therefore excluded from this mapping
+    }
+
     // Replace legacy semantic token types with TextMate scopes based on:
     //   - https://github.com/usethesource/rascal/blob/83023f60a6eb9df7a19ccc7a4194b513ac7b7157/src/org/rascalmpl/values/parsetrees/TreeAdapter.java#L44-L59
     //   - https://github.com/usethesource/rascal-language-servers/blob/752fea3ea09101e5b22ee426b11c5e36db880225/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L121-L142
