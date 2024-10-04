@@ -37,17 +37,20 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
     Checks if symbol `s` is recursive in grammar `g`
 }
 
-bool isRecursive(Grammar g, Symbol s) {
-    set[Symbol] getChildren(Symbol s) 
-        = {s | p <- lookup(g, s), /Symbol s := p.symbols};
+// TODO: Compute a map and memoize the results
+bool isRecursive(Grammar g, Symbol s, set[Symbol] checking = {})
+    = s in checking
+    ? true
+    : any(p <- lookup(g, delabel(s)),
+          /Symbol child := p.symbols, 
+          isRecursive(g, child, checking = checking + s));
 
-    bool check(set[Symbol] checking, Symbol s)
-        = s in checking
-        ? true
-        : any(child <- getChildren(s), check(checking + s, child));
-
-    return check({}, s);
+@synopsis{
+    Checks if production `p` is recursive in grammar `g`
 }
+
+bool isRecursive(Grammar g, Production p)
+    = any(/Symbol s := p.symbols, isRecursive(g, s));
 
 @synopsis{
     Representation of a pointer to a symbol in (the list of symbols of) a
