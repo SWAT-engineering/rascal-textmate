@@ -54,16 +54,24 @@ TmGrammar toTmGrammar(RscGrammar rsc, str name, NameGeneration nameGeneration = 
 }
 
 RscGrammar preprocess(RscGrammar rsc) {
-    // Replace occurrences of singleton ranges with just the corresponding
-    // literal. This makes it easier to identify delimiters.
-    rsc = visit (rsc) {
+    rsc = replaceSingletonRanges(rsc);
+    rsc = replaceCurrentSemanticTokenTypes(rsc);
+    rsc = replaceLegacySemanticTokenTypes(rsc);
+    return rsc;
+}
+
+// Replace occurrences of singleton ranges with just the corresponding literal.
+// This makes it easier to identify delimiters.
+private RscGrammar replaceSingletonRanges(RscGrammar rsc)
+    = visit (rsc) {
         case \char-class([range(char, char)]) => d
             when d := \lit("<stringChar(char)>"), isDelimiter(d)
-    }
+    };
 
-    // Replace current semantic token types with TextMate scopes based on:
-    //   - https://github.com/microsoft/vscode/blob/9f3a7b5bc8a2758584b33d0385b227f25ae8d3fb/src/vs/platform/theme/common/tokenClassificationRegistry.ts#L543-L571
-    rsc = visit (rsc) {
+// Replace current semantic token types with TextMate scopes based on:
+//   - https://github.com/microsoft/vscode/blob/9f3a7b5bc8a2758584b33d0385b227f25ae8d3fb/src/vs/platform/theme/common/tokenClassificationRegistry.ts#L543-L571
+private RscGrammar replaceCurrentSemanticTokenTypes(RscGrammar rsc)
+    = visit (rsc) {
         case \tag("category"("comment"))       => \tag("category"("comment"))
         case \tag("category"("string"))        => \tag("category"("string"))
         case \tag("category"("keyword"))       => \tag("category"("keyword.control"))
@@ -88,15 +96,16 @@ RscGrammar preprocess(RscGrammar rsc) {
         case \tag("category"("decorator"))     => \tag("category"("entity.name.decorator")) // Alternative: entity.name.function
         // Note: Categories types `member` and `label` are deprecated/undefined
         // and therefore excluded from this mapping
-    }
+    };
 
-    // Replace legacy semantic token types with TextMate scopes based on:
-    //   - https://github.com/usethesource/rascal/blob/83023f60a6eb9df7a19ccc7a4194b513ac7b7157/src/org/rascalmpl/values/parsetrees/TreeAdapter.java#L44-L59
-    //   - https://github.com/usethesource/rascal-language-servers/blob/752fea3ea09101e5b22ee426b11c5e36db880225/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L121-L142
-    // With updates based on:
-    //   - https://github.com/eclipse-lsp4j/lsp4j/blob/f235e91fbe2e45f62e185bbb9f6d21bed48eb2b9/org.eclipse.lsp4j/src/main/java/org/eclipse/lsp4j/Protocol.xtend#L5639-L5695
-    //   - https://github.com/usethesource/rascal-language-servers/blob/88be4a326128da8c81d581c2b918b4927f2185be/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L134-L152
-    rsc = visit (rsc) {
+// Replace legacy semantic token types with TextMate scopes based on:
+//   - https://github.com/usethesource/rascal/blob/83023f60a6eb9df7a19ccc7a4194b513ac7b7157/src/org/rascalmpl/values/parsetrees/TreeAdapter.java#L44-L59
+//   - https://github.com/usethesource/rascal-language-servers/blob/752fea3ea09101e5b22ee426b11c5e36db880225/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L121-L142
+// With updates based on:
+//   - https://github.com/eclipse-lsp4j/lsp4j/blob/f235e91fbe2e45f62e185bbb9f6d21bed48eb2b9/org.eclipse.lsp4j/src/main/java/org/eclipse/lsp4j/Protocol.xtend#L5639-L5695
+//   - https://github.com/usethesource/rascal-language-servers/blob/88be4a326128da8c81d581c2b918b4927f2185be/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L134-L152
+private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
+    = visit (rsc) {
         case \tag("category"("Normal"))           => \tag("category"("source"))
         case \tag("category"("Type"))             => \tag("category"("type"))     // Updated (before: storage.type)
         case \tag("category"("Identifier"))       => \tag("category"("variable"))
@@ -113,10 +122,7 @@ RscGrammar preprocess(RscGrammar rsc) {
         case \tag("category"("Result"))           => \tag("category"("string"))   // Updated (before: text)
         case \tag("category"("StdOut"))           => \tag("category"("string"))   // Updated (before: text)
         case \tag("category"("StdErr"))           => \tag("category"("string"))   // Updated (before: text)
-    }
-
-    return rsc;
-}
+    };
 
 @synoposis{
     Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of
