@@ -81,14 +81,10 @@ alias Graph[&Node] = tuple[
     rel[&Node, &Node] edges];
 
 @synopsis {
-    Representation of predicates to select nodes in a graph based on their own
-    properties, their ancestors, and their descendants
+    Representation of predicates to select nodes in a graph
 }
 
-alias Predicate[&Node] = bool(
-    &Node n, 
-    set[&Node] ancestors /* of `n` in the graph */,  
-    set[&Node] descendants /* of `n` in the graph */);
+alias Predicate[&Node] = bool(&Node n);
 
 @synopsis{
     Gets the nodes of graph `g` that satisfy predicate `p`, optionally including
@@ -103,7 +99,7 @@ set[&Node] getNodes(Graph[&Node] g, Predicate[&Node] p,
     rel[&Node, &Node] ancestors = invert(descendants);
 
     // Select nodes
-    nodes = {n | n <- g.nodes, p(n, ancestors[n] ? {}, descendants[n] ? {})};
+    nodes = {n | n <- g.nodes, p(n)};
     nodes += ({} | it + (ancestors[n] ? {}) | getAncestors, n <- nodes);
     nodes += ({} | it + (descendants[n] ? {}) | getDescendants, n <- nodes);
     return nodes;
