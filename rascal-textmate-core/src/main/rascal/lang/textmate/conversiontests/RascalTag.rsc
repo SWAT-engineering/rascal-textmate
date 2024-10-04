@@ -41,8 +41,8 @@ Grammar rsc = preprocess(grammar(#Tag));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("="),lit("\\"),lit(";"),lit("{")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
-    unit(rsc, prod(label("default",sort("Tag")),[lit("@"),layouts("LAYOUTLIST"),label("name",lex("Name")),layouts("LAYOUTLIST"),label("contents",lex("TagString"))],{\tag("Folded"()),\tag("category"("Comment"))}), true, true, <nothing(),nothing()>, <just(lit("@")),just(lit("}"))>),
-    unit(rsc, prod(label("expression",sort("Tag")),[lit("@"),layouts("LAYOUTLIST"),label("name",lex("Name")),layouts("LAYOUTLIST"),lit("="),layouts("LAYOUTLIST"),conditional(label("expression",sort("Expression")),{\not-follow(lit("@"))})],{\tag("Folded"()),\tag("category"("Comment"))}), false, true, <nothing(),nothing()>, <just(lit("@")),nothing()>)
+    unit(rsc, prod(label("default",sort("Tag")),[lit("@"),layouts("LAYOUTLIST"),label("name",lex("Name")),layouts("LAYOUTLIST"),label("contents",lex("TagString"))],{\tag("Folded"()),\tag("category"("comment"))}), true, true, <nothing(),nothing()>, <just(lit("@")),just(lit("}"))>),
+    unit(rsc, prod(label("expression",sort("Tag")),[lit("@"),layouts("LAYOUTLIST"),label("name",lex("Name")),layouts("LAYOUTLIST"),lit("="),layouts("LAYOUTLIST"),conditional(label("expression",sort("Expression")),{\not-follow(lit("@"))})],{\tag("Folded"()),\tag("category"("comment"))}), false, true, <nothing(),nothing()>, <just(lit("@")),nothing()>)
 ];
 
 test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "RascalTag");

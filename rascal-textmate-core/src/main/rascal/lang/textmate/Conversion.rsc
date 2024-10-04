@@ -54,13 +54,75 @@ TmGrammar toTmGrammar(RscGrammar rsc, str name, NameGeneration nameGeneration = 
 }
 
 RscGrammar preprocess(RscGrammar rsc) {
-    // Replace occurrences of singleton ranges with just the corresponding
-    // literal. This makes it easier to identify delimiters.
-    return visit (rsc) {
+    rsc = replaceSingletonRanges(rsc);
+    rsc = replaceCurrentSemanticTokenTypes(rsc);
+    rsc = replaceLegacySemanticTokenTypes(rsc);
+    return rsc;
+}
+
+// Replace occurrences of singleton ranges with just the corresponding literal.
+// This makes it easier to identify delimiters.
+private RscGrammar replaceSingletonRanges(RscGrammar rsc)
+    = visit (rsc) {
         case \char-class([range(char, char)]) => d
             when d := \lit("<stringChar(char)>"), isDelimiter(d)
-    }
-}
+    };
+
+// Replace current semantic token types with TextMate scopes based on:
+//   - https://github.com/microsoft/vscode/blob/9f3a7b5bc8a2758584b33d0385b227f25ae8d3fb/src/vs/platform/theme/common/tokenClassificationRegistry.ts#L543-L571
+private RscGrammar replaceCurrentSemanticTokenTypes(RscGrammar rsc)
+    = visit (rsc) {
+        case \tag("category"("comment"))       => \tag("category"("comment"))
+        case \tag("category"("string"))        => \tag("category"("string"))
+        case \tag("category"("keyword"))       => \tag("category"("keyword.control"))
+        case \tag("category"("number"))        => \tag("category"("constant.numeric"))
+        case \tag("category"("regexp"))        => \tag("category"("constant.regexp"))
+        case \tag("category"("operator"))      => \tag("category"("keyword.operator"))
+        case \tag("category"("namespace"))     => \tag("category"("entity.name.namespace"))
+        case \tag("category"("type"))          => \tag("category"("support.type")) // Alternative: support.type
+        case \tag("category"("struct"))        => \tag("category"("entity.name.type.struct"))
+        case \tag("category"("class"))         => \tag("category"("entity.name.type.class")) // Alternative: support.class
+        case \tag("category"("interface"))     => \tag("category"("entity.name.type.interface"))
+        case \tag("category"("enum"))          => \tag("category"("entity.name.type.enum"))
+        case \tag("category"("typeParameter")) => \tag("category"("entity.name.type.parameter"))
+        case \tag("category"("function"))      => \tag("category"("entity.name.function")) // Alternative: support.function
+        case \tag("category"("method"))        => \tag("category"("entity.name.function.member")) // Alternative: support.function
+        case \tag("category"("macro"))         => \tag("category"("entity.name.function.preprocessor"))
+        case \tag("category"("variable"))      => \tag("category"("variable.other.readwrite")) // Alternative: entity.name.variable
+        case \tag("category"("parameter"))     => \tag("category"("variable.parameter"))
+        case \tag("category"("property"))      => \tag("category"("variable.other.property"))
+        case \tag("category"("enumMember"))    => \tag("category"("variable.other.enummember"))
+        case \tag("category"("event"))         => \tag("category"("variable.other.event"))
+        case \tag("category"("decorator"))     => \tag("category"("entity.name.decorator")) // Alternative: entity.name.function
+        // Note: Categories types `member` and `label` are deprecated/undefined
+        // and therefore excluded from this mapping
+    };
+
+// Replace legacy semantic token types with TextMate scopes based on:
+//   - https://github.com/usethesource/rascal/blob/83023f60a6eb9df7a19ccc7a4194b513ac7b7157/src/org/rascalmpl/values/parsetrees/TreeAdapter.java#L44-L59
+//   - https://github.com/usethesource/rascal-language-servers/blob/752fea3ea09101e5b22ee426b11c5e36db880225/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L121-L142
+// With updates based on:
+//   - https://github.com/eclipse-lsp4j/lsp4j/blob/f235e91fbe2e45f62e185bbb9f6d21bed48eb2b9/org.eclipse.lsp4j/src/main/java/org/eclipse/lsp4j/Protocol.xtend#L5639-L5695
+//   - https://github.com/usethesource/rascal-language-servers/blob/88be4a326128da8c81d581c2b918b4927f2185be/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L134-L152
+private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
+    = visit (rsc) {
+        case \tag("category"("Normal"))           => \tag("category"("source"))
+        case \tag("category"("Type"))             => \tag("category"("type"))     // Updated (before: storage.type)
+        case \tag("category"("Identifier"))       => \tag("category"("variable"))
+        case \tag("category"("Variable"))         => \tag("category"("variable"))
+        case \tag("category"("Constant"))         => \tag("category"("string"))   // Updated (before: constant)
+        case \tag("category"("Comment"))          => \tag("category"("comment"))
+        case \tag("category"("Todo"))             => \tag("category"("comment"))
+        case \tag("category"("Quote"))            => \tag("category"("string"))   // Updated (before: meta.string)
+        case \tag("category"("MetaAmbiguity"))    => \tag("category"("invalid"))
+        case \tag("category"("MetaVariable"))     => \tag("category"("variable"))
+        case \tag("category"("MetaKeyword"))      => \tag("category"("keyword"))  // Updated (before: keyword.other)
+        case \tag("category"("MetaSkipped"))      => \tag("category"("string"))
+        case \tag("category"("NonterminalLabel")) => \tag("category"("variable")) // Updated (before: variable.parameter)
+        case \tag("category"("Result"))           => \tag("category"("string"))   // Updated (before: text)
+        case \tag("category"("StdOut"))           => \tag("category"("string"))   // Updated (before: text)
+        case \tag("category"("StdErr"))           => \tag("category"("string"))   // Updated (before: text)
+    };
 
 @synoposis{
     Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of

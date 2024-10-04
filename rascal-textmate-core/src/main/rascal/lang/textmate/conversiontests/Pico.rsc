@@ -14,8 +14,8 @@ Grammar rsc = preprocess(grammar(#Program));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("-"),lit(","),lit(")"),lit("("),lit("+"),lit("||"),lit(":="),lit("\""),lit(";")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
-    unit(rsc, prod(lex("WhitespaceAndComment"),[lit("%%"),conditional(\iter-star(\char-class([range(1,9),range(11,1114111)])),{\end-of-line()})],{\tag("category"("Comment"))}), false, false, <nothing(),nothing()>, <just(lit("%%")),nothing()>),
-    unit(rsc, prod(lex("WhitespaceAndComment"),[lit("%"),iter(\char-class([range(1,36),range(38,1114111)])),lit("%")],{\tag("category"("Comment"))}), false, true, <nothing(),nothing()>, <just(lit("%")),just(lit("%"))>),
+    unit(rsc, prod(lex("WhitespaceAndComment"),[lit("%%"),conditional(\iter-star(\char-class([range(1,9),range(11,1114111)])),{\end-of-line()})],{\tag("category"("comment"))}), false, false, <nothing(),nothing()>, <just(lit("%%")),nothing()>),
+    unit(rsc, prod(lex("WhitespaceAndComment"),[lit("%"),iter(\char-class([range(1,36),range(38,1114111)])),lit("%")],{\tag("category"("comment"))}), false, true, <nothing(),nothing()>, <just(lit("%")),just(lit("%"))>),
     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("do"),lit("declare"),lit("fi"),lit("else"),lit("end"),lit("od"),lit("nil-type"),lit("begin"),lit("natural"),lit("then"),lit("if"),lit("while"),lit("string")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
 ];
 

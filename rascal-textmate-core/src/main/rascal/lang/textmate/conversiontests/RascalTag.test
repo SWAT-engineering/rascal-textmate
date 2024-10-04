@@ -1,23 +1,23 @@
 # SYNTAX TEST "RascalTag"
 
   @memo foo
-# ^^^^^     Comment
-#       ^^^ -Comment
+# ^^^^^     comment
+#       ^^^ -comment
 
   @synopsis{foo} bar
-# ^^^^^^^^^^^^^^     Comment
-#               ^^^^ -Comment
+# ^^^^^^^^^^^^^^     comment
+#               ^^^^ -comment
 
   @synopsis{
-# ^^^^^^^^^^ Comment
+# ^^^^^^^^^^ comment
     foo bar 
-# ^^^^^^^^^  Comment
+# ^^^^^^^^^  comment
   } baz
-# ^          Comment
-#  ^^^^      -Comment
+# ^          comment
+#  ^^^^      -comment
 
   @category={;}
-# ^^^^^^^^^^^^^ Comment
+# ^^^^^^^^^^^^^ comment
 
 ### TODO: The following tests show that, currently, no newlines are allowed
 ### between `@` and the tag name. Starting from commit 6ba991d, there is a TODO
@@ -26,16 +26,16 @@
 ### generated rules"
 
   @
-# ^    -Comment
+# ^    -comment
   memo
-# ^^^^ -Comment
+# ^^^^ -comment
 
   @
-# ^             -Comment
+# ^             -comment
   synopsis{foo}
-# ^^^^^^^^^^^^^ -Comment
+# ^^^^^^^^^^^^^ -comment
 
   @
-# ^             -Comment
+# ^             -comment
   category={;}
-# ^^^^^^^^^^^^^ -Comment
+# ^^^^^^^^^^^^^ -comment
