@@ -109,6 +109,17 @@ list[Pointer] find(Grammar g, Production p, Symbol s, Direction dir = forward())
 }
 
 @synopsis{
+    Lookdowns a list of productions for symbol `s` in grammar `g`
+}
+
+// TODO: Rename this function because the current name makes little sense in
+// isolation (it's supposed to be the opposite of `lookup`, but in that sense,
+// the directions are illogical)
+
+set[Production] lookdown(Grammar g, Symbol s)
+    = {parent | /parent: prod(_, /Symbol _: s, _) := g};
+
+@synopsis{
     Lookups a list of productions for symbol `s` in grammar `g`, replacing
     formal parameters with actual parameters when needed
 }
