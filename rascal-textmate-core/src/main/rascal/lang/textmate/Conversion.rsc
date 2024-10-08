@@ -4,8 +4,6 @@
 
 module lang::textmate::Conversion
 
-import IO;
-
 import Grammar;
 import ParseTree;
 import String;
@@ -15,6 +13,7 @@ import util::Monitor;
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
+import lang::rascal::grammar::analyze::Categories;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
@@ -169,28 +168,36 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
 
 list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     str jobLabel = "Analyzing<name == "" ? "" : " (<name>)">";
-    jobStart(jobLabel, work = 4);
+    jobStart(jobLabel, work = 6);
 
-    // Analyze dependencies among productions
+    // Analyze productions
     jobStep(jobLabel, "Analyzing productions");
-    Graph[Production] graph = toGraph(rsc);
-    Production marker = prod(\empty(), [], {});
+    list[Production] prods = [p | /p: prod(_, _, _) <- rsc];
 
-    bool hasCategory(Production p)
-        = /\tag("category"(_)) := p;
-    bool hasActiveCategory(Production p)
-        = hasCategory(p) && marker in getClosestAncestors(graph, hasCategory, p, \default = just(marker));
-    bool isNonEmpty(prod(def, _, _))
-        = !tryParse(rsc, delabel(def), "");
-    
-    list[Production] prods = deps(graph)
-        .retainProds(hasActiveCategory)
-        .retainProds(isNonEmpty)
-        .getProds();
+    // Analyze categories
+    jobStep(jobLabel, "Analyzing categories");
+    prods = for (p <- prods) {
 
-    // for (p <- prods) {
-    //     println("<p.def>");
-    // }
+        // If `p` has 0 or >=2 categories, then ignore `p` (unclear which
+        // category should be used for highlighting)
+        set[str] categories = getCategories(rsc, p);
+        if ({_} !:= categories || {NO_CATEGORY} == categories) {
+            continue;
+        }
+
+        // If each parent of `p` has a category, then ignore `p` (the parents of
+        // `p` will be used for highlighting instead)
+        set[Production] parents = lookdown(rsc, delabel(p.def));
+        if (!any(parent <- parents, NO_CATEGORY in getCategories(rsc, parent))) {
+            continue;
+        }
+
+        append p;
+    }
+
+    // Analyze emptiness
+    jobStep(jobLabel, "Analyzing emptiness");
+    prods = [p | p <- prods, !tryParse(rsc, delabel(p.def), "")];
 
     // Analyze delimiters
     jobStep(jobLabel, "Analyzing delimiters");
@@ -214,10 +221,6 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     units += {unit(rsc, p, isRecursive(rsc, p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
     units += {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters + prodsKeywords, !isEmptyProd(p)};
     list[ConversionUnit] ret = sort([*removeStrictPrefixes(units)]);
-
-    // for (u <- units) {
-    //     println("<u.prod.def>: <u.recursive>");
-    // }
 
     // Return
     jobEnd(jobLabel);
