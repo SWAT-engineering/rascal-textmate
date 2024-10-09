@@ -11,6 +11,8 @@ import lang::textmate::ConversionUnit;
 
 // Based on `lang::rascal::\syntax::Rascal`
 
+start syntax Start = Class;
+
 syntax Class
     = simpleCharclass: "[" Range* ranges "]" 
     | complement: "!" Class charClass 
@@ -37,7 +39,7 @@ lexical UnicodeEscape
     | ascii: "\\" [a] [0-7] [0-9A-Fa-f]
     ;
 
-Grammar rsc = preprocess(grammar(#Class));
+Grammar rsc = preprocess(grammar(#Start));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("-"),lit(")"),lit("("),lit("!"),lit("||"),lit("&&")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),

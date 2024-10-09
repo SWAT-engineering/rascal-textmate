@@ -11,6 +11,8 @@ import lang::textmate::ConversionUnit;
 
 // Based on `lang::rascal::\syntax::Rascal`
 
+start syntax Start = StringLiteral;
+
 syntax StringLiteral
     = template: PreStringChars pre StringTemplate template StringTail tail 
     | interpolated: PreStringChars pre Expression expression StringTail tail 
@@ -66,7 +68,7 @@ syntax Expression
 		        | lessThan       : Expression lhs "\<" !>> "-" Expression rhs 
 		        | greaterThan    : Expression lhs "\>" Expression rhs );
 
-Grammar rsc = preprocess(grammar(#StringLiteral));
+Grammar rsc = preprocess(grammar(#Start));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("-"),lit(","),lit(")"),lit("("),lit("\n"),lit("\'"),lit("\<="),lit("}"),lit("\\"),lit("\>="),lit(";"),lit("{")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),

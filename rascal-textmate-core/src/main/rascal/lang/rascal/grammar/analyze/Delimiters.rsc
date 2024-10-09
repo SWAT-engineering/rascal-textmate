@@ -49,7 +49,7 @@ DelimiterPair getInnerDelimiterPair(Grammar g, Symbol s, bool getOnlyFirst = fal
     ```
     lexical X  = Y;
     lexical Y  = Y1 | Y2;
-    lexical Y1 = "[" Z "]"; 
+    lexical Y1 = "[" Z "]";
     lexical Y2 = "[" Z ")" [a-z];
     lexical Z  = [a-z];
     ```
@@ -83,7 +83,7 @@ private map[Symbol, Maybe[Symbol]] getInnerDelimiterBySymbol(Grammar g, Directio
 @memo
 private map[Production, Maybe[Symbol]] getInnerDelimiterByProduction(Grammar g, Direction direction, bool getOnlyFirst = false) {
     map[Production, Maybe[Symbol]] ret = (p: nothing() | /p: prod(_, _, _) := g);
-        
+
     solve (ret) {
         for (p <- ret, ret[p] == nothing()) {
             for (s <- reorder(p.symbols, direction)) {
@@ -108,7 +108,7 @@ private map[Production, Maybe[Symbol]] getInnerDelimiterByProduction(Grammar g, 
 }
 
 private set[Production] getChildren(Grammar g, Symbol s)
-    = {*lookup(g, s)};
+    = {*prodsOf(g, s)};
 
 @synopsis{
     Gets the unique rightmost delimiter (`begin`) and the unique leftmost
@@ -122,7 +122,7 @@ private set[Production] getChildren(Grammar g, Symbol s)
     ```
     lexical X  = Y;
     lexical Y  = Y1 | Y2;
-    lexical Y1 = "[" Z "]"; 
+    lexical Y1 = "[" Z "]";
     lexical Y2 = "[" Z ")" [a-z];
     lexical Z  = [a-z];
     ```
@@ -166,7 +166,7 @@ private map[Symbol, Maybe[Symbol]] getOuterDelimiterBySymbol(Grammar g, Directio
             ret[s] = unique(delimiters);
         }
     }
-    
+
     return ret;
 }
 

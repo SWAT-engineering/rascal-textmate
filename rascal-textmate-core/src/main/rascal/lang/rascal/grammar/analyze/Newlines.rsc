@@ -55,7 +55,7 @@ private map[Production, Maybe[set[Segment]]] getSegmentsByProduction(Grammar g) 
 }
 
 private Maybe[set[Segment]] getSegmentsWithEnvironment(
-        Grammar g, list[Symbol] symbols, 
+        Grammar g, list[Symbol] symbols,
         map[Production, Maybe[set[Segment]]] env) {
 
     // General idea: Recursively traverse `symbols` from left to right, while
@@ -73,9 +73,9 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
         set[Symbol] nested = {s | /Symbol s := head};
 
         Maybe[set[Segment]] finished = get(running, [], final = tail == []);
-        
+
         // If the head contains a non-terminal, then: (1) finish the running
-        // segment; (2) lookup the segments of the non-terminals in the
+        // segment; (2) look up the segments of the non-terminals in the
         // environment, if any; (3) compute the segments of the tail. Return the
         // union of 1-3.
         if (any(s <- nested, isNonTerminalType(s))) {
@@ -85,7 +85,7 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
             sets += finished;
 
             // (2)
-            sets += for (s <- nested, isNonTerminalType(s), p <- lookup(g, s)) {
+            sets += for (s <- nested, isNonTerminalType(s), p <- prodsOf(g, s)) {
 
                 bool isInitial(Segment seg)
                     = seg.initial && running.initial && running.symbols == [];
@@ -93,7 +93,7 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
                     = seg.final && tail == [];
                 Segment update(Segment seg)
                     = seg[initial = isInitial(seg)][final = isFinal(seg)];
-                
+
                 append just(segs) := env[p] ? just({update(seg) | seg <- segs}) : nothing();
             }
 
@@ -103,7 +103,7 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
             // Return union
             return (sets[0] | union(it, \set) | \set <- sets[1..]);
         }
-        
+
         // If the head doesn't contain a non-terminal, but it has a newline,
         // then: (1) finish the running segment; (2) compute the segments of the
         // tail. Return the union of 1-2. Note: the head, as it has a newline,
@@ -111,13 +111,13 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
         else if (any(s <- nested, hasNewline(g, s))) {
             return union(finished, get(segment([]), tail));
         }
-        
+
         // If the head doesn't contain a non-terminal, and if it doesn't have a
         // newline, then add the head to the running segment and proceed with
         // the tail.
         else {
             Segment old = running;
-            Segment new = old[symbols = old.symbols + head]; 
+            Segment new = old[symbols = old.symbols + head];
             return get(new, tail);
         }
     }
@@ -130,7 +130,7 @@ private Maybe[set[Segment]] getSegmentsWithEnvironment(
 }
 
 bool hasNewline(Grammar g, Symbol s) {
-    return any(p <- lookup(g, delabel(s)), hasNewline(g, p));
+    return any(p <- prodsOf(g, delabel(s)), hasNewline(g, p));
 }
 
 @synopsis{
@@ -149,7 +149,7 @@ private map[Production, bool] hasNewlineByProduction(Grammar g) {
         for (p <- ret, !ret[p]) {
             set[Symbol] nonTerminals = {s | /Symbol s := p.symbols, isNonTerminalType(s)};
             ret[p] = ret[p] || any(/r: range(_, _) := p.symbols, hasNewline(r))
-                            || any(s <- nonTerminals, Production child <- lookup(g, s), ret[child]);
+                            || any(s <- nonTerminals, Production child <- prodsOf(g, s), ret[child]);
         }
     }
 
@@ -165,7 +165,7 @@ private map[Production, bool] hasNewlineByProduction(Grammar g) {
 
 bool hasNewline(str s)
     = LF in chars(s);
-    
+
 bool hasNewline(range(begin, end))
     = begin <= LF && LF <= end;
 

@@ -11,6 +11,8 @@ import lang::textmate::ConversionUnit;
 
 // Based on `lang::rascal::\syntax::Rascal`
 
+start syntax Start = Concrete;
+
 lexical Concrete 
     = typed: /* "(" LAYOUTLIST l1 Sym symbol LAYOUTLIST l2 ")" LAYOUTLIST l3 */ "`" ConcretePart* parts "`";
 
@@ -27,7 +29,7 @@ lexical ConcretePart
 syntax ConcreteHole 
     = \one: "\<" /* Sym symbol Name name */ "\>";
 
-Grammar rsc = preprocess(grammar(#Concrete));
+Grammar rsc = preprocess(grammar(#Start));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),     

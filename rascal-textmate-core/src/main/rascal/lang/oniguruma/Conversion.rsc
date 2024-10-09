@@ -60,7 +60,7 @@ RegExp toRegExp(Grammar g, list[Symbol] symbols, set[Attr] attributes) {
 RegExp toRegExp(Grammar g, \label(_, symbol))
     = toRegExp(g, symbol);
 RegExp toRegExp(Grammar g, \parameter(_, _)) {
-    throw "Presumably unreachable..."; } // Covered by `lookup` (which substitutes actuals for formals)
+    throw "Presumably unreachable..."; } // Covered by `prodsOf` (which substitutes actuals for formals)
 
 // `ParseTree`: Start
 RegExp toRegExp(Grammar g, \start(symbol))
@@ -68,7 +68,7 @@ RegExp toRegExp(Grammar g, \start(symbol))
 
 // `ParseTree`: Non-terminals
 RegExp toRegExp(Grammar g, Symbol s)
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]) when isNonTerminalType(s);
+    = infix("|", [toRegExp(g, p) | p <- prodsOf(g, s)]) when isNonTerminalType(s);
 
 // `ParseTree`: Terminals
 RegExp toRegExp(Grammar _, \lit(string))
@@ -103,7 +103,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     prefixConditions = [c | c <- conditions, isPrefixCondition(c)];
     suffixConditions = [c | c <- conditions, isSuffixCondition(c)];
     deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
-    
+
     // Convert except conditions (depends on previous conversion)
     if (_ <- exceptConditions) {
         if (/\choice(symbol, alternatives) := g) {
@@ -112,7 +112,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
                 = \label(l, _) := def
                 ? \except(l) notin exceptConditions
                 : true;
-            
+
             re = infix("|", toRegExps(g, {a | a <- alternatives, keep(a)}));
         }
     }
@@ -130,7 +130,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     // Convert delete conditions (depends on previous conversions)
     if (_ <- deleteConditions) {
         RegExp delete = infix("|", [toRegExp(g, s) | \delete(s) <- deleteConditions]);
-            
+
         // TODO: Explain this complicated conversion...
         str string = "(?=(?\<head\><re.string>)(?\<tail\>.*)$)(?!(?:<delete.string>)\\k\<tail\>$)\\k\<head\>";
         list[str] categories = ["", *re.categories, "", *delete.categories];
@@ -196,7 +196,7 @@ str encode(int char) = preEncoded[char] ? "\\x{<toHex(char)>}";
 private set[int] charRange(str from, str to) = {*[charAt(from, 0)..charAt(to, 0) + 1]};
 
 private str toHex(int i)
-    = i < 16 
+    = i < 16
     ? hex[i]
     : toHex(i / 16) + toHex(i % 16);
 
