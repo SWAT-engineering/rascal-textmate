@@ -16,7 +16,6 @@ import Grammar;
 import ParseTree;
 import Relation;
 import Set;
-import util::Maybe;
 
 import lang::rascal::grammar::Util;
 
@@ -50,7 +49,7 @@ Dependencies deps(Graph[Production] g) {
         = deps(removeNodes(g, getNodes(g, p, getAncestors = removeAncestors)));
     list[Production] getProds()
         = toList(g.nodes);
-
+    
     return deps(retainProds, removeProds, getProds);
 }
 
@@ -82,10 +81,14 @@ alias Graph[&Node] = tuple[
     rel[&Node, &Node] edges];
 
 @synopsis {
-    Representation of predicates to select nodes in a graph
+    Representation of predicates to select nodes in a graph based on their own
+    properties, their ancestors, and their descendants
 }
 
-alias Predicate[&Node] = bool(&Node n);
+alias Predicate[&Node] = bool(
+    &Node n, 
+    set[&Node] ancestors /* of `n` in the graph */,  
+    set[&Node] descendants /* of `n` in the graph */);
 
 @synopsis{
     Gets the nodes of graph `g` that satisfy predicate `p`, optionally including
@@ -94,13 +97,13 @@ alias Predicate[&Node] = bool(&Node n);
 
 set[&Node] getNodes(Graph[&Node] g, Predicate[&Node] p,
         bool getAncestors = false, bool getDescendants = false) {
-
+    
     // Compute ancestors/descendants of nodes
     rel[&Node, &Node] descendants = g.edges+;
     rel[&Node, &Node] ancestors = invert(descendants);
 
     // Select nodes
-    nodes = {n | n <- g.nodes, p(n)};
+    nodes = {n | n <- g.nodes, p(n, ancestors[n] ? {}, descendants[n] ? {})};
     nodes += ({} | it + (ancestors[n] ? {}) | getAncestors, n <- nodes);
     nodes += ({} | it + (descendants[n] ? {}) | getDescendants, n <- nodes);
     return nodes;
@@ -119,26 +122,3 @@ Graph[&Node] retainNodes(Graph[&Node] g, set[&Node] nodes)
 
 Graph[&Node] removeNodes(Graph[&Node] g, set[&Node] nodes)
     = <g.nodes - nodes, carrierX(g.edges, nodes)>;
-
-@synopsis{
-    Gets the closest ancestors that satisfy predicate `p` in each branch upward
-    from node `n` in graph `g`, optionally including `\default` when none of the
-    ancestors in a branch satisfy `p`
-}
-
-set[&Node] getClosestAncestors(
-    Graph[&Node] g, Predicate[&Node] p, &Node n,
-    set[&Node] getting = {}, Maybe[&Node] \default = nothing()) {
-
-    if (n in getting) {
-        return {};
-    } else {
-        set[&Node] parents = invert(g.edges)[n];
-        if ({} == parents && just(_) := \default) {
-            return {\default.val};
-        } else {
-            set[&Node] recur(&Node parent) = getClosestAncestors(g, p, parent, getting = getting + n, \default = \default);
-            return {*(p(parent) ? {parent} : recur(parent)) | parent <- parents};
-        }
-    }
-}

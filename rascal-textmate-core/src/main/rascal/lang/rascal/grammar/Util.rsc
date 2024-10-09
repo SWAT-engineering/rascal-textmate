@@ -37,7 +37,6 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
     Checks if symbol `s` is recursive in grammar `g`
 }
 
-// TODO: Compute a map and memoize the results
 bool isRecursive(Grammar g, Symbol s, set[Symbol] checking = {})
     = s in checking
     ? true
