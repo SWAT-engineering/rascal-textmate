@@ -131,7 +131,7 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
       - one synthetic *delimiters* production;
       - zero-or-more *user-defined* productions (from `rsc`);
       - one synthetic *keywords* production.
-    
+
     Each production in the list (including the synthetic ones) is *suitable for
     conversion* to a TextMate rule. A production is "suitable for conversion"
     when it satisfies each of the following conditions:
@@ -139,7 +139,7 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
       - it does not match newlines;
       - it does not match the empty word;
       - it has a `@category` tag.
-    
+
     See the walkthrough for further motivation and examples.
 }
 
@@ -187,7 +187,7 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
 
         // If each parent of `p` has a category, then ignore `p` (the parents of
         // `p` will be used for highlighting instead)
-        set[Production] parents = lookdown(rsc, delabel(p.def));
+        set[Production] parents = prodsWith(rsc, delabel(p.def));
         if (!any(parent <- parents, NO_CATEGORY in getCategories(rsc, parent))) {
             continue;
         }
@@ -295,7 +295,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             bool guard = nothing() := u.innerDelimiters.begin;
             TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = guard))
                        [name = "/inner/single/<u.name>"];
-            
+
             rules = insertIn(rules, (u: r));
         }
 
@@ -311,8 +311,8 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
-                
-                // Create a set of pointers to the first (resp. last) occurrence 
+
+                // Create a set of pointers to the first (resp. last) occurrence
                 // of `pivot` in each unit, when `pivot` is a `begin` delimiter
                 // (resp. an `end` delimiter) of the group. If `pivot` occurs
                 // elsewhere in the grammar as well, then skip the conversion
@@ -320,9 +320,9 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 // avoid tokenization mistakes in which the other occurrences of
                 // `pivot` in the input are mistakenly interpreted as the
                 // beginning or ending of a unit in the group.
-                
+
                 Symbol pivot = key.val;
-                
+
                 set[Pointer] pointers = {};
                 pointers += pivot in begins ? {*find(rsc, u.prod, pivot, dir = forward()) [-1..] | u <- group} : {};
                 pointers += pivot in ends   ? {*find(rsc, u.prod, pivot, dir = backward())[-1..] | u <- group} : {};
@@ -342,7 +342,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                     toRegExp(rsc, [\alt(ends)], {t}),
                     [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)])
                     [name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
-                
+
                 rules = insertIn(rules, (u: r | u <- group));
             }
 
@@ -370,7 +370,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                             // and an `end` delimiter, then generate a
                             // begin/end pattern to highlight these delimiters
                             // and all content in between.
-                            
+
                             set[Segment] segs = getSegments(rsc, suffix);
                             segs = {removeBeginEnd(seg, {begin}, {end}) | seg <- segs};
 
@@ -379,7 +379,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                                 toRegExp(rsc, [end], {t}),
                                 [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)]);
                         }
-                        
+
                         else {
                             // If the suffix has a `begin` delimiter, but not
                             // an `end` delimiter, then generate a match pattern
@@ -475,7 +475,7 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
                 toRegExp(rsc, [\alt(ends)], {}),
                 [include("#<r.name>") | TmRule r <- innerRules])
                 [name = "/outer/<begin.string>"];
-            
+
             rules = insertIn(rules, (u: r | u <- group));
         }
     }

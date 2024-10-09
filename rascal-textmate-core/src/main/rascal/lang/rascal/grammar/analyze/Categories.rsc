@@ -33,7 +33,7 @@ private map[Production, set[str]] getCategoriesByProduction(Grammar g) {
 
         // If the new categories of `p` are different from the old ones, then
         // propagate these changes to the children of `p`
-        for (old != new, /Symbol s := p.symbols, child <- lookup(g, delabel(s))) {
+        for (old != new, /Symbol s := p.symbols, child <- prodsOf(g, delabel(s))) {
             doGet(child, new);
         }
     }
