@@ -11,6 +11,8 @@ import lang::textmate::ConversionUnit;
 
 // Based on `lang::rascal::\syntax::Rascal`
 
+start syntax Start = Tag;
+
 syntax Tag
 	= @Folded @category="Comment" \default  : "@" Name name TagString contents
 	| @Folded @category="Comment" empty     : "@" Name name 
@@ -37,7 +39,7 @@ lexical LAYOUT
 layout LAYOUTLIST
 	= LAYOUT* !>> [\u0009-\u000D \u0020 \u0085 \u00A0 \u1680 \u180E \u2000-\u200A \u2028 \u2029 \u202F \u205F \u3000] /* !>> "//" !>> "/*" */;
 
-Grammar rsc = preprocess(grammar(#Tag));
+Grammar rsc = preprocess(grammar(#Start));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("="),lit("\\"),lit(";"),lit("{")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
