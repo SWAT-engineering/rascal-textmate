@@ -38,11 +38,9 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
 }
 
 bool isRecursive(Grammar g, Symbol s, set[Symbol] checking = {})
-    = s in checking
-    ? true
-    : any(p <- prodsOf(g, delabel(s)),
-          /Symbol child := p.symbols,
-          isRecursive(g, child, checking = checking + s));
+    = s in checking || any(p <- prodsOf(g, delabel(s)),
+                           /Symbol child := p.symbols,
+                           isRecursive(g, child, checking = checking + s));
 
 @synopsis{
     Checks if production `p` is recursive in grammar `g`
