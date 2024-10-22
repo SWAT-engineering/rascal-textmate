@@ -11,6 +11,8 @@ import lang::textmate::ConversionUnit;
 
 // Based on `lang::rascal::\syntax::Rascal`
 
+start syntax Start = StringConstant;
+
 lexical StringConstant
     = @category="Constant" "\"" StringCharacter* chars "\"" ;
 
@@ -27,7 +29,7 @@ lexical UnicodeEscape
     | ascii: "\\" [a] [0-7] [0-9A-Fa-f]
     ;
 
-Grammar rsc = preprocess(grammar(#StringConstant));
+Grammar rsc = preprocess(grammar(#Start));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit("\n"),lit("\'"),lit("\\")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),

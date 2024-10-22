@@ -37,17 +37,17 @@ bool tryParse(Grammar g, Symbol s, str input, bool allowAmbiguity = false) {
     Checks if symbol `s` is recursive in grammar `g`
 }
 
-bool isRecursive(Grammar g, Symbol s) {
-    set[Symbol] getChildren(Symbol s) 
-        = {s | p <- lookup(g, s), /Symbol s := p.symbols};
+bool isRecursive(Grammar g, Symbol s, set[Symbol] checking = {})
+    = s in checking || any(p <- prodsOf(g, delabel(s)),
+                           /Symbol child := p.symbols,
+                           isRecursive(g, child, checking = checking + s));
 
-    bool check(set[Symbol] checking, Symbol s)
-        = s in checking
-        ? true
-        : any(child <- getChildren(s), check(checking + s, child));
-
-    return check({}, s);
+@synopsis{
+    Checks if production `p` is recursive in grammar `g`
 }
+
+bool isRecursive(Grammar g, Production p)
+    = any(/Symbol s := p.symbols, isRecursive(g, s));
 
 @synopsis{
     Representation of a pointer to a symbol in (the list of symbols of) a
@@ -70,7 +70,7 @@ alias Pointer = tuple[Production p, int index];
 
     ```
     lexical X  = Y;
-    lexical Y  = alt1: "[" "[" "[" Z1 "]" "]" "]" | alt2: "<" Z2 ">"; 
+    lexical Y  = alt1: "[" "[" "[" Z1 "]" "]" "]" | alt2: "<" Z2 ">";
     lexical Z1 = "foo" "bar";
     lexical Z2 = "baz";
     ```
@@ -80,7 +80,7 @@ alias Pointer = tuple[Production p, int index];
       - `<X,0>`
       - `<Y.alt1,3>`
       - `<Z1,1>`
-    
+
     The list of pointers to `"qux"` is just empty.
 }
 
@@ -92,7 +92,7 @@ list[Pointer] find(Grammar g, Production p, Symbol s, Direction dir = forward())
             if (ith == needle) {
                 return [<haystack, i>];
             }
-            for (isNonTerminalType(ith), child <- lookup(g, ith)) {
+            for (isNonTerminalType(ith), child <- prodsOf(g, ith)) {
                 if (list[Pointer] l: [_, *_] := doFind(doing + haystack, child, s)) {
                     return [<haystack, i>] + l;
                 }
@@ -106,19 +106,26 @@ list[Pointer] find(Grammar g, Production p, Symbol s, Direction dir = forward())
 }
 
 @synopsis{
-    Lookups a list of productions for symbol `s` in grammar `g`, replacing
+    Gets the list of productions that contain symbol `s` in grammar `g`
+}
+
+set[Production] prodsWith(Grammar g, Symbol s)
+    = {parent | /parent: prod(_, /Symbol _: s, _) := g};
+
+@synopsis{
+    Gets the list of productions of symbol `s` in grammar `g`, replacing
     formal parameters with actual parameters when needed
 }
 
-list[Production] lookup(Grammar g, s: \parameterized-sort(name, actual))
+list[Production] prodsOf(Grammar g, s: \parameterized-sort(name, actual))
     = [subst(p, formal, actual) | /p: prod(\parameterized-sort(name, formal), _, _) := g.rules[s] ? []]
     + [subst(p, formal, actual) | /p: prod(label(_, \parameterized-sort(name, formal)), _, _) := g.rules[s] ? []];
 
-list[Production] lookup(Grammar g, s: \parameterized-lex(name, actual))
+list[Production] prodsOf(Grammar g, s: \parameterized-lex(name, actual))
     = [subst(p, formal, actual) | /p: prod(\parameterized-lex(name, formal), _, _) := g.rules[s] ? []]
     + [subst(p, formal, actual) | /p: prod(label(_, \parameterized-lex(name, formal)), _, _) := g.rules[s] ? []];
 
-default list[Production] lookup(Grammar g, Symbol s)
+default list[Production] prodsOf(Grammar g, Symbol s)
     = [p | /p: prod(s, _, _) := g.rules[s] ? []]
     + [p | /p: prod(label(_, s), _, _) := g.rules[s] ? []];
 
@@ -130,7 +137,7 @@ default list[Production] lookup(Grammar g, Symbol s)
 &T subst(&T t, list[Symbol] from, list[Symbol] to)
     = subst(t, toMapUnique(zip2(from, to)))
     when size(from) == size(to);
-    
+
 private &T subst(&T t, map[Symbol, Symbol] m)
     = visit (t) { case Symbol s => m[s] when s in m };
 

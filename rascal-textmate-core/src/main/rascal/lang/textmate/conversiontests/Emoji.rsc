@@ -8,6 +8,11 @@ import lang::textmate::Conversion;
 import lang::textmate::ConversionTests;
 import lang::textmate::ConversionUnit;
 
+start syntax Start
+    = Unit
+    | Boolean
+    ;
+
 lexical Unit
     = @category="constant.language" [🌊];
 
@@ -16,7 +21,7 @@ lexical Boolean
     | @category="constant.language" [🙁]
     ;
 
-Grammar rsc = preprocess(grammar(#Boolean));
+Grammar rsc = preprocess(grammar(#Start));
 
 list[ConversionUnit] units = [
     unit(rsc, prod(lex("Boolean"),[lit("🙂")],{\tag("category"("constant.language"))}), false, false, <nothing(),nothing()>, <just(lit("🙂")),just(lit("🙂"))>),

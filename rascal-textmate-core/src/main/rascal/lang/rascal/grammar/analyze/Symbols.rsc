@@ -56,7 +56,7 @@ private map[Symbol, Maybe[set[Symbol]]] firstBySymbol(Grammar g, bool(Symbol) pr
         for (s <- ret, nothing() == ret[s]) {
             if (predicate(s)) {
                 ret[s] = just({s});
-            } else if (list[Production] prods: [_, *_] := lookup(g, s)) {
+            } else if (list[Production] prods: [_, *_] := prodsOf(g, s)) {
                 ret[s] = (just({}) | union(it, firstOf(reorder(p.symbols, dir))) | p <- prods);
             } else {
                 ret[s] = just({\empty()});
@@ -84,7 +84,7 @@ set[Symbol] follow(Grammar g, Symbol s)
 @memo
 private map[Symbol, Maybe[set[Symbol]]] followBySymbol(Grammar g, bool(Symbol) predicate, Direction dir) {
     map[Symbol, Maybe[set[Symbol]]] ret = (delabel(s): nothing() | s <- g.rules); // Non-terminals
-    
+
     Maybe[set[Symbol]] followOf(Symbol parent, [])
         = ret[delabel(parent)];
     Maybe[set[Symbol]] followOf(Symbol parent, [h, *t])
@@ -141,6 +141,8 @@ private default Maybe[int] max(Maybe[int] _, Maybe[int] _) = nothing();
 @synopsis{
     Computes the length of a terminal symbol as a range
 }
+
+Range length(label(_, symbol)) = length(symbol);
 
 Range length(\lit(string))   = <size(string), just(size(string))>;
 Range length(\cilit(string)) = <size(string), just(size(string))>;

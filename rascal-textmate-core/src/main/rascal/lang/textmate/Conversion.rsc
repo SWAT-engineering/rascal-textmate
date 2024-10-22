@@ -13,6 +13,7 @@ import util::Monitor;
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
+import lang::rascal::grammar::analyze::Categories;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
@@ -130,7 +131,7 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
       - one synthetic *delimiters* production;
       - zero-or-more *user-defined* productions (from `rsc`);
       - one synthetic *keywords* production.
-    
+
     Each production in the list (including the synthetic ones) is *suitable for
     conversion* to a TextMate rule. A production is "suitable for conversion"
     when it satisfies each of the following conditions:
@@ -138,7 +139,7 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
       - it does not match newlines;
       - it does not match the empty word;
       - it has a `@category` tag.
-    
+
     See the walkthrough for further motivation and examples.
 }
 
@@ -167,22 +168,36 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
 
 list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     str jobLabel = "Analyzing<name == "" ? "" : " (<name>)">";
-    jobStart(jobLabel, work = 4);
+    jobStart(jobLabel, work = 6);
 
-    // Define auxiliary predicates
-    bool isCyclic(Production p, set[Production] ancestors, _)
-        = p in ancestors;
-    bool isNonEmpty(prod(def, _, _), _, _)
-        = !tryParse(rsc, delabel(def), "");
-    bool hasCategory(prod(_, _, attributes), _, _)
-        = /\tag("category"(_)) := attributes;
-
-    // Analyze dependencies among productions
+    // Analyze productions
     jobStep(jobLabel, "Analyzing productions");
-    Graph[Production] graph = toGraph(rsc);
-    list[Production] prods             = deps(graph).retainProds(isNonEmpty).retainProds(hasCategory).getProds();
-    list[Production] prodsNonRecursive = prods & deps(graph).removeProds(isCyclic, true).getProds();
-    list[Production] prodsRecursive    = prods - prodsNonRecursive;
+    list[Production] prods = [p | /p: prod(_, _, _) <- rsc];
+
+    // Analyze categories
+    jobStep(jobLabel, "Analyzing categories");
+    prods = for (p <- prods) {
+
+        // If `p` has 0 or >=2 categories, then ignore `p` (unclear which
+        // category should be used for highlighting)
+        set[str] categories = getCategories(rsc, p);
+        if ({_} !:= categories || {NO_CATEGORY} == categories) {
+            continue;
+        }
+
+        // If each parent of `p` has a category, then ignore `p` (the parents of
+        // `p` will be used for highlighting instead)
+        set[Production] parents = prodsWith(rsc, delabel(p.def));
+        if (!any(parent <- parents, NO_CATEGORY in getCategories(rsc, parent))) {
+            continue;
+        }
+
+        append p;
+    }
+
+    // Analyze emptiness
+    jobStep(jobLabel, "Analyzing emptiness");
+    prods = [p | p <- prods, !tryParse(rsc, delabel(p.def), "")];
 
     // Analyze delimiters
     jobStep(jobLabel, "Analyzing delimiters");
@@ -199,14 +214,11 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
 
     // Prepare units
     jobStep(jobLabel, "Preparing units");
-
-    bool isRecursive(Production p)
-        = p in prodsRecursive;
     bool isEmptyProd(prod(_, [\alt(alternatives)], _))
         = alternatives == {};
-    
+
     set[ConversionUnit] units = {};
-    units += {unit(rsc, p, isRecursive(p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
+    units += {unit(rsc, p, isRecursive(rsc, p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
     units += {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters + prodsKeywords, !isEmptyProd(p)};
     list[ConversionUnit] ret = sort([*removeStrictPrefixes(units)]);
 
@@ -283,7 +295,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             bool guard = nothing() := u.innerDelimiters.begin;
             TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = guard))
                        [name = "/inner/single/<u.name>"];
-            
+
             rules = insertIn(rules, (u: r));
         }
 
@@ -299,8 +311,8 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
-                
-                // Create a set of pointers to the first (resp. last) occurrence 
+
+                // Create a set of pointers to the first (resp. last) occurrence
                 // of `pivot` in each unit, when `pivot` is a `begin` delimiter
                 // (resp. an `end` delimiter) of the group. If `pivot` occurs
                 // elsewhere in the grammar as well, then skip the conversion
@@ -308,9 +320,9 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 // avoid tokenization mistakes in which the other occurrences of
                 // `pivot` in the input are mistakenly interpreted as the
                 // beginning or ending of a unit in the group.
-                
+
                 Symbol pivot = key.val;
-                
+
                 set[Pointer] pointers = {};
                 pointers += pivot in begins ? {*find(rsc, u.prod, pivot, dir = forward()) [-1..] | u <- group} : {};
                 pointers += pivot in ends   ? {*find(rsc, u.prod, pivot, dir = backward())[-1..] | u <- group} : {};
@@ -330,7 +342,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                     toRegExp(rsc, [\alt(ends)], {t}),
                     [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)])
                     [name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
-                
+
                 rules = insertIn(rules, (u: r | u <- group));
             }
 
@@ -358,7 +370,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                             // and an `end` delimiter, then generate a
                             // begin/end pattern to highlight these delimiters
                             // and all content in between.
-                            
+
                             set[Segment] segs = getSegments(rsc, suffix);
                             segs = {removeBeginEnd(seg, {begin}, {end}) | seg <- segs};
 
@@ -367,7 +379,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                                 toRegExp(rsc, [end], {t}),
                                 [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)]);
                         }
-                        
+
                         else {
                             // If the suffix has a `begin` delimiter, but not
                             // an `end` delimiter, then generate a match pattern
@@ -463,7 +475,7 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
                 toRegExp(rsc, [\alt(ends)], {}),
                 [include("#<r.name>") | TmRule r <- innerRules])
                 [name = "/outer/<begin.string>"];
-            
+
             rules = insertIn(rules, (u: r | u <- group));
         }
     }
