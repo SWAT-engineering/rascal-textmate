@@ -9,16 +9,13 @@
         <isMultiLine>true</isMultiLine>
     </rascal_style>
     <tmgrammar_test_style>
-      <firstLine># ------------------------------------------------------------------------------</firstLine>
-      <beforeEachLine># </beforeEachLine>
-      <endLine># ------------------------------------------------------------------------------</endLine>
-      <!-- <afterEachLine></afterEachLine> -->
-      <skipLine># SYNTAX TEST .*$</skipLine>
-      <firstLineDetectionPattern># ------------------------------------------------------------------------------$</firstLineDetectionPattern>
-      <lastLineDetectionPattern># ------------------------------------------------------------------------------$</lastLineDetectionPattern>
-      <allowBlankLines>true</allowBlankLines>
-      <isMultiLine>true</isMultiLine>
-      <!-- <multiLine>true</multiLine> -->
-      <!-- <padLines>false</padLines> -->
+        <firstLine># ------------------------------------------------------------------------------</firstLine>
+        <beforeEachLine># </beforeEachLine>
+        <endLine># ------------------------------------------------------------------------------</endLine>
+        <skipLine># SYNTAX TEST .*$</skipLine>
+        <firstLineDetectionPattern># ------------------------------------------------------------------------------$</firstLineDetectionPattern>
+        <lastLineDetectionPattern># ------------------------------------------------------------------------------$</lastLineDetectionPattern>
+        <allowBlankLines>true</allowBlankLines>
+        <isMultiLine>true</isMultiLine>
     </tmgrammar_test_style>
 </additionalHeaders>
