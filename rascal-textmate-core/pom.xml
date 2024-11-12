@@ -144,7 +144,7 @@
           </headerDefinitions>
           <licenseSets>
             <licenseSet>
-              <header>LICENSE</header>
+              <header>../LICENSE</header>
               <excludes>
                 <exclude>META-INF/**</exclude>
                 <exclude>node_modules/**</exclude>
