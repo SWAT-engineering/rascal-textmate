@@ -29,13 +29,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     used in the special VS Code extension
 }
 
-module VSCode
+module lang::textmate::main::VSCode
 
-import VSCodePico;
-import VSCodeRascal;
+import lang::textmate::main::VSCodePico;
+import lang::textmate::main::VSCodeRascal;
 
 int main() {
-    VSCodePico::main();
-    VSCodeRascal::main();
+    lang::textmate::main::VSCodePico::main();
+    lang::textmate::main::VSCodeRascal::main();
     return 0;
 }

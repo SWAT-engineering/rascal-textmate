@@ -29,13 +29,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     the special VS Code extension
 }
 
-module VSCodeRascal
+module lang::textmate::main::VSCodeRascal
 
 import Grammar;
-import Main;
+import lang::textmate::main::Main;
 extend lang::textmate::conversiontests::Rascal;
 
-int main() = Main::main(getRscGrammar(), "source.rascalmpl", |project://vscode-extension/syntaxes/rascal.tmLanguage.json|);
+int main() = lang::textmate::main::Main::main(
+    getRscGrammar(), "source.rascalmpl",
+    |project://vscode-extension/syntaxes/rascal.tmLanguage.json|);
 
 // Relevant comment regarding grammar precedence in VS Code:
 //   - https://github.com/microsoft/vscode-docs/issues/2862#issuecomment-599994967
@@ -45,7 +47,7 @@ private Grammar getRscGrammar() {
         = {\tag("category"(_)), *rest} := attributes
         ? p[attributes = rest + \tag("category"(category))]
         : p[attributes = attributes + \tag("category"(category))];
-    
+
     return visit (rsc) {
         // Temporarily hot-patch Rascal's own grammar as discussed here:
         //   - https://github.com/SWAT-engineering/rascal-textmate/pull/6

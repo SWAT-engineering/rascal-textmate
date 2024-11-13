@@ -28,7 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     Main functions to generate TextMate grammars for Rascal grammars
 }
 
-module Main
+module lang::textmate::main::Main
 
 import Grammar;
 import lang::textmate::Conversion;
