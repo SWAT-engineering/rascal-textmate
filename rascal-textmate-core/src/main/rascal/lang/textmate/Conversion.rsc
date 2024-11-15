@@ -172,18 +172,16 @@ private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
 
 @description{
     The analysis consists of three stages:
-      1. selection of user-defined productions;
-      2. creation of synthetic delimiters production;
-      3. creation of synthetic keywords production;
-      4. wrapping of productions inside conversion units.
+     1. selection of user-defined productions;
+     2. creation of synthetic delimiters production;
+     3. creation of synthetic keywords production;
+     4. wrapping of productions inside conversion units.
 
-    In stage 1, a dependency graph among all productions that occur in `rsc`
-    (specifically: `prod` constructors) is created. This dependency graph is
-    subsequently pruned to keep only the suitable-for-conversion productions:
-      - first, productions that involve non-empty word matching are retained;
-      - next, productions that have a `@category` tag are retained.
-    The resulting list of productions is split into lists of recursive
-    productions and non-recursive productions.
+    In stage 1, each user-defined production (specifically: `prod` constructor)
+    that occurs in `rsc` is selected for conversion when it fulfils the
+    following requirements:
+      - it has a unique `@category` tag;
+      - it doesn't match the empty word.
 
     In stage 2, the set of all delimiters that occur in `rsc` is created. This
     set is subsequently reduced by removing:
@@ -205,11 +203,11 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     str jobLabel = "Analyzing<name == "" ? "" : " (<name>)">";
     jobStart(jobLabel, work = 6);
 
-    // Analyze productions
+    // Stage 1: Analyze productions
     jobStep(jobLabel, "Analyzing productions");
     list[Production] prods = [p | /p: prod(_, _, _) <- rsc];
 
-    // Analyze categories
+    // Stage 1: Analyze categories
     jobStep(jobLabel, "Analyzing categories");
     prods = for (p <- prods) {
 
@@ -230,11 +228,11 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
         append p;
     }
 
-    // Analyze emptiness
+    // Stage 1: Analyze emptiness
     jobStep(jobLabel, "Analyzing emptiness");
     prods = [p | p <- prods, !tryParse(rsc, delabel(p.def), "")];
 
-    // Analyze delimiters
+    // Stage 2: Analyze delimiters
     jobStep(jobLabel, "Analyzing delimiters");
     set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
     delimiters &= removeStrictPrefixes(delimiters);
@@ -242,12 +240,12 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     delimiters -= {s | p <- prods, /just(s) := getInnerDelimiterPair(rsc, p, getOnlyFirst = true)};
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
-    // Analyze keywords
+    // Stage 3: Analyze keywords
     jobStep(jobLabel, "Analyzing keywords");
     set[Symbol] keywords = {s | /Symbol s := rsc, isKeyword(delabel(s))};
     list[Production] prodsKeywords = [prod(lex(KEYWORDS_PRODUCTION_NAME), [\alt(keywords)], {\tag("category"("keyword.control"))})];
 
-    // Prepare units
+    // Stage 4: Prepare units
     jobStep(jobLabel, "Preparing units");
     bool isEmptyProd(prod(_, [\alt(alternatives)], _))
         = alternatives == {};
@@ -269,10 +267,10 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
 
 @description{
     The transformation consists of two stages:
-      1. creation of TextMate rules;
-      2. composition of TextMate rules into a TextMate grammar.
-    
-    Stage 1 is organizes as a pipeline that, step-by-step, adds names and rules
+     1. creation of TextMate rules;
+     2. composition of TextMate rules into a TextMate grammar.
+
+    Stage 1 is organized as a pipeline that, step-by-step, adds names and rules
     to the conversion units. First, it adds unique names. Next, it adds "inner
     rules". Last, it adds "outer rules". See module
     `lang::textmate::ConversionUnit` for an explanation of inner/outer rules.
