@@ -1,0 +1,237 @@
+# SYNTAX TEST "NestedCategories"
+# ------------------------------------------------------------------------------
+# BSD 2-Clause License
+#
+# Copyright (c) 2024, Swat.engineering
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# ------------------------------------------------------------------------------
+
+  foo01 bar01 foo01 baz01
+#            ^             a
+#      ^^^^^^              b
+#                  ^^^^^^  c
+# ^^^^^       ^^^^^        d
+
+  foo01 bar01
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo01 baz01
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo01
+#          ^^^^^          -d
+
+  foo02 bar02 foo02 baz02
+#            ^             a
+# ^^^^^^^^^^^              b
+#             ^^^^^^^^^^^  c
+# ^^^^^       ^^^^^       -d
+
+  foo02 bar02
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo02 baz02
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo02
+#          ^^^^^          -d
+
+  foo03 bar03 foo03 baz03
+#            ^     ^^^^^^  a
+#      ^^^^^^              b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^        d
+
+  foo03 bar03
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo03 baz03
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo03
+#          ^^^^^          -d
+
+  foo04 bar04 foo04 baz04
+#            ^^^^^^^^^^^^  a
+# ^^^^^^^^^^^              b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^       -d
+
+  foo04 bar04
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo04 baz04
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo04
+#          ^^^^^          -d
+
+  foo05 bar05 foo05 baz05
+#      ^^^^^^^     ^^^^^^  a
+# ^^^^^^^^^^^             -b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^        d
+
+  foo05 bar05
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo05 baz05
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo05
+#          ^^^^^          -d
+
+  foo06 bar06 foo06 baz06
+# ^^^^^^^^^^^^^^^^^^^^^^^  a
+# ^^^^^^^^^^^             -b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^       -d
+
+  foo06 bar06
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo06 baz06
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo06
+#          ^^^^^          -d
+
+  foo07 bar07 foo07 baz07
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+#      ^^^^^^              b
+#                  ^^^^^^  c
+# ^^^^^       ^^^^^        d
+
+  foo07 bar07
+#      ^^^^^^              b
+# ^^^^^                    d
+
+              foo07 baz07
+#                  ^^^^^^  c
+#             ^^^^^        d
+
+           foo07
+#          ^^^^^          -d
+
+  foo08 bar08 foo08 baz08
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+# ^^^^^^^^^^^              b
+#             ^^^^^^^^^^^  c
+# ^^^^^       ^^^^^       -d
+
+  foo08 bar08
+# ^^^^^^^^^^^              b
+# ^^^^^                   -d
+
+              foo08 baz08
+#             ^^^^^^^^^^^  c
+#             ^^^^^       -d
+
+           foo08
+#          ^^^^^          -d
+
+  foo09 bar09 foo09 baz09
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+#      ^^^^^^              b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^        d
+
+  foo09 bar09
+#      ^^^^^^              b
+# ^^^^^                    d
+
+              foo09 baz09
+#             ^^^^^^^^^^^ -c
+#             ^^^^^        d
+
+           foo09
+#          ^^^^^           d
+
+  foo10 bar10 foo10 baz10
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+# ^^^^^^^^^^^              b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^       -d
+
+  foo10 bar10
+# ^^^^^^^^^^^              b
+# ^^^^^                   -d
+
+              foo10 baz10
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo10
+#          ^^^^^          -d
+
+  foo11 bar11 foo11 baz11
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+# ^^^^^^^^^^^             -b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^        d
+
+  foo11 bar11
+# ^^^^^^^^^^^             -b
+# ^^^^^                    d
+
+              foo11 baz11
+#             ^^^^^^^^^^^ -c
+#             ^^^^^        d
+
+           foo11
+#          ^^^^^           d
+
+  foo12 bar12 foo12 baz12
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+# ^^^^^^^^^^^             -b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^       -d
+
+  foo11 bar11 foo11 baz11
+# ^^^^^^^^^^^^^^^^^^^^^^^ -a
+# ^^^^^^^^^^^             -b
+#             ^^^^^^^^^^^ -c
+# ^^^^^       ^^^^^        d
+
+  foo12 bar12
+# ^^^^^^^^^^^             -b
+# ^^^^^                   -d
+
+              foo12 baz12
+#             ^^^^^^^^^^^ -c
+#             ^^^^^       -d
+
+           foo12
+#          ^^^^^          -d

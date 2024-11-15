@@ -1,3 +1,29 @@
+@license{
+BSD 2-Clause License
+
+Copyright (c) 2024, Swat.engineering
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+}
 @synopsis{
     Types and functions to transform productions to regular expressions
 }
@@ -60,7 +86,7 @@ RegExp toRegExp(Grammar g, list[Symbol] symbols, set[Attr] attributes) {
 RegExp toRegExp(Grammar g, \label(_, symbol))
     = toRegExp(g, symbol);
 RegExp toRegExp(Grammar g, \parameter(_, _)) {
-    throw "Presumably unreachable..."; } // Covered by `lookup` (which substitutes actuals for formals)
+    throw "Presumably unreachable..."; } // Covered by `prodsOf` (which substitutes actuals for formals)
 
 // `ParseTree`: Start
 RegExp toRegExp(Grammar g, \start(symbol))
@@ -68,7 +94,7 @@ RegExp toRegExp(Grammar g, \start(symbol))
 
 // `ParseTree`: Non-terminals
 RegExp toRegExp(Grammar g, Symbol s)
-    = infix("|", [toRegExp(g, p) | p <- lookup(g, s)]) when isNonTerminalType(s);
+    = infix("|", [toRegExp(g, p) | p <- prodsOf(g, s)]) when isNonTerminalType(s);
 
 // `ParseTree`: Terminals
 RegExp toRegExp(Grammar _, \lit(string))
@@ -103,7 +129,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     prefixConditions = [c | c <- conditions, isPrefixCondition(c)];
     suffixConditions = [c | c <- conditions, isSuffixCondition(c)];
     deleteConditions = [c | c <- conditions, isDeleteCondition(c)];
-    
+
     // Convert except conditions (depends on previous conversion)
     if (_ <- exceptConditions) {
         if (/\choice(symbol, alternatives) := g) {
@@ -112,7 +138,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
                 = \label(l, _) := def
                 ? \except(l) notin exceptConditions
                 : true;
-            
+
             re = infix("|", toRegExps(g, {a | a <- alternatives, keep(a)}));
         }
     }
@@ -130,7 +156,7 @@ RegExp toRegExp(Grammar g, \conditional(symbol, conditions)) {
     // Convert delete conditions (depends on previous conversions)
     if (_ <- deleteConditions) {
         RegExp delete = infix("|", [toRegExp(g, s) | \delete(s) <- deleteConditions]);
-            
+
         // TODO: Explain this complicated conversion...
         str string = "(?=(?\<head\><re.string>)(?\<tail\>.*)$)(?!(?:<delete.string>)\\k\<tail\>$)\\k\<head\>";
         list[str] categories = ["", *re.categories, "", *delete.categories];
@@ -196,7 +222,7 @@ str encode(int char) = preEncoded[char] ? "\\x{<toHex(char)>}";
 private set[int] charRange(str from, str to) = {*[charAt(from, 0)..charAt(to, 0) + 1]};
 
 private str toHex(int i)
-    = i < 16 
+    = i < 16
     ? hex[i]
     : toHex(i / 16) + toHex(i % 16);
 

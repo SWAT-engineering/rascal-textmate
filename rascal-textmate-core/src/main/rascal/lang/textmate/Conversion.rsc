@@ -1,3 +1,29 @@
+@license{
+BSD 2-Clause License
+
+Copyright (c) 2024, Swat.engineering
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+}
 @synopsis{
     Types and functions to convert Rascal grammars to TextMate grammars
 }
@@ -13,6 +39,7 @@ import util::Monitor;
 import lang::oniguruma::Conversion;
 import lang::oniguruma::RegExp;
 import lang::rascal::grammar::Util;
+import lang::rascal::grammar::analyze::Categories;
 import lang::rascal::grammar::analyze::Delimiters;
 import lang::rascal::grammar::analyze::Dependencies;
 import lang::rascal::grammar::analyze::Newlines;
@@ -57,13 +84,75 @@ TmGrammar toTmGrammar(RscGrammar rsc, str name, NameGeneration nameGeneration = 
 }
 
 RscGrammar preprocess(RscGrammar rsc) {
-    // Replace occurrences of singleton ranges with just the corresponding
-    // literal. This makes it easier to identify delimiters.
-    return visit (rsc) {
+    rsc = replaceSingletonRanges(rsc);
+    rsc = replaceCurrentSemanticTokenTypes(rsc);
+    rsc = replaceLegacySemanticTokenTypes(rsc);
+    return rsc;
+}
+
+// Replace occurrences of singleton ranges with just the corresponding literal.
+// This makes it easier to identify delimiters.
+private RscGrammar replaceSingletonRanges(RscGrammar rsc)
+    = visit (rsc) {
         case \char-class([range(char, char)]) => d
             when d := \lit("<stringChar(char)>"), isDelimiter(d)
-    }
-}
+    };
+
+// Replace current semantic token types with TextMate scopes based on:
+//   - https://github.com/microsoft/vscode/blob/9f3a7b5bc8a2758584b33d0385b227f25ae8d3fb/src/vs/platform/theme/common/tokenClassificationRegistry.ts#L543-L571
+private RscGrammar replaceCurrentSemanticTokenTypes(RscGrammar rsc)
+    = visit (rsc) {
+        case \tag("category"("comment"))       => \tag("category"("comment"))
+        case \tag("category"("string"))        => \tag("category"("string"))
+        case \tag("category"("keyword"))       => \tag("category"("keyword.control"))
+        case \tag("category"("number"))        => \tag("category"("constant.numeric"))
+        case \tag("category"("regexp"))        => \tag("category"("constant.regexp"))
+        case \tag("category"("operator"))      => \tag("category"("keyword.operator"))
+        case \tag("category"("namespace"))     => \tag("category"("entity.name.namespace"))
+        case \tag("category"("type"))          => \tag("category"("support.type")) // Alternative: support.type
+        case \tag("category"("struct"))        => \tag("category"("entity.name.type.struct"))
+        case \tag("category"("class"))         => \tag("category"("entity.name.type.class")) // Alternative: support.class
+        case \tag("category"("interface"))     => \tag("category"("entity.name.type.interface"))
+        case \tag("category"("enum"))          => \tag("category"("entity.name.type.enum"))
+        case \tag("category"("typeParameter")) => \tag("category"("entity.name.type.parameter"))
+        case \tag("category"("function"))      => \tag("category"("entity.name.function")) // Alternative: support.function
+        case \tag("category"("method"))        => \tag("category"("entity.name.function.member")) // Alternative: support.function
+        case \tag("category"("macro"))         => \tag("category"("entity.name.function.preprocessor"))
+        case \tag("category"("variable"))      => \tag("category"("variable.other.readwrite")) // Alternative: entity.name.variable
+        case \tag("category"("parameter"))     => \tag("category"("variable.parameter"))
+        case \tag("category"("property"))      => \tag("category"("variable.other.property"))
+        case \tag("category"("enumMember"))    => \tag("category"("variable.other.enummember"))
+        case \tag("category"("event"))         => \tag("category"("variable.other.event"))
+        case \tag("category"("decorator"))     => \tag("category"("entity.name.decorator")) // Alternative: entity.name.function
+        // Note: Categories types `member` and `label` are deprecated/undefined
+        // and therefore excluded from this mapping
+    };
+
+// Replace legacy semantic token types with TextMate scopes based on:
+//   - https://github.com/usethesource/rascal/blob/83023f60a6eb9df7a19ccc7a4194b513ac7b7157/src/org/rascalmpl/values/parsetrees/TreeAdapter.java#L44-L59
+//   - https://github.com/usethesource/rascal-language-servers/blob/752fea3ea09101e5b22ee426b11c5e36db880225/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L121-L142
+// With updates based on:
+//   - https://github.com/eclipse-lsp4j/lsp4j/blob/f235e91fbe2e45f62e185bbb9f6d21bed48eb2b9/org.eclipse.lsp4j/src/main/java/org/eclipse/lsp4j/Protocol.xtend#L5639-L5695
+//   - https://github.com/usethesource/rascal-language-servers/blob/88be4a326128da8c81d581c2b918b4927f2185be/rascal-lsp/src/main/java/org/rascalmpl/vscode/lsp/util/SemanticTokenizer.java#L134-L152
+private RscGrammar replaceLegacySemanticTokenTypes(RscGrammar rsc)
+    = visit (rsc) {
+        case \tag("category"("Normal"))           => \tag("category"("source"))
+        case \tag("category"("Type"))             => \tag("category"("type"))     // Updated (before: storage.type)
+        case \tag("category"("Identifier"))       => \tag("category"("variable"))
+        case \tag("category"("Variable"))         => \tag("category"("variable"))
+        case \tag("category"("Constant"))         => \tag("category"("string"))   // Updated (before: constant)
+        case \tag("category"("Comment"))          => \tag("category"("comment"))
+        case \tag("category"("Todo"))             => \tag("category"("comment"))
+        case \tag("category"("Quote"))            => \tag("category"("string"))   // Updated (before: meta.string)
+        case \tag("category"("MetaAmbiguity"))    => \tag("category"("invalid"))
+        case \tag("category"("MetaVariable"))     => \tag("category"("variable"))
+        case \tag("category"("MetaKeyword"))      => \tag("category"("keyword"))  // Updated (before: keyword.other)
+        case \tag("category"("MetaSkipped"))      => \tag("category"("string"))
+        case \tag("category"("NonterminalLabel")) => \tag("category"("variable")) // Updated (before: variable.parameter)
+        case \tag("category"("Result"))           => \tag("category"("string"))   // Updated (before: text)
+        case \tag("category"("StdOut"))           => \tag("category"("string"))   // Updated (before: text)
+        case \tag("category"("StdErr"))           => \tag("category"("string"))   // Updated (before: text)
+    };
 
 @synoposis{
     Analyzes Rascal grammar `rsc`. Returns a list of productions, in the form of
@@ -71,13 +160,13 @@ RscGrammar preprocess(RscGrammar rsc) {
       - one synthetic *delimiters* production;
       - zero-or-more *user-defined* productions (from `rsc`);
       - one synthetic *keywords* production.
-    
+
     Each production in the list (including the synthetic ones) is *suitable for
     conversion* to a TextMate rule. A production is "suitable for conversion"
     when it satisfies each of the following conditions:
       - it does not match the empty word;
       - it has a `@category` tag.
-    
+
     See the walkthrough for further motivation and examples.
 }
 
@@ -114,29 +203,43 @@ RscGrammar preprocess(RscGrammar rsc) {
 
 list[ConversionUnit] analyze(RscGrammar rsc, str name) {
     str jobLabel = "Analyzing<name == "" ? "" : " (<name>)">";
-    jobStart(jobLabel, work = 4);
+    jobStart(jobLabel, work = 6);
 
-    // Define auxiliary predicates
-    bool isCyclic(Production p, set[Production] ancestors, _)
-        = p in ancestors;
-    bool isNonEmpty(prod(def, _, _), _, _)
-        = !tryParse(rsc, delabel(def), "");
-    bool hasCategory(prod(_, _, attributes), _, _)
-        = /\tag("category"(_)) := attributes;
-
-    // Analyze dependencies among productions
+    // Analyze productions
     jobStep(jobLabel, "Analyzing productions");
-    Graph[Production] graph = toGraph(rsc);
-    list[Production] prods             = deps(graph).retainProds(isNonEmpty).retainProds(hasCategory).getProds();
-    list[Production] prodsNonRecursive = prods & deps(graph).removeProds(isCyclic, true).getProds();
-    list[Production] prodsRecursive    = prods - prodsNonRecursive;
+    list[Production] prods = [p | /p: prod(_, _, _) <- rsc];
+
+    // Analyze categories
+    jobStep(jobLabel, "Analyzing categories");
+    prods = for (p <- prods) {
+
+        // If `p` has 0 or >=2 categories, then ignore `p` (unclear which
+        // category should be used for highlighting)
+        set[str] categories = getCategories(rsc, p);
+        if ({_} !:= categories || {NO_CATEGORY} == categories) {
+            continue;
+        }
+
+        // If each parent of `p` has a category, then ignore `p` (the parents of
+        // `p` will be used for highlighting instead)
+        set[Production] parents = prodsWith(rsc, delabel(p.def));
+        if (!any(parent <- parents, NO_CATEGORY in getCategories(rsc, parent))) {
+            continue;
+        }
+
+        append p;
+    }
+
+    // Analyze emptiness
+    jobStep(jobLabel, "Analyzing emptiness");
+    prods = [p | p <- prods, !tryParse(rsc, delabel(p.def), "")];
 
     // Analyze delimiters
     jobStep(jobLabel, "Analyzing delimiters");
-    set[Symbol] delimiters
-        = removeStrictPrefixes({s | /Symbol s := rsc, isDelimiter(delabel(s))})
-        - {s | p <- prods, /just(s) := getOuterDelimiterPair(rsc, p)}
-        - {s | p <- prods, /just(s) := getInnerDelimiterPair(rsc, p, getOnlyFirst = true)};
+    set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
+    delimiters &= removeStrictPrefixes(delimiters);
+    delimiters -= {s | p <- prods, /just(s) := getOuterDelimiterPair(rsc, p)};
+    delimiters -= {s | p <- prods, /just(s) := getInnerDelimiterPair(rsc, p, getOnlyFirst = true)};
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
@@ -146,14 +249,11 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
 
     // Prepare units
     jobStep(jobLabel, "Preparing units");
-
-    bool isRecursive(Production p)
-        = p in prodsRecursive;
     bool isEmptyProd(prod(_, [\alt(alternatives)], _))
         = alternatives == {};
-    
+
     set[ConversionUnit] units = {};
-    units += {unit(rsc, p, isRecursive(p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
+    units += {unit(rsc, p, isRecursive(rsc, p), hasNewline(rsc, p), getOuterDelimiterPair(rsc, p), getInnerDelimiterPair(rsc, p, getOnlyFirst = true)) | p <- prods};
     units += {unit(rsc, p, false, false, <nothing(), nothing()>, <nothing(), nothing()>) | p <- prodsDelimiters + prodsKeywords, !isEmptyProd(p)};
     list[ConversionUnit] ret = sort([*removeStrictPrefixes(units)]);
 
@@ -235,7 +335,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
             bool guard = nothing() := u.innerDelimiters.begin;
             TmRule r = toTmRule(toRegExp(u.rsc, u.prod, guard = guard))
                        [name = "/inner/single/<u.name>"];
-            
+
             rules = insertIn(rules, (u: r));
         }
 
@@ -251,8 +351,8 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
 
             // Simple case: each unit does have an `end` inner delimiter
             if (_ <- group && all(u <- group, just(_) := u.innerDelimiters.end)) {
-                
-                // Create a set of pointers to the first (resp. last) occurrence 
+
+                // Create a set of pointers to the first (resp. last) occurrence
                 // of `pivot` in each unit, when `pivot` is a `begin` delimiter
                 // (resp. an `end` delimiter) of the group. If `pivot` occurs
                 // elsewhere in the grammar as well, then skip the conversion
@@ -260,9 +360,9 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                 // avoid tokenization mistakes in which the other occurrences of
                 // `pivot` in the input are mistakenly interpreted as the
                 // beginning or ending of a unit in the group.
-                
+
                 Symbol pivot = key.val;
-                
+
                 set[Pointer] pointers = {};
                 pointers += pivot in begins ? {*find(rsc, u.prod, pivot, dir = forward()) [-1..] | u <- group} : {};
                 pointers += pivot in ends   ? {*find(rsc, u.prod, pivot, dir = backward())[-1..] | u <- group} : {};
@@ -282,7 +382,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                     toRegExp(rsc, [\alt(ends)], {t}),
                     [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)])
                     [name = "/inner/multi/<intercalate(",", [u.name | u <- group])>"];
-                
+
                 rules = insertIn(rules, (u: r | u <- group));
             }
 
@@ -310,7 +410,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                             // and an `end` delimiter, then generate a
                             // begin/end pattern to highlight these delimiters
                             // and all content in between.
-                            
+
                             set[Segment] segs = getSegments(rsc, suffix);
                             segs = {removeBeginEnd(seg, {begin}, {end}) | seg <- segs};
 
@@ -319,7 +419,7 @@ private list[ConversionUnit] addInnerRules(list[ConversionUnit] units) {
                                 toRegExp(rsc, [end], {t}),
                                 [toTmRule(toRegExp(rsc, [s], {t})) | s <- toTerminals(segs)]);
                         }
-                        
+
                         else {
                             // If the suffix has a `begin` delimiter, but not
                             // an `end` delimiter, then generate a match pattern
@@ -415,7 +515,7 @@ private list[ConversionUnit] addOuterRules(list[ConversionUnit] units) {
                 toRegExp(rsc, [\alt(ends)], {}),
                 [include("#<r.name>") | TmRule r <- innerRules])
                 [name = "/outer/<begin.string>"];
-            
+
             rules = insertIn(rules, (u: r | u <- group));
         }
     }

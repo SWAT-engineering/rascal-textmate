@@ -25,30 +25,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 @synopsis{
-    Utility functions for `Maybe` values
+    Main function to generate new TextMate grammars for Rascal and Pico, to be
+    used in the special VS Code extension
 }
 
-module util::MaybeUtil
+module lang::textmate::main::VSCode
 
-import util::Maybe;
+import lang::textmate::main::VSCodePico;
+import lang::textmate::main::VSCodeRascal;
 
-@synopsis{
-    Returns the set of a `Maybe` value when present. Returns the empty set when
-    absent.
+int main() {
+    lang::textmate::main::VSCodePico::main();
+    lang::textmate::main::VSCodeRascal::main();
+    return 0;
 }
-
-set[&T] unmaybe(Maybe[set[&T]] _: nothing())
-    = {};
-set[&T] unmaybe(Maybe[set[&T]] _: just(set[&T] \set))
-    = \set;
-
-@synopsis{
-    Returns just the union of the sets of two `Maybe` values when both are
-    present. Returns nothing if at least one is absent.
-}
-
-Maybe[set[&T]] union(just(set[&T] set1), just(set[&T] set2))
-    = just(set1 + set2);
-
-default Maybe[set[&T]] union(Maybe[set[&T]] _, Maybe[set[&T]] _)
-    = nothing();

@@ -1,3 +1,29 @@
+@license{
+BSD 2-Clause License
+
+Copyright (c) 2024, Swat.engineering
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+}
 @synopsis{
     Types and functions to analyze symbols
 }
@@ -56,7 +82,7 @@ private map[Symbol, Maybe[set[Symbol]]] firstBySymbol(Grammar g, bool(Symbol) pr
         for (s <- ret, nothing() == ret[s]) {
             if (predicate(s)) {
                 ret[s] = just({s});
-            } else if (list[Production] prods: [_, *_] := lookup(g, s)) {
+            } else if (list[Production] prods: [_, *_] := prodsOf(g, s)) {
                 ret[s] = (just({}) | union(it, firstOf(reorder(p.symbols, dir))) | p <- prods);
             } else {
                 ret[s] = just({\empty()});
@@ -84,7 +110,7 @@ set[Symbol] follow(Grammar g, Symbol s)
 @memo
 private map[Symbol, Maybe[set[Symbol]]] followBySymbol(Grammar g, bool(Symbol) predicate, Direction dir) {
     map[Symbol, Maybe[set[Symbol]]] ret = (delabel(s): nothing() | s <- g.rules); // Non-terminals
-    
+
     Maybe[set[Symbol]] followOf(Symbol parent, [])
         = ret[delabel(parent)];
     Maybe[set[Symbol]] followOf(Symbol parent, [h, *t])
@@ -141,6 +167,8 @@ private default Maybe[int] max(Maybe[int] _, Maybe[int] _) = nothing();
 @synopsis{
     Computes the length of a terminal symbol as a range
 }
+
+Range length(label(_, symbol)) = length(symbol);
 
 Range length(\lit(string))   = <size(string), just(size(string))>;
 Range length(\cilit(string)) = <size(string), just(size(string))>;
