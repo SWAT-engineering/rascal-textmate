@@ -64,7 +64,7 @@
     <dependency>
       <groupId>org.rascalmpl</groupId>
       <artifactId>rascal</artifactId>
-      <version>0.40.4</version>
+      <version>0.40.17</version>
     </dependency>
 
     <!-- Rascal tests require JUnit 4 -->
@@ -77,6 +77,19 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>.</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>META-INF/RASCAL.MF</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/rascal</directory>
+        <filtering>false</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

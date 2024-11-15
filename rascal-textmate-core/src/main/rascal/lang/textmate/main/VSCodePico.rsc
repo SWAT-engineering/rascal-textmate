@@ -29,9 +29,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     special VS Code extension
 }
 
-module VSCodePico
+module lang::textmate::main::VSCodePico
 
-import Main;
+import lang::textmate::main::Main;
 extend lang::textmate::conversiontests::PicoWithCategories;
 
-int main() = Main::main(rsc, "source.pico", |project://vscode-extension/syntaxes/pico.tmLanguage.json|);
+int main() = lang::textmate::main::Main::main(
+    rsc, "source.pico", |project://vscode-extension/syntaxes/pico.tmLanguage.json|);

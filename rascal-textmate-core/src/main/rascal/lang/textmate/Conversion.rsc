@@ -227,10 +227,10 @@ list[ConversionUnit] analyze(RscGrammar rsc, str name) {
 
     // Analyze delimiters
     jobStep(jobLabel, "Analyzing delimiters");
-    set[Symbol] delimiters
-        = removeStrictPrefixes({s | /Symbol s := rsc, isDelimiter(delabel(s))})
-        - {s | p <- prods, /just(s) := getOuterDelimiterPair(rsc, p)}
-        - {s | p <- prods, /just(s) := getInnerDelimiterPair(rsc, p, getOnlyFirst = true)};
+    set[Symbol] delimiters = {s | /Symbol s := rsc, isDelimiter(delabel(s))};
+    delimiters &= removeStrictPrefixes(delimiters);
+    delimiters -= {s | p <- prods, /just(s) := getOuterDelimiterPair(rsc, p)};
+    delimiters -= {s | p <- prods, /just(s) := getInnerDelimiterPair(rsc, p, getOnlyFirst = true)};
     list[Production] prodsDelimiters = [prod(lex(DELIMITERS_PRODUCTION_NAME), [\alt(delimiters)], {})];
 
     // Analyze keywords
