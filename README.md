@@ -24,7 +24,7 @@ previous [project](https://github.com/TarVK/syntax-highlighter) by
 
 Enter the following commands in a terminal:
 
-```
+```shell
 git clone https://github.com/SWAT-engineering/rascal-textmate.git
 cd rascal-textmate/rascal-textmate-core
 mvn install -Drascal.compile.skip -Drascal.tutor.skip -DskipTests
@@ -36,7 +36,7 @@ rm -rf rascal-textmate
 
  1. Add the following dependency in `pom.xml` of the project:
 
-    ```
+    ```xml
     <dependency>
       <groupId>org.rascalmpl</groupId>
       <artifactId>rascal-textmate-core</artifactId>
@@ -50,9 +50,9 @@ rm -rf rascal-textmate
  3. Open a REPL in a grammar module of the project, import module
     `lang::textmate::main::Main` in the REPL, and run function
     [`main`](https://github.com/SWAT-engineering/rascal-textmate/blob/69bd92c1e39b51c78ad6d49e680bba212a8df2a7/rascal-textmate-core/src/main/rascal/Main.rsc#L38-L47)
-    on the start symbol of the grammar. For instance:
+    on the `start` symbol of the grammar. For instance:
 
-    ```
+    ```rascal
     main(#Foo, "source.foo", |home:///Desktop/foo.json|)
     ```
 
