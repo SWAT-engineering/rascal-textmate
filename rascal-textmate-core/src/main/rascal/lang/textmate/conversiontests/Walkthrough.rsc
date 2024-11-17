@@ -26,18 +26,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 @description{
 This module consists of a walkthrough to explain the main ideas behind the
-conversion algorithm, from Rascal grammars to TextMate grammars.
+conversion algorithm, from Rascal grammars to TextMate grammars. The walkthrough
+is not intended to be comprehensive, meaning that not all corner cases are
+discussed and explained. The aim of the walkthrough is to convey just the
+general approach.
 
-The walkthrough is split into five parts. The initial part explains basic
-conversion. The subsequent four parts present complications and demonstrate
-extensions of the conversion algorithm to address them.
+The walkthrough consists of the following sections:
+  - Preface
+  - Basic conversion: single-line, non-recursive
+  - Advanced conversion: multi-line, non-recursive
+  - Advanced conversion: single/multi-line, recursive
+  - Advanced conversion: context detection
 
-The toy language considered, is a simple data language consisting of:
-  - base: maps, numbers, strings;
-  - extension 1: layout (including comments);
-  - extension 2: regular expressions;
-  - extension 3: locations;
-  - extension 4: booleans.
+Throughout, a simple data language is used to demonstrate the main ideas. It is
+defined incrementally, by need.
 
 Working familiarity with TextMate grammar is assumed. To summarize:
 
@@ -47,9 +49,9 @@ Working familiarity with TextMate grammar is assumed. To summarize:
         regular expression) or a *begin/end pattern* (consisting of two
         regular expressions and a list of nested TextMate rules).
 
-  - Semantics: A tokenization engine reads a document (line by line, top to
-    bottom, left to right), while iteratively trying to apply TextMate rules
-    by matching text against the regular expressions.
+  - Semantics: A TextMate tokenizer reads a document (line by line, top to
+    bottom, left to right), while iteratively trying to apply TextMate rules by
+    matching text against the regular expressions.
 
 Further reading:
   - https://macromates.com/manual/en/language_grammars
@@ -93,17 +95,17 @@ lexical Print = [0-9 A-Z a-z \ \t\n];
 // user-defined Rascal production that is *suitable for conversion* to a
 // TextMate rule. Roughly, a production is said to have that property when:
 //   - it has a category;
-//   - it does not produce the empty word.
+//   - it cannot produce the empty word.
 //
 // For instance:
 
 lexical Identifier = Alnum+ !>> [0-9 A-Z a-z] ;
-lexical Chars      = @category="string" Alnum* ;
+lexical Chars      = @category="string" Print* ;
 lexical Number     = @category="constant.numeric" Digit+ !>> [0-9] ;
 
 // The Rascal productions of `Identifier` (does not have a category) and `Chars`
-// (produces the empty word) are not suitable-for-conversion. In contrast, the
-// Rascal production of `Number` is suitable-for-conversion. The following
+// (can produce the empty word) are not suitable-for-conversion. In contrast,
+// the Rascal production of `Number` is suitable-for-conversion. The following
 // TextMate rule is generated:
 //
 // ```
@@ -114,17 +116,16 @@ lexical Number     = @category="constant.numeric" Digit+ !>> [0-9] ;
 // }
 // ```
 //
-// Note: The name (`name` property) could be anything, but to simplify
-// debugging, the conversion algorithm uses a description of the Rascal
-// production.
+// Note: Property `name` could be anything, but to simplify debugging, the
+// conversion algorithm uses a description of the Rascal production.
 //
-// Note: The regular expression (`match` property) is written in *Oniguruma*
-// format (following the TextMate grammar specification).
+// Note: The `match` property is a regular expression written in *Oniguruma*
+// format (as required by the TextMate grammar specification).
 
 // ### Keywords
 //
 // Sometimes, literals that qualify as *keywords* do not have a corresponding
-// category and would not be highlighted. For instance:
+// category. For instance:
 
 syntax BooleanExpr
     = "true"
@@ -164,10 +165,10 @@ lexical LineComment = @category="comment" "//" (Alnum | Space)* $ ;
 lexical Location    = "|" Alnum+ "://" Alnum+ "|";
 
 // The Rascal production of `Comment` is suitable-for-conversion, while the
-// Rascal production of `Location` (does not have a category) is not. If only
-// the `Comment` Rascal production were to be converted to a TextMate rule, then
-// substring "//Desktop" of input string "|home://Desktop|" would be mistakenly
-// tokenized as a comment.
+// Rascal production of `Location` (does not have a category) is not. However,
+// if only the former were to be converted to a TextMate rule, then substring
+// "//Desktop" of input string "|home://Desktop|" would be mistakenly tokenized
+// as a comment.
 //
 // Thus, the conversion algorithm:
 //   - analyzes the Rascal grammar to find each literal that qualifies as a
@@ -204,40 +205,39 @@ lexical Location    = "|" Alnum+ "://" Alnum+ "|";
 //
 // ### Approach
 //
-// To convert user-defined Rascal productions of strings that potentially span
-// multiple lines, more advanced machinery is needed. This is because individual
-// TextMate rules with match patterns cannot be used to match strings that span
-// multiple lines (i.e., newlines cannot be matched by individual regular
-// expressions in a TextMate grammar). Instead, TextMate rule with begin/end
-// patterns needs to be used. The approach is roughly as follows:
+// To convert user-defined Rascal productions of multi-line strings, more
+// advanced machinery than TextMate rules with match patterns of single-line
+// strings is needed (i.e., newlines cannot be matched by individual regular
+// expressions in a TextMate grammar). That is, TextMate rules with begin/end
+// patterns need to be used. The approach is roughly as follows:
 //
 //   - First, the conversion algorithm analyzes the Rascal grammar to find each
-//     user-defined suitable-for-conversion Rascal production.
+//     user-defined Rascal production that is suitable-for-conversion.
 //
-//   - Next, the conversion algorithm optimistically converts each production --
-//     *including* those of strings that potentially span multiple lines -- to a
-//     TextMate rule with a match pattern. The rationale is that single-line is
-//     an important special case of multi-line, so a TextMate rule with a match
-//     pattern can already be quite effective (even if it does not cover strings
-//     that span multiple lines).
+//   - Next, the conversion algorithm optimistically converts each of those
+//     productions -- *including* those of multi-line strings -- to a TextMate
+//     rule with a match pattern of single-line strings. The rationale is that
+//     single-line strings are a significant special case of multi-line strings,
+//     so this TextMate rule can already be quite effective.
 //
-//   - Next, the conversion algorithm checks for each production if it is
-//     *delimited*, *semi-delimited*, or *non-delimited*:
+//   - Next, the conversion algorithm checks for each of those productions of
+//     multi-line strings if it is *delimited*, *semi-delimited*, or
+//     *non-delimited*:
 //
 //       - If it begins and ends with a delimiter, then it is *delimited*. In
 //         this case, the production can be converted to a TextMate rule with a
-//         begin/end pattern in a relatively *simple* way.
+//         begin/end pattern in a relatively simple way.
 //
 //       - If it begins with a delimiter, but it does not end with a delimiter,
 //         then it is *semi-delimited*. In this case, the production can be
 //         converted to a TextMate rule with a begin/end pattern in a relatively
-//         *complex* way.
+//         complex way.
 //
 //       - If it does not begin with a delimiter, then it is *non-delimited*. In
 //         this case, the production cannot be converted to a TextMate rule with
 //         a begin/end pattern.
 //
-// ### Delimited conversion when the begin-delimiter is unique
+// ### Delimited conversion, when the begin-delimiter is unique
 //
 // For instance:
 
@@ -246,7 +246,8 @@ lexical BlockComment = @category="comment" "/*" Print* "*/" ;
 // The Rascal production of `BlockComment` is suitable-for-conversion,
 // multi-line (because `Print` can produce a newline), and delimited (by "/*"
 // and "*/"). Moreover, the begin-delimiter is unique: there is no other Rascal
-// production that begins with "/*". The following TextMate rule is generated:
+// production in the Rascal grammar that begins with "/*". The following
+// TextMate rule is generated:
 //
 // ```
 // {
@@ -269,11 +270,11 @@ lexical BlockComment = @category="comment" "/*" Print* "*/" ;
 // ```
 //
 // Note: The purpose of the nested match patterns is to force the TextMate
-// tokenizer to consume input between the begin/end delimiters. The first nested
-// match pattern is derived from the Rascal production of `Print`. The second
-// nested match pattern is a default fallback.
+// tokenizer to explicitly consume all input between the begin/end delimiters.
+// The first nested match pattern is derived from the Rascal production of
+// `Print`. The second nested match pattern is a default fallback.
 //
-// ### Delimited conversion when the begin-delimiter is *not* unique
+// ### Delimited conversion, when the begin-delimiter is *not* unique
 //
 // For instance:
 
@@ -290,8 +291,9 @@ lexical StringRight     = @category="string" "\>" Print* "\"" ;
 // The Rascal production of `StringMid` is suitable-for-conversion, multi-line
 // (because `Print` can produce a newline), and delimited (by ">" and "<").
 // However, the begin-delimiter is not unique: there is another Rascal
-// production that begins with ">", namely the one of `StringRight`. The
-// following *single* TextMate rule is generated for *both* Rascal productions:
+// production in the Rascal grammar that begins with ">", namely the one of
+// `StringRight`. The following *single* TextMate rule is generated that covers
+// *both* Rascal productions:
 //
 // ```
 // {
@@ -315,13 +317,13 @@ lexical StringRight     = @category="string" "\>" Print* "\"" ;
 //
 // Note: Similarly, the Rascal productions of `StringLeftRight` and `StringLeft`
 // are suitable-for-conversion, multi-line, and delimited. Moreover, their begin
-// delimiter is "\"", while there is no other Rascal production that begins with
-// "\"". However, "\"" *does* occur as a non-begin delimiter elsewhere in the
-// Rascal grammar: it is the end delimiter of the Rascal production of
-// `StringLeftRight` itself. Consequently, "\"" does *not* unmistakenly indicate
-// the beginning of a string. To avoid multi-line tokenization mistakes, the
-// Rascal productions of `StringLeftRight` and `StringLeft` are not converted to
-// a TextMate rule.
+// delimiter is "\"", while there is no other Rascal production in the Rascal
+// grammar that begins with "\"". However, "\"" *does* occur as a non-begin
+// delimiter elsewhere in the Rascal grammar: it is the end-delimiter of the
+// Rascal production of `StringLeftRight`. Consequently, "\"" does *not*
+// unmistakenly indicate the beginning of `StringLeftRight` or `StringLeft`. To
+// avoid multi-line tokenization mistakes, the Rascal productions of
+// `StringLeftRight` and `StringLeft` are not converted to a TextMate rule.
 //
 // ### Semi-delimited conversion
 //
@@ -373,8 +375,7 @@ layout Layout = Space* !>> [\ \t\n];
 // ```
 //
 // Note: The begin pattern matches the common *prefix* of the two Rascal
-// productions. The two nested patterns each correspond to the two different
-// *suffixes*.
+// productions. The two nested patterns correspond to the different *suffixes*.
 
 // ----------------------------------------------------
 // ## Advanced conversion: single/multi-line, recursive
@@ -386,131 +387,92 @@ layout Layout = Space* !>> [\ \t\n];
 // -----------------------------------------
 // ## Advanced conversion: context detection
 //
-// TODO
+// Sometimes, highlighting depends on the context in which the tokenization
+// input occurs. For instance:
 
-start syntax Start = Tag ;
+lexical RegExp = "/" RegExpBody "/";
 
-test bool conversion() {
+lexical RegExpBody
+    = @category="string" alnum: Alnum+ !>> [0-9 A-Z a-z]
+    | RegExpBody "?"
+    | RegExpBody "+"
+    | RegExpBody "|" RegExpBody
+    ;
+
+// Rascal production `alnum` of `RegExpBody` is suitable-for-conversion.
+// However, except for the `@category` tag, it has exactly the same definition
+// as the production of `Identifier` (above). If the conversion algorithm were
+// to naively convert `alnum` to a TextMate rule, identifiers would be
+// mistakenly highlighted as strings.
+//
+// Thus, the conversion algorithm first heuristically checks for each Rascal
+// production that is suitable-for-conversion if it is *enclosed by delimiters*.
+// If so, it is converted to an *outer* TextMate rule with a begin/end pattern
+// to match the enclosing delimiters (i.e., context detection) and include
+// patterns to toggle *inner* TextMate rules. That is, the inner TextMate rules
+// are used for tokenization only between matches of the enclosing delimiters
+// (i.e., in the right context).
+//
+// For instance, production `alnum` is enclosed by an opening `/` and a closing
+// `/`. The following outer TextMate rule is generated:
+//
+// ```
+// {
+//   "name":          "/outer//",
+//   "begin":         "(?:\\/)",
+//   "end":           "(?:\\/)",
+//   "beginCaptures": {},
+//   "endCaptures":   {},
+//   "patterns": [
+//     { "include": "#/inner/single/$delimiters" },
+//     { "include": "#/inner/single/regexpbody.alnum" },
+//     { "include": "#/inner/single/$keywords" }
+//   ]
+// }
+// ```
+//
+// Note: If N Rascal productions are enclosed by the same delimiters, then the
+// conversion algorithm converts them into one outer TextMate rule and N inner
+// TextMate rules.
+
+// ## Tests
+//
+// The following code tests the conversion algorithm on input of the grammar
+// defined above.
+
+start syntax Start
+    = Identifier
+    | Chars
+    | Number
+    | BooleanExpr
+    | LineComment
+    | Location
+    | BlockComment
+    | String
+    | Tag
+    | RegExp ;
+
+Grammar rsc = preprocess(grammar(#Start));
+
+list[ConversionUnit] units = [
+    unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(")"),lit("("),lit("+"),lit("="),lit("|"),lit("?"),lit("{"),lit("://")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(sort("Tag"),[lit("@"),layouts("Layout"),\iter-seps(lex("Alnum"),[layouts("Layout")]),layouts("Layout"),lit("="),layouts("Layout"),\iter-seps(lex("Alnum"),[layouts("Layout")])],{\tag("category"("comment"))}), false, true, <nothing(),nothing()>, <just(lit("@")),nothing()>),
+    unit(rsc, prod(sort("Tag"),[lit("@"),layouts("Layout"),\iter-seps(lex("Alnum"),[layouts("Layout")]),layouts("Layout"),lit("{"),layouts("Layout"),\iter-star-seps(lex("Print"),[layouts("Layout")]),layouts("Layout"),lit("}")],{\tag("category"("comment"))}), false, true, <nothing(),nothing()>, <just(lit("@")),just(lit("}"))>),
+    unit(rsc, prod(lex("StringMid"),[lit("\>"),\iter-star(lex("Print")),lit("\<")],{\tag("category"("string"))}), false, true, <just(lit("\<")),just(lit("\>"))>, <just(lit("\>")),just(lit("\<"))>),
+    unit(rsc, prod(lex("StringRight"),[lit("\>"),\iter-star(lex("Print")),lit("\"")],{\tag("category"("string"))}), false, true, <just(lit("\<")),nothing()>, <just(lit("\>")),just(lit("\""))>),
+    unit(rsc, prod(lex("LineComment"),[lit("//"),conditional(\iter-star(alt({lex("Alnum"),lex("Space")})),{\end-of-line()})],{\tag("category"("comment"))}), false, true, <nothing(),nothing()>, <just(lit("//")),nothing()>),
+    unit(rsc, prod(lex("BlockComment"),[lit("/*"),\iter-star(lex("Print")),lit("*/")],{\tag("category"("comment"))}), false, true, <nothing(),nothing()>, <just(lit("/*")),just(lit("*/"))>),
+    unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("string"))}), false, false, <just(lit("/")),just(lit("/"))>, <nothing(),nothing()>),
+    unit(rsc, prod(lex("StringLeft"),[lit("\""),\iter-star(lex("Print")),lit("\<")],{\tag("category"("string"))}), false, true, <nothing(),just(lit("\>"))>, <just(lit("\"")),just(lit("\<"))>),
+    unit(rsc, prod(lex("StringLeftRight"),[lit("\""),\iter-star(lex("Print")),lit("\"")],{\tag("category"("string"))}), false, true, <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
+    unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
+    unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false"),lit("else"),lit("then"),lit("if")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
+];
+
+test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "Walkthrough");
+test bool transformTest() = doTransformTest(units, <12, 6, 0>, name = "Walkthrough");
+
+bool convertAndPrint() {
     println(toJSON(toTmGrammar(grammar(#Start), "Walkthrough", nameGeneration = short())));
     return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// layout Layout = (Comment | Space)* !>> "//" !>> [\ \t\n];
-
-// start syntax Value
-//     = Map
-//     | Number
-//     | String
-//     | RegExp
-//     | Location
-//     | Boolean
-//     ;
-
-// syntax Map = "{" {(Key ":" Value) ","}* "}";
-
-// lexical Key    = Alnum+ !>> [a-z A-Z 0-9];
-// lexical Number = @category="constant.numeric" Digit+ !>> [0-9];
-// lexical String = @category="string.quoted.double" "\"" Alnum* "\"";
-
-// // ## Extension 2: Delimiter-sensitive conversion
-// //
-// // The second extension (regular expressions; illustrative fragment) looks as
-// // follows:
-
-// syntax RegExp = "/" RegExpBody "/";
-
-// lexical RegExpBody
-//     = @category="markup.italic" alnum: Alnum+ !>> [a-z A-Z 0-9]
-//     | RegExpBody "?"
-//     | RegExpBody "+"
-//     | RegExpBody "|" RegExpBody
-//     ;
-
-// // Production `alnum` of `RegExpBody` is suitable for conversion. However,
-// // except for the `@category` tag, it has exactly the same definition as the
-// // production of `Key` (above). Thus, if the conversion algorithm were to
-// // naively convert `alnum` to a TextMate rule, keys in maps would be tokenized
-// // accidentally as regular expressions (and mistakenly typeset in italics).
-// //
-// // To solve this issue, the conversion algorithm first heuristically checks for
-// // each suitable-for-conversion production if it is *enclosed by delimiters*. If
-// // so, instead of converting the production to a top-level match pattern, it is
-// // converted to a top-level begin/end pattern (for the enclosing delimiters)
-// // with a nested match pattern (for the production itself). As a result, the
-// // nested match pattern will be used for tokenization only between matches of
-// // the enclosing delimiters. For instance, production `alnum` is enclosed by an
-// // opening `/` and a closing `/`, so it is converted to the following top-level
-// // begin/end pattern with a nested match pattern:
-// //
-// // ```
-// // {
-// //   "begin": "(?:\\u002F)",
-// //   "end": "(?:\\u002F)",
-// //   "patterns": [
-// //     {
-// //       "match": "((?:[\\u0030-\\u0039]|[\\u0041-\\u005A]|[\\u0061-\\u007A])+?(?!(?:[\\u0030-\\u0039]|[\\u0041-\\u005A]|[\\u0061-\\u007A])))",
-// //       "name": "prod(label(\"alnum\",lex(\"RegExpBody\")),[conditional(iter(lex(\"Alnum\")),{\\not-follow(\\char-class([range(48,57),range(65,90),range(97,122)]))})],{tag(\"category\"(\"markup.italic\"))})",
-// //       "captures": {
-// //         "1": {
-// //           "name": "markup.italic"
-// //         }
-// //       }
-// //     }
-// //   ]
-// // }
-// // ```
-// //
-// // Note: If N suitable-for-conversion productions are enclosed by the same
-// // delimiters, then the conversion algorithm converts them into one top-level
-// // begin/end pattern with N nested match patterns (one for each production).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // ## Tests
-// //
-// // The following code tests the conversion algorithm on input of the grammar
-// // defined above.
-
-// Grammar rsc = preprocess(grammar(#Value));
-
-// list[ConversionUnit] units = [
-//     unit(rsc, prod(lex(DELIMITERS_PRODUCTION_NAME),[alt({lit(","),lit("+"),lit("}"),lit("|"),lit("?"),lit("{"),lit("://")})],{}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
-//     unit(rsc, prod(label("line",lex("Comment")),[lit("//"),conditional(\iter-star(alt({lex("Blank"),lex("Alnum")})),{\end-of-line()})],{\tag("category"("comment.line.double-slash"))}), false, false, <nothing(),nothing()>, <just(lit("//")),nothing()>),
-//     unit(rsc, prod(label("block",lex("Comment")),[lit("/*"),\iter-star(alt({lex("Alnum"),lex("Space")})),lit("*/")],{\tag("category"("comment.block"))}), false, true, <nothing(),nothing()>, <just(lit("/*")),just(lit("*/"))>),
-//     unit(rsc, prod(label("alnum",lex("RegExpBody")),[conditional(iter(lex("Alnum")),{\not-follow(\char-class([range(48,57),range(65,90),range(97,122)]))})],{\tag("category"("markup.italic"))}), false, false, <just(lit("/")),just(lit("/"))>, <nothing(),nothing()>),
-//     unit(rsc, prod(lex("String"),[lit("\""),\iter-star(lex("Alnum")),lit("\"")],{\tag("category"("string.quoted.double"))}), false, false, <nothing(),nothing()>, <just(lit("\"")),just(lit("\""))>),
-//     unit(rsc, prod(lex("Number"),[conditional(iter(lex("Digit")),{\not-follow(\char-class([range(48,57)]))})],{\tag("category"("constant.numeric"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>),
-//     unit(rsc, prod(lex(KEYWORDS_PRODUCTION_NAME),[alt({lit("true"),lit("false")})],{\tag("category"("keyword.control"))}), false, false, <nothing(),nothing()>, <nothing(),nothing()>)
-// ];
-
-// test bool analyzeTest()   = doAnalyzeTest(rsc, units, name = "Walkthrough");
-// test bool transformTest() = doTransformTest(units, <7, 2, 0>, name = "Walkthrough");
