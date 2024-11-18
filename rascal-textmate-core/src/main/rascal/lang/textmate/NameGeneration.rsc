@@ -49,9 +49,6 @@ alias NameGenerator = str(Production);
 
 NameGenerator newNameGenerator(list[Production] prods, short()) {
 
-    // Define auxiliary functions to compute names for symbols
-
-
     // Define auxiliary function to count the number of occurrences of a name
     int count(str name) = (0 | it + 1 | p <- prods, toName(p.def) == name);
 
